@@ -149,14 +149,14 @@ def _create_topic_xml(
 
         detail_children = []
         if precond_val:
-            detail_children.append({"title": f"前置条件：{precond_val}"})
+            detail_children.append({"title": f"前置条件：\n{precond_val}"})
         if test_data_val:
-            detail_children.append({"title": f"测试数据：{test_data_val}"})
+            detail_children.append({"title": f"测试数据：\n{test_data_val}"})
         if expected_val and not steps_val:
             raise ValueError("预期结果缺少对应的操作步骤，无法按用例结构导出")
         if steps_val:
-            step_children = [{"title": f"预期结果：{expected_val}"}] if expected_val else []
-            detail_children.append({"title": f"操作步骤：{steps_val}", "children": step_children})
+            step_children = [{"title": f"预期结果：\n{expected_val}"}] if expected_val else []
+            detail_children.append({"title": f"操作步骤：\n{steps_val}", "children": step_children})
         children = detail_children + list(children or [])
 
     if children:

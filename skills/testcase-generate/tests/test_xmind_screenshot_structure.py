@@ -58,13 +58,13 @@ class TestScreenshotStructure(unittest.TestCase):
         self.assertEqual((title(module), title(submodule), title(case)), ("订单", "提交", "显示待支付状态"))
         detail = children(case)
         self.assertEqual([title(item) for item in detail], [
-            "前置条件：用户已登录",
-            "测试数据：一件普通商品",
-            "操作步骤：1、选择商品\n2、提交订单",
+            "前置条件：\n用户已登录",
+            "测试数据：\n一件普通商品",
+            "操作步骤：\n1、选择商品\n2、提交订单",
         ])
         self.assertEqual(children(detail[0]), [])
         self.assertEqual(children(detail[1]), [])
-        self.assertEqual([title(item) for item in children(detail[2])], ["预期结果：1、商品进入订单\n2、订单显示待支付状态"])
+        self.assertEqual([title(item) for item in children(detail[2])], ["预期结果：\n1、商品进入订单\n2、订单显示待支付状态"])
         self.assertEqual(children(children(detail[2])[0]), [])
         self.assertEqual([item.get("marker-id") for item in case.findall(f"{NS}marker-refs/{NS}marker-ref")], ["priority-1"])
         with zipfile.ZipFile(output) as archive:
@@ -106,7 +106,7 @@ class TestScreenshotStructure(unittest.TestCase):
         _, _, case = self.read_case(output)
         detail = children(case)
         self.assertEqual(len(detail), 1)
-        self.assertTrue(title(detail[0]).startswith("操作步骤："))
+        self.assertTrue(title(detail[0]).startswith("操作步骤：\n"))
         self.assertEqual(len(children(detail[0])), 1)
         self.assertEqual(case.findall(f"{NS}marker-refs/{NS}marker-ref"), [])
 
