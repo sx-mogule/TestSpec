@@ -1,0 +1,198 @@
+{
+  "skill_name": "testcase-generate",
+  "fixture_policy": {
+    "origin": "synthetic",
+    "contains_proprietary_data": false
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成 schema v2 用例并导出 Excel。",
+      "expected_output": "从 revision 2 testpoints 生成可追溯用例，testcases._context 传播完整 envelope，并导出 Excel。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 同步完成后展示新头像。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"sync rule changed\",\"next_skill\":\"testcase-generate\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"sync rule changed\",\"next_skill\":\"testcase-generate\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/specs/testpoints.md",
+          "content": "# 测试点：Profile Sync\n\n## 命名字典\n\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 资料 | PROF |\n\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 资料 | 同步 | SYNC |\n\n### 资料模块\n#### 同步功能\n- TP_PROF_SYNC_001: 资料_同步_完成后展示新头像\n  - 验证要点: 同步完成后展示新头像\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-001\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"sync rule changed\",\"next_skill\":\"testcase-generate\",\"coverage_estimate\":\"functional 100%\"}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Generates valid schema v2 cases with non-empty TP references",
+          "check": "programmatic",
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-profile-sync/artifacts/testcases.json')); assert d['schema_version']==2 and d['testcases'] and all(c.get('tp_refs') for c in d['testcases']); print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Propagates revision 2 and resolves the cases stale marker",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-profile-sync --through generate --expected-version 2"
+        },
+        {
+          "text": "Exports an Excel artifact using the skill-local script",
+          "check": "programmatic",
+          "script": "test -f testspec/changes/synthetic-profile-sync/artifacts/synthetic-profile-sync_cases.xlsx && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Reports generated paths and validation status",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "运行 testcase-generate。canonical requirements 是 version 3，但 testpoints 仍是 version 2；不要生成用例。",
+      "expected_output": "检测直接上游版本落后，停止并提示先运行 test-points。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-notification-rules/requirements.md",
+          "content": "# Requirements\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":3,\"summary\":\"synthetic notification revision\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"specs/testpoints.md\",\"artifacts/testcases.json\"],\"stale_reason\":\"rule changed\",\"next_skill\":\"test-points\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-notification-rules/specs/testpoints.md",
+          "content": "# Old Points\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":2},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "eval-input/synthetic-marker.txt",
+          "content": "No generated artifacts should be created.\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Does not create testcases JSON",
+          "check": "programmatic",
+          "script": "test ! -e testspec/changes/synthetic-notification-rules/artifacts/testcases.json && test ! -e testspec/changes/synthetic-notification-rules/testcases.json && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Reports version 3 versus version 2",
+          "check": "qualitative"
+        },
+        {
+          "text": "Directs the user to test-points",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "根据 synthetic-export 的 review-report 做定向返修。只修 RV-S2-001 的模糊 oracle，保留未被 finding 指向的用例。",
+      "expected_output": "消费 open 且分配给 generate 的 finding，定向更新一条用例，记录 review_repairs，不自行把 finding 标成 resolved。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-export/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：导出完成后显示文件名和记录数。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic export\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-export/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_EXPORT_TEXT_001：导出文本文件\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic export\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-export/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic export\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]},\"testcases\":[{\"id\":\"CASE-1\",\"module\":\"导出\",\"submodule\":\"文本文件\",\"test_name\":\"导出_文本文件_生成成功\",\"preconditions\":\"\",\"test_data\":\"格式：文本\",\"steps\":\"1、选择文本格式\",\"expected_result\":\"1、导出成功\",\"priority\":\"p0\",\"type\":\"正向\",\"tp_refs\":[\"TP_EXPORT_TEXT_001\"]},{\"id\":\"CASE-2\",\"module\":\"导出\",\"submodule\":\"取消\",\"test_name\":\"导出_取消_关闭对话框\",\"preconditions\":\"1、导出对话框已打开\",\"test_data\":\"\",\"steps\":\"1、点击取消\",\"expected_result\":\"1、对话框关闭\",\"priority\":\"p1\",\"type\":\"正向\",\"tp_refs\":[\"TP_EXPORT_TEXT_001\"]}]}"
+        },
+        {
+          "path": "testspec/changes/synthetic-export/review-report.md",
+          "content": "# Review\n\n- [S2] [open] RV-S2-001 CASE-1：oracle 只写导出成功，缺少文件名和记录数。owner=generate\n\n<!-- testspec-context\n{\"source_skill\":\"testcase-review\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic export\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[],\"review_gate\":{\"status\":\"blocked\",\"s1_unresolved_count\":0,\"s1_issue_ids\":[]}}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Improves only the targeted case oracle",
+          "check": "programmatic",
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-export/artifacts/testcases.json')); a={c['id']:c for c in d['testcases']}; assert '文件名' in a['CASE-1']['expected_result'] and '记录数' in a['CASE-1']['expected_result'] and a['CASE-2']['expected_result']=='1、对话框关闭'; print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Records RV-S2-001 in review_repairs",
+          "check": "programmatic",
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-export/artifacts/testcases.json')); assert any(x.get('issue_id')=='RV-S2-001' for x in d['_context']['review_repairs']); print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Does not mark the review finding resolved; re-review owns resolution",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "运行 testcase-generate，使用 tracking 策略为 synthetic-checkout-tracking 生成埋点测试用例。不要猜测材料未定义的产品口径。",
+      "expected_output": "生成覆盖曝光、点击、成功、失败、条件必填字段、trace_id 链路关联、去重重试、来源归因和平台版本维度的可判定用例；未定义的时区和 UV 去重键标为待确认。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-checkout-tracking/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：结算页曝光、提交点击、支付成功和支付失败均需上报事件。\n- REQ-002：所有事件包含 trace_id、source、platform、app_version；失败事件额外包含 error_code。\n- REQ-003：重复点击和网络重试不能造成成功事件重复计数。\n- REQ-004：需要统计日级 PV、UV 和曝光到成功漏斗；时区与 UV 去重键尚未定义。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic checkout tracking\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[\"日级统计时区未定义\",\"UV 去重键未定义\"],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"],\"stale_reason\":\"cases not generated\",\"next_skill\":\"testcase-generate\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-checkout-tracking/specs/testpoints.md",
+          "content": "# 测试点：Checkout Tracking\n\n- TP_TRACK_EVENT_001：逐事件验证曝光、点击、成功和失败的触发时机与公共字段\n- TP_TRACK_EVENT_002：失败事件必须上报 error_code，成功事件不得误带失败态\n- TP_TRACK_CHAIN_001：同一结算链路使用 trace_id 串联事件并保留 source 归因\n- TP_TRACK_DEDUP_001：重复点击和网络重试不得重复计算成功事件\n- TP_TRACK_ENV_001：验证需求声明的 platform 与 app_version 组合\n- TP_TRACK_METRIC_001：验证 PV、UV、漏斗的时间粒度、去重键和分母；未定义口径不得猜测\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic checkout tracking\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[\"日级统计时区未定义\",\"UV 去重键未定义\"],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"],\"stale_reason\":\"cases not generated\",\"next_skill\":\"testcase-generate\",\"coverage_estimate\":\"tracking coverage\"}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Generates schema v2 cases for every tracking test point",
+          "check": "programmatic",
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-checkout-tracking/artifacts/testcases.json')); refs={r for c in d['testcases'] for r in c.get('tp_refs',[])}; assert d['schema_version']==2 and all(f'TP_TRACK_{x}' in refs for x in ['EVENT_001','EVENT_002','CHAIN_001','DEDUP_001','ENV_001','METRIC_001']); print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Generated cases include success and failure events, conditional error_code validation, and do not reduce failure testing to a UI message",
+          "check": "qualitative"
+        },
+        {
+          "text": "Generated cases validate trace_id linkage, source attribution, event order, and duplicate suppression under retry",
+          "check": "qualitative"
+        },
+        {
+          "text": "Generated cases cover only the declared platform and app_version dimensions instead of inventing unsupported environments",
+          "check": "qualitative"
+        },
+        {
+          "text": "Reports timezone and UV deduplication key as unresolved product decisions rather than inventing values",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "运行 testcase-generate，为 synthetic-account-api 生成用例。材料里有 OpenAPI 地址，但本阶段禁止发送探索请求或根据当前响应反推预期。",
+      "expected_output": "Generate traceable cases only from the confirmed requirement and test points, keep the declared oracle, and make no network request.",
+      "execution_policy": {
+        "network": "forbidden",
+        "external_side_effects": "forbidden"
+      },
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-account-api/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：查询存在的合成账号时返回已确认的 active 状态。\n- 参考接口定义：https://api.example.invalid/openapi.yaml\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic account api\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-account-api/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_ACCOUNT_QUERY_001：验证查询存在账号时返回已确认的 active 状态\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic account api\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"]}\n-->\n"
+        },
+        {
+          "path": "eval-input/network_probe.py",
+          "content": "from pathlib import Path\nPath('network-contact.marker').write_text('unexpected', encoding='utf-8')\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Does not call the supplied API URL or execute the network probe",
+          "check": "programmatic",
+          "script": "test ! -e network-contact.marker && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Derives the expected active state from REQ-001 rather than an observed response",
+          "check": "qualitative"
+        },
+        {
+          "text": "Keeps TP_ACCOUNT_QUERY_001 traceability and routes missing interface facts back to prd-analysis instead of exploring",
+          "check": "qualitative"
+        }
+      ]
+    }
+  ]
+}

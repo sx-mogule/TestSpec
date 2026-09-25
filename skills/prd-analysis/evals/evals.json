@@ -1,0 +1,107 @@
+{
+  "skill_name": "prd-analysis",
+  "fixture_policy": {
+    "origin": "synthetic",
+    "contains_proprietary_data": false
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "运行 prd-analysis，分析 synthetic-reporting-console。上游已经更新到 version 2，必须丢弃旧分析中的 vendor chart config 口径。",
+      "expected_output": "基于 version 2 requirements 重建分析，使用 normalized series 口径，传播 revision 2，并移除 analysis 自身 stale 标记。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-reporting-console/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 趋势接口返回 normalized series 数据，不返回 vendor chart config；验收条件：客户端可独立渲染两类序列。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"replace vendor config with normalized series\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[\"执行期发现未知分类时登记\"],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"requirements-analysis.md\",\"specs/testpoints.md\",\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"reporting response contract changed\",\"next_skill\":\"prd-analysis\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reporting-console/requirements-analysis.md",
+          "content": "# Old Analysis\n\n- 客户端直接使用 vendor chart config。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Regenerates active analysis from the new response contract",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-reporting-console/requirements-analysis.md && grep -qi 'normalized series' \"$FILE\" && ! grep -q '直接使用 vendor chart config' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Propagates revision 2 and resolves the analysis stale marker",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-reporting-console --through analysis --expected-version 2"
+        },
+        {
+          "text": "Keeps execution-time discovery in dynamic_followups instead of blocking questions",
+          "check": "qualitative"
+        },
+        {
+          "text": "Unverified hypothesis signals do not enter risks_identified without evidence",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "运行 prd-analysis，重点分析 synthetic-admin-access 中不同角色的记录可见范围，以及会话失效后的业务页面状态。",
+      "expected_output": "针对角色权限矩阵和会话失效后的可观察业务状态加深分析，所有 risks_identified 都有 REQ 或材料位置证据；不生成独立安全测试分支。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-admin-access/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 管理员可查看审计记录；普通成员不可访问；验收条件：越权请求被拒绝且不返回记录内容。\n- REQ-002 会话失效后重新验证身份；验收条件：受保护页面不显示缓存数据。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic admin access\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Creates analysis for the deterministic change",
+          "check": "programmatic",
+          "script": "test -f testspec/changes/synthetic-admin-access/requirements-analysis.md && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Covers authorization, data exposure, and expired-session behavior",
+          "check": "qualitative"
+        },
+        {
+          "text": "Every promoted risk cites a requirement or source location",
+          "check": "qualitative"
+        },
+        {
+          "text": "Propagates the version 1 envelope",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-admin-access --through analysis --expected-version 1"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "运行 prd-analysis，分析 synthetic-preferences。这里只有完整 PRD，没有代码仓库权限；请正常完成分析，不要索要代码。",
+      "expected_output": "以 PRD-first 完成需求分析，记录 code role=none，不把代码不可访问当作阻塞项。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-preferences/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：用户可以关闭每周摘要。\n- AC-001：保存后状态显示为关闭。\n- AC-002：下一周期不生成摘要。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic preferences\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[],\"canonical_source_policy\":\"prd-first\",\"evidence_sources\":[{\"type\":\"prd\",\"source_ref\":\"requirements.md#REQ-001\",\"authority\":\"canonical\"}]}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Completes analysis without requiring code access",
+          "check": "programmatic",
+          "script": "test -f testspec/changes/synthetic-preferences/requirements-analysis.md && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Keeps PRD as the canonical source and code evidence disabled",
+          "check": "qualitative"
+        },
+        {
+          "text": "Does not add missing code access to blocking questions",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-preferences/requirements-analysis.md && ! grep -qi '必须.*代码\\|代码.*阻塞' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Propagates revision 1",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-preferences --through analysis --expected-version 1"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+# Timeout for subprocess calls (seconds) - generous timeout for file generation
+# Can be overridden via TEST_SUBPROCESS_TIMEOUT environment variable
+SUBPROCESS_TIMEOUT = int(os.getenv('TEST_SUBPROCESS_TIMEOUT', '60'))
+
+
+def _venv_python() -> str:
+    return sys.executable
+
+
+def _xmind_script() -> str:
+    pkg_root = Path(__file__).resolve().parents[1]
+    return str(pkg_root / "scripts" / "generate_xmind.py")
+
+
+class TestGenerateXMind(unittest.TestCase):
+    def test_xmind_uses_title_when_name_missing(self):
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            input_path = td_path / "testcases.json"
+            output_path = td_path / "out.xmind"
+
+            testcases = [
+                {
+                    "id": "需求A_202602280001",
+                    "module": "登录",
+                    "submodule": "凭据验证",
+                    "test_name": "登录_凭据验证_正确凭据登录成功",
+                    "type": "正向",
+                    "priority": "p1",
+                    "steps": "1、...",
+                    "expected_result": "1、...",
+                }
+            ]
+            input_path.write_text(json.dumps(testcases, ensure_ascii=False), encoding="utf-8")
+
+            subprocess.check_call(
+                [
+                    _venv_python(),
+                    _xmind_script(),
+                    "--input",
+                    str(input_path),
+                    "--output",
+                    str(output_path),
+                    "--title",
+                    "测试用例",
+                ],
+                timeout=SUBPROCESS_TIMEOUT,
+            )
+
+            with zipfile.ZipFile(output_path, "r") as zf:
+                content = zf.read("content.xml").decode("utf-8")
+
+            self.assertIn("<title>正确凭据登录成功</title>", content)
+            self.assertNotIn("<title>登录_凭据验证_正确凭据登录成功</title>", content)
+            self.assertIn("操作步骤：", content)
+            self.assertIn("预期结果：", content)
+            self.assertIn('marker-id="priority-1"', content)
+            self.assertNotIn("优先级：", content)
+
+    def test_xmind_with_quoted_text(self):
+        """字段值包含中文引号「」时正常生成 XMind。"""
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            input_path = td_path / "testcases.json"
+            output_path = td_path / "out.xmind"
+
+            testcases = [
+                {
+                    "id": "需求B_202602280001",
+                    "module": "任务",
+                    "submodule": "按钮文案",
+                    "test_name": "任务_按钮文案_显示去完成",
+                    "type": "正向",
+                    "priority": "p1",
+                    "steps": "1、点击「去完成」按钮",
+                    "expected_result": "1、按钮文案为「去完成」",
+                }
+            ]
+            input_path.write_text(json.dumps(testcases, ensure_ascii=False), encoding="utf-8")
+
+            subprocess.check_call(
+                [_venv_python(), _xmind_script(), "--input", str(input_path), "--output", str(output_path), "--title", "测试用例"],
+                timeout=SUBPROCESS_TIMEOUT,
+            )
+
+            with zipfile.ZipFile(output_path, "r") as zf:
+                content = zf.read("content.xml").decode("utf-8")
+
+            self.assertIn("去完成", content)
+
+    def test_xmind_invalid_json_exits_with_message(self):
+        """testcases.json 格式非法时脚本应返回非零退出码并输出提示。"""
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            input_path = td_path / "testcases.json"
+            output_path = td_path / "out.xmind"
+
+            input_path.write_text('[{"steps": "点击"按钮""}]', encoding="utf-8")
+
+            result = subprocess.run(
+                [_venv_python(), _xmind_script(), "--input", str(input_path), "--output", str(output_path)],
+                capture_output=True, text=True, timeout=30,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("JSON 格式无效", result.stderr)
+
+    def test_xmind_schema_v2_with_tp_refs(self):
+        """支持 schema v2 格式（对象包装器）并正确处理 tp_refs 字段。"""
+        with tempfile.TemporaryDirectory() as td:
+            td_path = Path(td)
+            input_path = td_path / "testcases.json"
+            output_path = td_path / "out.xmind"
+
+            testcases_v2 = {
+                "schema_version": 2,
+                "testcases": [
+                    {
+                        "id": "需求C_202603020001",
+                        "module": "登录",
+                        "submodule": "凭据验证",
+                        "test_name": "登录_凭据验证_正确凭据登录成功",
+                        "type": "正向",
+                        "priority": "p1",
+                        "steps": "1、输入正确的用户名和密码",
+                        "expected_result": "1、登录成功并跳转到首页",
+                        "tp_refs": ["TP_LOGIN_CRED_001"],
+                    }
+                ],
+            }
+            input_path.write_text(json.dumps(testcases_v2, ensure_ascii=False), encoding="utf-8")
+
+            subprocess.check_call(
+                [
+                    _venv_python(),
+                    _xmind_script(),
+                    "--input",
+                    str(input_path),
+                    "--output",
+                    str(output_path),
+                    "--title",
+                    "测试用例",
+                ],
+                timeout=SUBPROCESS_TIMEOUT,
+            )
+
+            with zipfile.ZipFile(output_path, "r") as zf:
+                content = zf.read("content.xml").decode("utf-8")
+
+            self.assertIn("<title>正确凭据登录成功</title>", content)
+            self.assertNotIn("<title>登录_凭据验证_正确凭据登录成功</title>", content)
+            self.assertIn("操作步骤：", content)
+            self.assertIn("预期结果：", content)
+            self.assertNotIn("优先级：", content)
+
+
+if __name__ == "__main__":
+    unittest.main()
