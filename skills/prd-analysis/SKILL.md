@@ -36,12 +36,13 @@ TestSpec 分析进度：
 - 产物模板：`references/requirements-analysis-template.md`
 - 需求审问闭环：`references/interrogation-loop.md`
 - 蓝湖 PRD 输入适配：`references/lanhu-prd-input.md`
+- HTML 需求输入交互核对：`references/html-prd-input.md`
 - 来源与 TestLib 信任：`../_testspec-shared/references/source-provenance.md`
 
 ## 执行步骤
 
 1. **确定当前变更目录**。
-2. **读取上下文**：优先读取 `requirements.md`（若存在）；否则读取 `proposal.md`；若两者都不存在，则使用用户本次提供的 PRD、用户故事或需求片段，并先创建最小 `testspec/changes/<name>/` 工作区与 canonical 需求源。若有外部需求文档，尽可能获取内容；若链接来自蓝湖，先读取 `references/lanhu-prd-input.md`，再使用 `<prd-analysis-skill-dir>/scripts/direct_extract_axure.py` 走直连读取，并按该说明逐页读取文字与图片内容、核对完整性。
+2. **读取上下文**：优先读取 `requirements.md`（若存在）；否则读取 `proposal.md`；若两者都不存在，则使用用户本次提供的 PRD、用户故事或需求片段，并先创建最小 `testspec/changes/<name>/` 工作区与 canonical 需求源。若有外部需求文档，尽可能获取内容；本轮新提供的 HTML 即使已有 `requirements.md` 也必须读取，与 canonical 内容核对并更新来源记录；冲突未确认时进入阻塞澄清，不沿用旧口径掩盖新材料。若输入为可交互 HTML 文件，按 `references/html-prd-input.md` 逐项核对按钮及其可观察结果；若链接来自蓝湖，先读取 `references/lanhu-prd-input.md`，再使用 `<prd-analysis-skill-dir>/scripts/direct_extract_axure.py` 走直连读取，并按该说明逐页读取文字与图片内容、核对完整性。
 3. **判定分析模式**：根据用户目标和输入材料，从 `references/analysis-modes.md` 中选择一个或多个模式。
 4. **按模式执行分析**：合并模式结果，生成兼容现有结构的 `requirements-analysis.md`。
 5. **告知用户**：文件路径及下一步可执行 test-points 提炼测试要点。
@@ -54,7 +55,7 @@ TestSpec 分析进度：
 
 ### 材料评估与上下文消费
 
-1. 读取所有可用需求输入（优先 requirements.md，其次 proposal.md、用户提供的 PRD/需求片段、外部链接）。蓝湖链接按 `references/lanhu-prd-input.md` 对全部页面、文字、图片和可见交互状态建立阅读记录并归档到 canonical source；未逐张视觉阅读的图片不得标为已读，未读资源须明确标为缺口。本 skill 不读取代码；代码行为只能作为用户提供的已验证证据，不能在本流程内扫描代码。
+1. 读取所有可用需求输入（优先 requirements.md，其次 proposal.md、用户提供的 PRD/需求片段、外部链接）。蓝湖链接按 `references/lanhu-prd-input.md` 对全部页面、文字、图片和可见交互状态建立阅读记录并归档到 canonical source；未逐张视觉阅读的图片不得标为已读，未读资源须明确标为缺口。可交互 HTML 文件按 `references/html-prd-input.md` 建立按钮清单并逐项点击核对；静态源码盘点不能代替点击验证。本 skill 不扫描被测系统的底层生产代码；HTML 结构只用于定位用户提供的需求页面控件，交互结果按来源证据分层，不能直接当作生产系统的业务 Oracle。
 2. 检查上游产物是否包含上下文元数据（按 `../_testspec-shared/references/context-protocol.md`）
 3. 评估信息密度和关键信号：
    - 若存在 requirements.md：以其「功能列表」「边界声明」「风险点」「阻塞澄清项」「执行期动态跟进」作为主需求源；blocking_open_questions 直接纳入质询清单种子输入，dynamic_followups 作为执行期关注点记录但不阻塞分析

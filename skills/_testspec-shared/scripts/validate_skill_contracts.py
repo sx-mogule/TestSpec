@@ -49,6 +49,9 @@ DESIGN_METHODS = (
     "正交实验",
     "因果图",
     "配对组合",
+    "基于属性的测试",
+    "变形测试",
+    "语法规则分析",
 )
 
 OLD_SKILL_SUFFIXES = (
@@ -74,6 +77,13 @@ def read_text(path: Path) -> str:
 def add_error(errors: list[str], condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
+
+
+def listed_design_methods(markdown: str) -> tuple[str, ...]:
+    return tuple(
+        title.split("（", 1)[0].strip()
+        for title in re.findall(r"^## \d+\.\s+(.+)$", markdown, re.MULTILINE)
+    )
 
 
 def referenced_paths(skill_dir: Path, markdown: str) -> set[Path]:
@@ -132,7 +142,12 @@ def validate_generate_contract(errors: list[str]) -> None:
     for method in DESIGN_METHODS:
         add_error(errors, method in methods_text, f"test-design-methods.md 缺少方法：{method}")
         add_error(errors, method in points_methods_text, f"test-points 测试方法说明缺少方法：{method}")
+    add_error(errors, listed_design_methods(methods_text) == DESIGN_METHODS,
+              "testcase-generate 的正式方法集合或顺序与十二种方法契约不一致")
+    add_error(errors, listed_design_methods(points_methods_text) == DESIGN_METHODS,
+              "test-points 的正式方法集合或顺序与十二种方法契约不一致")
     add_error(errors, '"design_methods"' in read_text(SKILLS_DIR / "test-points" / "SKILL.md"), "test-points 未声明 design_methods 上下文输出")
+    add_error(errors, "_context.design_methods" in skill_text, "testcase-generate 未声明 design_methods 上下文输出")
 
     add_error(errors, "XMind（默认）" in skill_text, "testcase-generate 未声明默认输出 XMind")
     add_error(errors, "独立 API、安全、性能等类型不进入本流程" in skill_text, "testcase-generate 未限制为功能用例")
@@ -150,9 +165,14 @@ def validate_generate_contract(errors: list[str]) -> None:
               "testcase-generate 仍含非功能策略")
     points_template = read_text(SKILLS_DIR / "test-points" / "references" / "testpoints-template.md")
     review_text = read_text(SKILLS_DIR / "testcase-review" / "SKILL.md")
+    review_dimensions = read_text(SKILLS_DIR / "testcase-review" / "references" / "review-dimensions.md")
     review_template = read_text(SKILLS_DIR / "testcase-review" / "review-report-template.md")
     add_error(errors, "Non-Functional" not in points_template, "测试点模板仍含非功能分支")
     add_error(errors, "功能范围" in review_text and "S1 阻断" in review_text, "Review 未保持功能范围阻断")
+    for method in DESIGN_METHODS[-3:]:
+        add_error(errors, method in review_dimensions, f"Review 未覆盖新增方法：{method}")
+    add_error(errors, '"design_methods"' in review_template and "| 设计方法 |" in review_template,
+              "Review 模板未保留方法追溯")
     add_error(errors, "反馈合成闭环" not in review_text and "feedback_for_" not in review_text + review_template,
               "Review 仍含反馈合成流程")
 

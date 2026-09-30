@@ -58,6 +58,7 @@ Markdown 产物在文件末尾保存：
 | `material_quality` | 输入质量：high / medium / low |
 | `risks_identified` | 已识别风险 |
 | `coverage_estimate` | 覆盖情况摘要 |
+| `design_methods` | test-points 记录各 TP 使用的正式方法集合；testcase-generate 记录已生成正式用例所引用 TP 的方法集合，不进入八个业务字段 |
 | `stale_downstream_artifacts` | 需要重新生成或复核的下游产物 |
 | `stale_reason` | 产物过期原因 |
 | `next_skill` | 下一步 Skill 新名称 |

@@ -33,7 +33,7 @@ TestSpec 用例生成进度：
 
 - 测试类型策略单一数据源：`references/test-type-strategies.md`
 - 用例设计规则：`references/case-design-rules.md`
-- 九种测试方法及示例：`references/test-design-methods.md`（生成前按测试点特征选择）
+- 十二种测试方法及示例：`references/test-design-methods.md`（生成前按测试点特征选择）
 - 输出契约：`../_testspec-shared/references/output-contracts.md`
 - 命名契约：`../_testspec-shared/references/naming-contract.md`
 - 来源与信任：`../_testspec-shared/references/source-provenance.md`
@@ -60,6 +60,7 @@ TestSpec 用例生成进度：
    - 提取 `blocking_open_questions` → 相关用例标注风险
    - 提取 `testlib_reuse`（若有）→ 识别哪些 TP 已在 testlib 中有用例
    - 提取 `regression_tiers`（若有）→ 用例继承对应 TP 的回归层级
+   - 提取各 TP 的“设计方法”和 `design_methods` → 按所选方法展开场景；方法名不在十二种方法内时先退回 `test-points` 澄清，不自行替换
    - 提取 `canonical_source_policy`、`evidence_sources`、`questions` → 原样传播；代码不可访问不影响生成
 4. 成功生成后原样传播 canonical envelope，从 stale 列表移除自身产物，并将 `next_skill` 指向 `testcase-review`
 
@@ -101,13 +102,14 @@ TestSpec 用例生成进度：
 在 testcases.json 的 `_context` 字段记录推理结论（按 `../_testspec-shared/references/context-protocol.md`），包括：
 
 - canonical revision envelope：source_revision, blocking_open_questions, dynamic_followups, material_quality, stale_downstream_artifacts, stale_reason, next_skill
-- 常规字段：coverage_estimate, iteration_count, iteration_summary
+- 常规字段：coverage_estimate, design_methods, iteration_count, iteration_summary
 - testlib 参考信息：`testlib_reference.referenced_features`（参考了哪些 testlib 功能的已有用例）
 
 ### 转换原则
 
 - **一对多映射**：一个测试点可能对应多个测试用例场景
 - **场景细化**：根据测试点的验证要点，细化为具体的测试场景；涉及多种输入条件或状态时，须设计多个独立用例
+- **HTML 按钮来源**：核对各 `BTN_ID` 对应的已确认 TP；相关用例写明可复现的点击动作和可观察业务结果。同一场景可覆盖多个按钮，但须能逐项追溯；仅有原型点击现象、缺少需求 Oracle 的按钮不编造正式用例
 - **数据驱动**：针对边界验证点，设计多组边界数据的测试用例
 - **异常覆盖**：针对异常验证点，设计各种异常情况的测试用例
 - **优先级独立判断**：测试点中的优先级仅供参考，每个用例根据具体场景独立判断；同一测试点可衍生 p0 到 p2 不同级别的用例
@@ -124,7 +126,7 @@ TestSpec 用例生成进度：
 
 ## 用例设计方法
 
-生成用例前加载 `references/case-design-rules.md` 和 `references/test-design-methods.md`。从等价类、边界值、判定表、流程分析、状态迁移、错误推断、正交实验、因果图、配对组合中按测试点特征选择一种或多种方法，并在 `_context.design_methods` 记录选择；中等及以上复杂度的 TP 额外做创意测试探索，并在 `_context` 记录新增场景数量。
+生成用例前加载 `references/case-design-rules.md` 和 `references/test-design-methods.md`。继承每个 TP 已选的方法，按十二种方法的规则展开可执行场景；若需补选方法，先返回 `test-points` 更新对应 TP 与测试点上下文。`_context.design_methods` 与所有被正式用例引用的 TP 方法集合一致；中等及以上复杂度的 TP 额外做创意测试探索，并在 `_context` 记录新增场景数量。
 
 ---
 

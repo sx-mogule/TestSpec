@@ -44,7 +44,7 @@
 
 - TP_<MODULE>_<FEATURE>_001: <测试点名称>
   - 验证要点: <验证什么（What），不写步骤/数据>
-  - 设计方法: <九种方法中的一种或多种>
+  - 设计方法: <十二种方法中的中文名称；多个用顿号分隔，不填写辅助分析策略>
   - 优先级: p0/p1/p2
   - Oracle 状态: confirmed/needs-confirmation
   - Oracle 范围: direct/contract/indirect/out-of-scope

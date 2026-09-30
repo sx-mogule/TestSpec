@@ -20,7 +20,8 @@
     "evidence_sources": [{"type": "prd", "source_ref": "requirements.md#REQ-001", "authority": "canonical"}],
     "questions": [],
     "origin": {"kind": "testspec-native", "source_change": "synthetic-account-access"},
-    "trust": {"status": "provisional", "basis": "prd-first"}
+    "trust": {"status": "provisional", "basis": "prd-first"},
+    "design_methods": ["等价类"]
   },
   "testcases": [
     {

@@ -64,6 +64,30 @@ class TestFourStageContext(unittest.TestCase):
             write_markdown(root / "review-report.md", reviewed)
             self.assertIn("review: pass requires zero unresolved S1 and empty s1_issue_ids", chain.validate(root, "review", 1))
 
+    def test_review_preserves_design_methods_when_present(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            generated_path = root / "artifacts/testcases.json"
+            generated = json.loads(generated_path.read_text(encoding="utf-8"))
+            generated["_context"]["design_methods"] = ["基于属性的测试"]
+            generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
+            reviewed["design_methods"] = ["变形测试"]
+            write_markdown(root / "review-report.md", reviewed)
+            self.assertIn("review: design_methods differs from generated cases", chain.validate(root, "review", 1))
+
+    def test_review_method_order_does_not_change_method_set(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            generated_path = root / "artifacts/testcases.json"
+            generated = json.loads(generated_path.read_text(encoding="utf-8"))
+            generated["_context"]["design_methods"] = ["基于属性的测试", "变形测试"]
+            generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
+            reviewed["design_methods"] = ["变形测试", "基于属性的测试"]
+            write_markdown(root / "review-report.md", reviewed)
+            self.assertEqual(chain.validate(root, "review", 1), [])
+
 
 if __name__ == "__main__":
     unittest.main()

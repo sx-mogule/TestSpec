@@ -164,6 +164,7 @@ S1 只用于真正阻断问题，禁止滥用。
 10. **输出评审结论与逐项修复动作**
 
 H3/H7 必须检查组件与 Oracle 范围：`indirect` 用例不得断言下游副作用已完成，`out-of-scope` 不应成为正式用例。
+H3/H2 还须按测试点“设计方法”核对新增三种方法的场景和 Oracle：基于属性的测试核对各数据组的不变量，变形测试核对成对操作与前后结果关系，语法规则分析核对合法/非法结构及可判定结果；缺少需求依据或无法独立判定时不得通过 Review。
 H3 同时检查功能范围：独立 API、安全、性能、兼容性等测试用例及非功能测试点不得通过 Review；发现时以 S1 阻断，退回对应上游清理范围。
 
 ---
@@ -218,6 +219,7 @@ H3 同时检查功能范围：独立 API、安全、性能、兼容性等测试�
   "blocking_open_questions": ["<从上游继承>"],
   "dynamic_followups": ["<从上游继承>"],
   "material_quality": "<从上游继承>",
+  "design_methods": ["<从 testcase-generate 继承的正式方法名>"],
   "stale_downstream_artifacts": [],
   "review_gate": {
     "status": "pass/blocked",

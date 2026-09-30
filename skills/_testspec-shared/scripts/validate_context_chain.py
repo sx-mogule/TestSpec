@@ -87,6 +87,7 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
         )
 
     through_index = list(STAGES).index(through)
+    generated_methods = None
     for stage, (relative_path, expected_skill) in list(STAGES.items())[: through_index + 1]:
         path = change_dir / relative_path
         if not path.exists() and stage == "generate":
@@ -108,6 +109,21 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
                 f"{stage}: source_skill={context.get('source_skill')!r}, "
                 f"expected {expected_skill!r}"
             )
+
+        if stage == "generate" and "design_methods" in context:
+            names = context["design_methods"]
+            if not isinstance(names, list) or any(not isinstance(name, str) for name in names):
+                errors.append("generate: design_methods must be an array of names")
+            else:
+                generated_methods = set(names)
+        if stage == "review" and generated_methods is not None:
+            names = context.get("design_methods")
+            if (
+                not isinstance(names, list)
+                or any(not isinstance(name, str) for name in names)
+                or set(names) != generated_methods
+            ):
+                errors.append("review: design_methods differs from generated cases")
 
         if stage == "review":
             gate = context.get("review_gate")

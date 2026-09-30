@@ -102,6 +102,40 @@
           "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-preferences --through analysis --expected-version 1"
         }
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "运行 prd-analysis，分析 synthetic-html-buttons。需求输入包含可交互 HTML：打开页面，盘点入口和交互后出现的全部按钮，逐项点击可执行按钮，记录禁用项，并把 observed 与 requirements.md 的 intended 分开。",
+      "expected_output": "输出完整 BTN_ID 清单和逐项点击证据；动态出现的关闭按钮也被发现并执行；禁用按钮保留原因；需求依据与页面观察分开；无法执行的项不声称已验证。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-html-buttons/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：点击“打开说明”后显示说明面板。\n- REQ-002：点击“关闭说明”后隐藏说明面板。\n- REQ-003：“不可提交”按钮保持禁用。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic HTML buttons\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-html-buttons/artifacts/source-page.html",
+          "content": "<!doctype html><html lang=\"zh-CN\"><meta charset=\"utf-8\"><title>按钮样例</title><button id=\"open\" onclick=\"document.getElementById('panel').hidden=false\">打开说明</button><section id=\"panel\" hidden>说明内容<button id=\"close\" onclick=\"document.getElementById('panel').hidden=true\">关闭说明</button></section><button id=\"submit\" disabled>不可提交</button></html>"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Records stable button IDs for all three controls, including the button revealed after a click",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-html-buttons/requirements-analysis.md && test -f \"$FILE\" && grep -q 'BTN-001' \"$FILE\" && grep -q 'BTN-002' \"$FILE\" && grep -q 'BTN-003' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Actually clicks the open and close buttons and records before/after evidence rather than inferring behavior from HTML source",
+          "check": "qualitative"
+        },
+        {
+          "text": "Marks the disabled button with evidence and does not claim it was clicked",
+          "check": "qualitative"
+        },
+        {
+          "text": "Separates observed HTML behavior from the requirement-backed intended result for each control",
+          "check": "qualitative"
+        }
+      ]
     }
   ]
 }

@@ -75,6 +75,78 @@ def _extract_tp_ids_from_md(md_text: str) -> set[str]:
     return set(re.findall(r"\bTP_[A-Z0-9_]+\b", md_text))
 
 
+def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[dict]:
+    """核对已覆盖 TP 的方法名是否进入生成阶段上下文。"""
+    methods_by_tp: dict[str, set[str]] = {}
+    listed_tps: set[str] = set()
+    current_tp = None
+    for line in tp_text.splitlines():
+        tp_match = re.match(r"^\s*-\s*(TP_[A-Z0-9_]+)\s*[:：]", line)
+        if tp_match:
+            current_tp = tp_match.group(1)
+            listed_tps.add(current_tp)
+            continue
+        method_match = re.match(r"^\s*-\s*设计方法\s*[:：]\s*(.+)$", line)
+        if current_tp and method_match:
+            names = {
+                name.strip() for name in re.split(r"[、,，]", method_match.group(1)) if name.strip()
+            }
+            if names:
+                methods_by_tp[current_tp] = names
+    if not methods_by_tp:
+        return []  # 兼容未标方法的旧测试点
+
+    methods_doc = Path(__file__).resolve().parents[2] / "test-points/references/test-design-methods.md"
+    allowed = {
+        title.split("（", 1)[0].strip()
+        for title in re.findall(r"^## \d+\.\s+(.+)$", methods_doc.read_text(encoding="utf-8"), re.MULTILINE)
+    }
+    declared = set().union(*methods_by_tp.values())
+    errors = []
+    missing_tp_methods = sorted(listed_tps - methods_by_tp.keys())
+    if missing_tp_methods:
+        errors.append({"type": "MISSING_TP_DESIGN_METHOD", "severity": "error",
+                       "tp_ids": missing_tp_methods, "fix_hint": "每个 TP 均须标注一种或多种正式设计方法"})
+    unknown = sorted(declared - allowed)
+    if unknown:
+        errors.append({"type": "UNKNOWN_DESIGN_METHOD", "severity": "error",
+                       "methods": unknown, "fix_hint": "测试点设计方法须来自十二种正式方法，辅助策略不写入设计方法"})
+
+    point_context = re.findall(r"<!--\s*testspec-context\s*(\{.*?\})\s*-->", tp_text, re.DOTALL)
+    if point_context:
+        try:
+            point_methods = json.loads(point_context[-1]).get("design_methods")
+        except json.JSONDecodeError:
+            point_methods = None
+        if (
+            not isinstance(point_methods, list)
+            or any(not isinstance(name, str) for name in point_methods)
+            or set(point_methods) != declared
+        ):
+            errors.append({"type": "TESTPOINT_METHOD_CONTEXT_MISMATCH", "severity": "error",
+                           "fix_hint": "testpoints.md 上下文方法名须与各 TP 的设计方法一致"})
+
+    covered = {
+        ref for case in cases
+        for ref in (case.get("tp_refs") if isinstance(case.get("tp_refs"), list) else [])
+        if isinstance(ref, str)
+    }
+    expected = set().union(*(names for tp, names in methods_by_tp.items() if tp in covered))
+    context = data.get("_context")
+    actual = context.get("design_methods") if isinstance(context, dict) else None
+    if not isinstance(actual, list) or any(not isinstance(name, str) for name in actual):
+        errors.append({"type": "MISSING_DESIGN_METHODS", "severity": "error",
+                       "fix_hint": "在 testcases.json._context.design_methods 记录已覆盖 TP 的方法名"})
+    else:
+        missing = sorted(expected - set(actual))
+        extra = sorted(set(actual) - expected)
+        if missing or extra:
+            errors.append({"type": "DESIGN_METHOD_MISMATCH", "severity": "error",
+                           "missing": missing, "extra": extra,
+                           "fix_hint": "生成阶段方法名须与已生成用例所引用 TP 的设计方法一致，且只使用十二种正式方法"})
+    return errors
+
+
 # ── 校验函数 ──────────────────────────────────────────────────────
 
 def check_required_fields(cases: list[dict]) -> list[dict]:
@@ -413,6 +485,9 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
     if testpoints_path and tp_path.exists() and re.search(r"(?:Non-Functional|非功能性验证点)", tp_text, re.IGNORECASE):
         errors.append({"type": "NON_FUNCTIONAL_TESTPOINT", "severity": "error",
                        "fix_hint": "本流程仅接收功能测试点；回到 test-points 清理非功能分支"})
+
+    if testpoints_path:
+        errors.extend(check_design_methods(data, cases, tp_text))
 
     for issue in check_required_fields(cases):
         (errors if issue["severity"] == "error" else warnings).append(issue)

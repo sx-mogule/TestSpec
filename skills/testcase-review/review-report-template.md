@@ -124,9 +124,9 @@
 
 #### 意图一致性评估表
 
-| TP_ID | 用例数 | Action Match | Oracle Match | Scope Match | 结论 | 证据/说明 |
-|-------|--------|--------------|--------------|-------------|------|-----------|
-| <tp_id> | <count> | <score> | <score> | <score> | <conclusion> | <evidence> |
+| TP_ID | 设计方法 | 用例数 | Action Match | Oracle Match | Scope Match | 结论 | 证据/说明 |
+|-------|----------|--------|--------------|--------------|-------------|------|-----------|
+| <tp_id> | <method> | <count> | <score> | <score> | <score> | <conclusion> | <evidence> |
 
 <问题列表>
 
@@ -142,6 +142,7 @@
 
 **结果**: <pass/fail>
 **覆盖类型**: <types>
+**HTML 按钮覆盖（适用时）**: <发现/已点击/已关联 TP/已有用例/未覆盖数量及 BTN_ID>
 
 <问题列表>
 
@@ -195,6 +196,7 @@
   "blocking_open_questions": [],
   "dynamic_followups": [],
   "material_quality": "<从上游继承>",
+  "design_methods": ["<从 testcase-generate 继承的正式方法名>"],
   "stale_downstream_artifacts": [],
   "canonical_source_policy": "prd-first",
   "origin": {"kind": "<testspec-native/legacy-import/mixed>"},
