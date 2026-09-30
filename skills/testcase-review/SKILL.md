@@ -176,6 +176,7 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 - 评审模式（Import-Quarantine/Provenance-Unknown/Strict/Legacy）
 - 深度（标准/加深）与触发原因
 - 14 项检查矩阵
+- 需求去向核对：对照 canonical source（优先 `requirements.md`，否则 `proposal.md`）、`testpoints.md` 和用例，列出每条已确认需求对应的测试点及用例，待澄清/范围外项列明原因；此记录不改变现有检查项分级或 Review Gate 计算
 - S1/S2/S3 问题列表（每条带稳定 issue ID、`open/resolved/accepted` 状态、`case_id`/`TP_ID`/`GLOBAL:<rule>`、影响和建议）
 - 机器可读 `review_gate`：`status`、`s1_unresolved_count`、`s1_issue_ids`
 - 总体结论（通过/有问题）

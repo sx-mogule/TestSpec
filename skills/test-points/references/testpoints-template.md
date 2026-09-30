@@ -46,8 +46,8 @@
   - 验证要点: <验证什么（What），不写步骤/数据>
   - 设计方法: <十二种方法中的中文名称；多个用顿号分隔，不填写辅助分析策略>
   - 优先级: p0/p1/p2
-  - Oracle 状态: confirmed/needs-confirmation
-  - Oracle 范围: direct/contract/indirect/out-of-scope
+  - Oracle 状态: confirmed
+  - Oracle 范围: direct/contract/indirect
   - 回归层级: Smoke/Full/Targeted
   - 关联需求: <需求编号/段落>
 
@@ -60,6 +60,19 @@
 ##### 埋点验证点 (Tracking)
 
 ##### 兼容性矩阵验证点 (Compatibility)
+
+## 需求去向与待澄清项
+
+| 需求 | 去向 | 说明 |
+|------|------|------|
+| REQ-001 | <正式测试点编号 / Q-001 / 范围外> | <对应关系或原因> |
+
+- Q-001: <待确认的通过/失败口径>
+  - Oracle 状态: needs-confirmation
+  - 关联需求: <需求编号/段落>
+  - 潜在影响优先级: p0/p1/p2
+
+> 待澄清和范围外内容不分配正式测试点编号；确认后补齐测试点并重跑下游。
 
 <!-- testspec-context
 {

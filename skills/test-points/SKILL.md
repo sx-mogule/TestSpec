@@ -70,7 +70,7 @@ TestSpec 测试点进度：
 3. 消费直接上游上下文：
    - 提取有证据的 `risks_identified` → 按影响决定测试点优先级
    - `intuition_flags.status = unverified` → 仅作为核查提示，不自动提升优先级
-   - 提取 `blocking_open_questions` → 标注为"需确认"的测试点
+   - 提取 `blocking_open_questions` → 关联到待澄清项；会改变通过/失败判断且暂无已确认 Oracle 的内容不分配正式 TP_ID
    - 提取 `material_quality` → 影响推理深度
    - 提取 `testlib_coverage`（若有）→ 直接使用 analysis 的扫描结论
    - 提取 `canonical_source_policy`、`evidence_sources`、`questions` → 原样传播 PRD-first 证据和稳定问题状态
@@ -147,15 +147,15 @@ TestSpec 测试点进度：
 
 - 按模块/功能点组织，并按 Functional / Boundary / Exception / Integration / Tracking / Compatibility 分类分区；后两类仅在需求明确规定事件口径或环境组合及可判定预期时生成
 - 每条测试点必须包含：TP_ID、测试点名称、验证要点、优先级（p0/p1/p2）、关联需求
-- 每条测试点标注 `oracle_scope: direct/contract/indirect/out-of-scope`；`indirect` 不得声称下游副作用完成，`out-of-scope` 不生成正式用例
+- 每条正式测试点标注 `oracle_scope: direct/contract/indirect`；`indirect` 不得声称下游副作用完成；`out-of-scope` 记录在范围说明，不分配正式 TP_ID
 - 确保覆盖 analysis 中识别的风险点和边界值
 - 若需求来源是可交互 HTML，逐项核对 analysis 的 `BTN_ID` 清单：已确认的按钮行为关联到 TP；禁用、不可达、未执行或结果含糊的项保留原因及澄清问题，不得当作已覆盖功能
 - 在测试点中记录适用的方法：等价类、边界值、判定表、流程分析、状态迁移、错误推断、正交实验、因果图、配对组合、基于属性的测试、变形测试或语法规则分析；风险排序和探索式测试是辅助策略，不写入 `design_methods`
-- 不确定项标注"需与产品确认"，同时记录 `oracle_status: needs-confirmation`；优先级仍按潜在业务影响判断，高影响歧义可以是 p0/p1，不补充假设性业务规则
+- 会改变通过/失败判断且暂无已确认 Oracle 的事项，以稳定 `Q-001` 等编号记录在待澄清清单，标注 `oracle_status: needs-confirmation`、关联需求和潜在影响优先级（高影响歧义可为 p0/p1）；不得分配正式 TP_ID 或补充假设性业务规则。确认后转成正式测试点并重新生成下游产物
 
 ### 输出质量要求
 
-- 测试点必须完整覆盖已确认需求；未确认范围必须显式关联稳定问题，不能假装已覆盖
+- 测试点必须完整覆盖已确认需求；逐条核对 `requirements.md` 的 REQ：关联正式 TP，或记录待澄清/范围外去向；未确认范围不能假装已覆盖
 - 测试点之间不得重复
 - 每个测试点必须可独立验证
 - 测试点应可直接用于后续测试用例设计
