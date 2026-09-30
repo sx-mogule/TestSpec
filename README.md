@@ -133,29 +133,28 @@ flowchart TD
 .
 ├── README.md                           # 项目主说明文档
 ├── AGENTS.md                           # AI Agent 行为准则与 SDET 专家思维规范
-├── skills/                             # 核心 Agent Skills 套件
-│   ├── prd-analysis/                   # [阶段 1] 需求分析技能
-│   │   ├── SKILL.md                    # 技能工作流定义与提示词
-│   │   ├── references/                 # 分析模式、蓝湖输入规范、审问闭环协议
-│   │   ├── scripts/                    # 蓝湖 Axure 直连提取脚本 (direct_extract_axure.py)
-│   │   └── tests/                      # 单元测试集
-│   ├── test-points/                    # [阶段 2] 测试点设计技能
-│   │   ├── SKILL.md                    # 技能工作流定义
-│   │   └── references/                 # 测试点设计规范、TP 命名规则、模板
-│   ├── testcase-generate/              # [阶段 3] 用例生成与导出技能
-│   │   ├── SKILL.md                    # 技能工作流定义
-│   │   ├── scripts/                    # 原生 XMind 生成器 (generate_xmind.py, export_md_to_xmind.py)
-│   │   ├── references/                 # 用例设计原则、粒度划分标准、JSON 契约
-│   │   └── tests/                      # 用例校验与 XMind 生成测试
-│   ├── testcase-review/                # [阶段 4] 用例独立评审技能
-│   │   ├── SKILL.md                    # 技能工作流与门禁判定定义
-│   │   ├── references/                 # 14 维度评审准则 (R1-R6, H1-H8)
-│   │   └── review-report-template.md   # 标准评审报告模板
-│   └── _testspec-shared/               # 跨技能公共底座与协议
-│       ├── references/                 # 上下文协议、命名契约、输出契约、反思协议
-│       ├── scripts/                    # 契约与用例校验脚本 (validate_testcases.py 等)
-│       └── tests/                      # 跨阶段上下文集成测试
-└── testcases/                          # 典型项目实战交付范例（Markdown / XMind / JSON）
+└── skills/                             # 核心 Agent Skills 套件
+    ├── prd-analysis/                   # [阶段 1] 需求分析技能
+    │   ├── SKILL.md                    # 技能工作流定义与提示词
+    │   ├── references/                 # 分析模式、蓝湖输入规范、审问闭环协议
+    │   ├── scripts/                    # 蓝湖 Axure 直连提取脚本 (direct_extract_axure.py)
+    │   └── tests/                      # 单元测试集
+    ├── test-points/                    # [阶段 2] 测试点设计技能
+    │   ├── SKILL.md                    # 技能工作流定义
+    │   └── references/                 # 测试点设计规范、TP 命名规则、模板
+    ├── testcase-generate/              # [阶段 3] 用例生成与导出技能
+    │   ├── SKILL.md                    # 技能工作流定义
+    │   ├── scripts/                    # 原生 XMind 生成器 (generate_xmind.py, export_md_to_xmind.py)
+    │   ├── references/                 # 用例设计原则、粒度划分标准、JSON 契约
+    │   └── tests/                      # 用例校验与 XMind 生成测试
+    ├── testcase-review/                # [阶段 4] 用例独立评审技能
+    │   ├── SKILL.md                    # 技能工作流与门禁判定定义
+    │   ├── references/                 # 14 维度评审准则 (R1-R6, H1-H8)
+    │   └── review-report-template.md   # 标准评审报告模板
+    └── _testspec-shared/               # 跨技能公共底座与协议
+        ├── references/                 # 上下文协议、命名契约、输出契约、反思协议
+        ├── scripts/                    # 契约与用例校验脚本 (validate_testcases.py 等)
+        └── tests/                      # 跨阶段上下文集成测试
 ```
 
 ---
