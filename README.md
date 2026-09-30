@@ -6,14 +6,14 @@
 [![Type: AI Agent Skills](https://img.shields.io/badge/Agent%20Skills-Standardized-orange.svg)]()
 [![Code Style: SDET Grade](https://img.shields.io/badge/Quality-SDET%20Grade-purple.svg)]()
 
-> **面向 AI Coding Agent 的工程化端到端功能测试用例标准操作流程（SOP）与 Agent Skills 套件**  
+> **面向 AI Coding Agent 的工程化测试用例标准操作流程（SOP）与 Agent Skills 套件**
 > *Industrial-grade Functional Test Specification Pipeline & Agent Skills for SDETs*
 
 ---
 
 ## 📖 项目简介 (Overview)
 
-**TestSpec SOP** 是一套专为资深测试开发专家（SDET）、质量保障工程师（QA）及技术团队设计的 **AI Coding Agent 工业级规范化测试流水线**。
+**TestSpec SOP** 是一套专为资深测试开发专家（SDET）、质量保障工程师（QA）及技术团队设计的 **AI Coding Agent 工业级规范化测试流水线**，输出功能用例及有明确需求依据的埋点、兼容性矩阵用例。
 
 在让 LLM / AI Coding Agent（如 Claude Code, Codex, Google Antigravity, Cursor, Windsurf 等）编写测试用例时，业内常面临以下痛点：
 - ❌ **直接一步生成用例**：跳过需求边界与风险梳理，导致模型严重依赖“幻觉”，遗漏关键业务分支与异常流；
@@ -23,7 +23,7 @@
 
 **TestSpec** 通过严谨的**四阶段递进式工程流水线**，将“需求深度分析 → 测试要点提炼 → 8 字段结构化用例展开与 XMind 导出 → 14 维度独立交叉评审”全流程严格解耦与标准化，确保 AI 产出的测试用例具备极高的可执行性、可验证性与工业级交付标准。
 
-> 📌 **测试边界声明**：本流程专注于**功能测试用例**（涵盖主流程、业务规则、边界值、异常流、角色权限、状态迁移与功能间交互）；API 文档与接口定义可作为需求事实证据，但本流水线不产出独立的接口协议测试、安全渗透、性能或兼容性测试用例。
+> 📌 **测试边界声明**：本流程输出功能测试用例，并允许有明确需求口径的埋点、兼容性矩阵测试用例。API 文档与接口定义可作为需求事实证据；独立接口协议、安全渗透、性能及其他未授权类型不进入正式输出。所有允许类型仍须满足追溯、Oracle、覆盖率和 Review 门禁。
 
 ---
 

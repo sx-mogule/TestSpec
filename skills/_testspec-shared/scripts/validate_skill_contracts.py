@@ -168,7 +168,13 @@ def validate_generate_contract(errors: list[str]) -> None:
     review_dimensions = read_text(SKILLS_DIR / "testcase-review" / "references" / "review-dimensions.md")
     review_template = read_text(SKILLS_DIR / "testcase-review" / "review-report-template.md")
     add_error(errors, "Non-Functional" not in points_template, "测试点模板仍含非功能分支")
-    add_error(errors, "功能范围" in review_text and "S1 阻断" in review_text, "Review 未保持功能范围阻断")
+    for category, case_type in (("Tracking", "埋点"), ("Compatibility", "兼容性矩阵")):
+        add_error(errors, category in points_rules and category in points_template,
+                  f"测试点缺少允许分类：{category}")
+        add_error(errors, case_type in validator_text and case_type in type_rules and case_type in review_text,
+                  f"用例生成或 Review 缺少允许类型：{case_type}")
+    add_error(errors, "H3 同时检查范围" in review_text and "S1 阻断" in review_text,
+              "Review 未保持范围阻断")
     for method in DESIGN_METHODS[-3:]:
         add_error(errors, method in review_dimensions, f"Review 未覆盖新增方法：{method}")
     add_error(errors, '"design_methods"' in review_template and "| 设计方法 |" in review_template,

@@ -31,7 +31,7 @@ TestSpec 测试点进度：
 
 生成测试点前，加载 `references/testpoint-design-rules.md`，获取：
 
-- Functional/Boundary/Exception/Integration 功能分类
+- Functional/Boundary/Exception/Integration，以及有明确需求证据时的 Tracking/Compatibility 分类
 - `TP_<MODULE>_<FEATURE>_<SEQ>` 分配规则
 - p0/p1/p2 与 Smoke/Full/Targeted 规则
 - 粒度、禁止内容和反模式
@@ -42,7 +42,7 @@ TestSpec 测试点进度：
 不可妥协的规则：
 
 - 测试点只说明验证目标，不写执行步骤或具体测试数据。即使输入包含 OpenAPI，也不得写测试账号、请求体样例、可执行参数或具体断言表达式。
-- 每个测试点只表达一个稳定业务意图。
+- 每个测试点只表达一个稳定验证意图。
 - TestLib 绝不覆盖 PRD；未验证导入不能提供 priority 或 oracle。
 - 每个测试点都有 category、TP_ID、priority、requirement reference、`oracle_scope` 和 `oracle_status`。
 - 每个测试点记录所采用的方法名（可多个），供 `testcase-generate` 继承并展开。
@@ -145,7 +145,7 @@ TestSpec 测试点进度：
 
 ### 提炼原则
 
-- 按模块/功能点组织，并按功能类别分区（Functional / Boundary / Exception / Integration）
+- 按模块/功能点组织，并按 Functional / Boundary / Exception / Integration / Tracking / Compatibility 分类分区；后两类仅在需求明确规定事件口径或环境组合及可判定预期时生成
 - 每条测试点必须包含：TP_ID、测试点名称、验证要点、优先级（p0/p1/p2）、关联需求
 - 每条测试点标注 `oracle_scope: direct/contract/indirect/out-of-scope`；`indirect` 不得声称下游副作用完成，`out-of-scope` 不生成正式用例
 - 确保覆盖 analysis 中识别的风险点和边界值
@@ -172,7 +172,7 @@ TestSpec 测试点进度：
 
 - 概述；实际命中时才输出知识库复用摘要和可复用资产
 - 模块/功能命名字典
-- 四类功能测试点分组
+- 四类功能测试点分组，以及适用时的埋点和兼容性矩阵测试点分组
 - 每条 TP 的 ID、验证要点、影响型优先级、Oracle 状态、回归层级和关联需求
 - 文件末尾 canonical revision envelope
 

@@ -35,7 +35,11 @@ REQUIRED_FIELDS = {
 }
 OPTIONAL_VALUE_FIELDS = {"preconditions", "test_data"}
 VALID_PRIORITIES = {"p0", "p1", "p2"}
-VALID_TYPES = {"冒烟", "正向", "负向", "边界", "异常", "其他"}
+VALID_TYPES = {"冒烟", "正向", "负向", "边界", "异常", "其他", "埋点", "兼容性矩阵"}
+SPECIAL_TP_SECTION_TYPES = {
+    "埋点验证点 (Tracking)": "埋点",
+    "兼容性矩阵验证点 (Compatibility)": "兼容性矩阵",
+}
 ACTION_VERBS = [
     "点击", "输入", "选择", "等待", "查看", "校验",
     "打开", "提交", "确认", "删除", "修改", "搜索",
@@ -268,6 +272,68 @@ def check_enum_values(cases: list[dict]) -> list[dict]:
     return issues
 
 
+def check_special_scope_type_matches(cases: list[dict], tp_text: str) -> list[dict]:
+    """Require tracking/compatibility cases to reference only their explicit TP section."""
+    tp_categories: dict[str, set[str]] = {}
+    current_category = None
+    current_heading_level = None
+
+    for line in tp_text.splitlines():
+        heading_match = re.match(r"^\s*(#{1,6})\s+(.+?)\s*$", line)
+        if heading_match:
+            level = len(heading_match.group(1))
+            title = heading_match.group(2)
+            if current_heading_level is not None and level <= current_heading_level:
+                current_category = None
+                current_heading_level = None
+            category = SPECIAL_TP_SECTION_TYPES.get(title)
+            if category:
+                current_category = category
+                current_heading_level = level
+            continue
+
+        if current_category:
+            tp_match = re.match(r"^\s*[-*]\s*(TP_[A-Z0-9_]+)\s*[:：]", line)
+            if tp_match:
+                tp_categories.setdefault(tp_match.group(1), set()).add(current_category)
+
+    issues = []
+    for case in cases:
+        case_type = case.get("type", "")
+        refs = case.get("tp_refs") if isinstance(case.get("tp_refs"), list) else []
+        if case_type in {"埋点", "兼容性矩阵"}:
+            mismatched = sorted(
+                (
+                    ref for ref in refs
+                    if not isinstance(ref, str) or tp_categories.get(ref) != {case_type}
+                ),
+                key=lambda ref: str(ref),
+            )
+            if mismatched:
+                issues.append({
+                    "type": "CASE_TYPE_TP_CATEGORY_MISMATCH",
+                    "severity": "error",
+                    "case_id": case.get("id", "UNKNOWN"),
+                    "case_type": case_type,
+                    "tp_ids": mismatched,
+                    "fix_hint": f"type={case_type} 的用例只能引用对应的专属测试点分类",
+                })
+            continue
+
+        special_refs = sorted(ref for ref in refs if isinstance(ref, str) and ref in tp_categories)
+        if special_refs:
+            issues.append({
+                "type": "CASE_TYPE_TP_CATEGORY_MISMATCH",
+                "severity": "error",
+                "case_id": case.get("id", "UNKNOWN"),
+                "case_type": case_type,
+                "tp_ids": special_refs,
+                "fix_hint": "埋点与兼容性矩阵测试点必须分别使用 type=埋点 或 type=兼容性矩阵，不可用 type=其他 绕过",
+            })
+
+    return issues
+
+
 def check_naming_contract(cases: list[dict]) -> list[dict]:
     """检查新字段是否存在，并兼容检查旧 title/feature 的三段式命名。"""
     issues = []
@@ -476,6 +542,17 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
                 errors.append({"type": "INVALID_TP_REFS", "severity": "error",
                                "case_id": case.get("id", "UNKNOWN"),
                                "fix_hint": "tp_refs 必须非空且只引用当前测试点"})
+        errors.extend(check_special_scope_type_matches(cases, tp_text))
+    else:
+        for case in cases:
+            if case.get("type") in {"埋点", "兼容性矩阵"}:
+                errors.append({
+                    "type": "SPECIAL_CASE_TYPE_REQUIRES_TESTPOINTS",
+                    "severity": "error",
+                    "case_id": case.get("id", "UNKNOWN"),
+                    "case_type": case.get("type"),
+                    "fix_hint": "埋点与兼容性矩阵用例必须提供 testpoints.md 以校验对应分类和 TP 引用",
+                })
     for case in cases:
         if case.get("type") == "冒烟" and case.get("priority") != "p0":
             errors.append({"type": "SMOKE_NOT_P0", "severity": "error",
@@ -484,7 +561,7 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
 
     if testpoints_path and tp_path.exists() and re.search(r"(?:Non-Functional|非功能性验证点)", tp_text, re.IGNORECASE):
         errors.append({"type": "NON_FUNCTIONAL_TESTPOINT", "severity": "error",
-                       "fix_hint": "本流程仅接收功能测试点；回到 test-points 清理非功能分支"})
+                       "fix_hint": "本流程仅接收允许范围内的测试点；移除泛非功能分支，保留功能、埋点或兼容性矩阵专属分类"})
 
     if testpoints_path:
         errors.extend(check_design_methods(data, cases, tp_text))
@@ -512,7 +589,7 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
     if coverage.get("available") and not coverage["pass"]:
         errors.append({"type": "TP_COVERAGE_BELOW_THRESHOLD", "severity": "error",
                        "uncovered": coverage["uncovered"], "coverage_rate": coverage["coverage_rate"],
-                       "fix_hint": "功能测试点覆盖率必须达到 95%"})
+                       "fix_hint": "允许范围内的测试点覆盖率必须达到 95%"})
 
     # 分布
     distribution = compute_distribution(cases)

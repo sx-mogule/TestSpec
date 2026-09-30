@@ -44,7 +44,7 @@ LANHU_COOKIE='从已登录蓝湖请求头复制的完整 Cookie'
 1. 把蓝湖链接、页面名称、可见文案、交互规则和截图事实记录为 `requirements.md` 的需求来源。
 2. 在 `requirements.md` 中注明来源链接或页面位置；保留原始事实，不把页面分组推断写成需求事实。
 3. 蓝湖只提供需求材料，不能替代用户确认的业务规则；不清晰的页面行为进入阻塞澄清项。
-4. 继续按 `prd-analysis` 的四类功能覆盖和上下文协议生成 `requirements-analysis.md`，并把 `source_revision` 原样传播给后续步骤。
+4. 继续按 `prd-analysis` 的功能覆盖、适用时的埋点与兼容性矩阵范围，以及上下文协议生成 `requirements-analysis.md`，并把 `source_revision` 原样传播给后续步骤。
 
 ## 信息不足时的降级
 

@@ -57,6 +57,10 @@
 
 ##### 集成验证点 (Integration)
 
+##### 埋点验证点 (Tracking)
+
+##### 兼容性矩阵验证点 (Compatibility)
+
 <!-- testspec-context
 {
   "source_skill": "test-points",

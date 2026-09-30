@@ -129,14 +129,14 @@
         },
         {
           "path": "testspec/changes/synthetic-checkout-tracking/specs/testpoints.md",
-          "content": "# 测试点：Checkout Tracking\n\n- TP_TRACK_EVENT_001：逐事件验证曝光、点击、成功和失败的触发时机与公共字段\n- TP_TRACK_EVENT_002：失败事件必须上报 error_code，成功事件不得误带失败态\n- TP_TRACK_CHAIN_001：同一结算链路使用 trace_id 串联事件并保留 source 归因\n- TP_TRACK_DEDUP_001：重复点击和网络重试不得重复计算成功事件\n- TP_TRACK_ENV_001：验证需求声明的 platform 与 app_version 组合\n- TP_TRACK_METRIC_001：验证 PV、UV、漏斗的时间粒度、去重键和分母；未定义口径不得猜测\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic checkout tracking\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[\"日级统计时区未定义\",\"UV 去重键未定义\"],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"],\"stale_reason\":\"cases not generated\",\"next_skill\":\"testcase-generate\",\"coverage_estimate\":\"tracking coverage\"}\n-->\n"
+          "content": "# 测试点：Checkout Tracking\n\n##### 埋点验证点 (Tracking)\n\n- TP_TRACK_EVENT_400：逐事件验证曝光、点击、成功和失败的触发时机与公共字段\n  - 设计方法：流程分析\n- TP_TRACK_EVENT_401：失败事件必须上报 error_code，成功事件不得误带失败态\n  - 设计方法：流程分析\n- TP_TRACK_CHAIN_402：同一结算链路使用 trace_id 串联事件并保留 source 归因\n  - 设计方法：流程分析\n- TP_TRACK_DEDUP_403：重复点击和网络重试不得重复计算成功事件\n  - 设计方法：流程分析\n- TP_TRACK_ENV_404：验证各事件的 platform 与 app_version 字段与当前运行环境一致\n  - 设计方法：流程分析\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic checkout tracking\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[\"日级统计时区未定义\",\"UV 去重键未定义\"],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"],\"stale_reason\":\"cases not generated\",\"next_skill\":\"testcase-generate\",\"coverage_estimate\":\"tracking coverage\",\"design_methods\":[\"流程分析\"]}\n-->\n"
         }
       ],
       "assertions": [
         {
           "text": "Generates schema v2 cases for every tracking test point",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-checkout-tracking/artifacts/testcases.json')); refs={r for c in d['testcases'] for r in c.get('tp_refs',[])}; assert d['schema_version']==2 and all(f'TP_TRACK_{x}' in refs for x in ['EVENT_001','EVENT_002','CHAIN_001','DEDUP_001','ENV_001','METRIC_001']); print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-checkout-tracking/artifacts/testcases.json')); refs={r for c in d['testcases'] for r in c.get('tp_refs',[])}; assert d['schema_version']==2 and all(f'TP_TRACK_{x}' in refs for x in ['EVENT_400','EVENT_401','CHAIN_402','DEDUP_403','ENV_404']); print('PASS')\" 2>/dev/null || echo FAIL"
         },
         {
           "text": "Generated cases include success and failure events, conditional error_code validation, and do not reduce failure testing to a UI message",
@@ -190,6 +190,40 @@
         },
         {
           "text": "Keeps TP_ACCOUNT_QUERY_001 traceability and routes missing interface facts back to prd-analysis instead of exploring",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "运行 testcase-generate，为 synthetic-compatibility-matrix 按已确认环境组合生成兼容性矩阵测试用例；不扩展未声明的平台、系统或浏览器版本。",
+      "expected_output": "输出引用 Compatibility 测试点且 type=兼容性矩阵的 schema v2 用例，分别验证两条已声明环境组合；每条有明确环境、操作和订单列表结果。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-compatibility-matrix/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：Android 14 / Chrome 126 与 iOS 17 / Safari 17 均支持已登录用户打开订单列表，并显示最近三笔订单。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic compatibility matrix\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"],\"stale_reason\":\"cases not generated\",\"next_skill\":\"testcase-generate\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-compatibility-matrix/specs/testpoints.md",
+          "content": "# 测试点：兼容性矩阵\n\n##### 兼容性矩阵验证点 (Compatibility)\n\n- TP_COMP_ORDER_500：Android 14 / Chrome 126 登录后展示最近三笔订单\n  - 设计方法：判定表\n  - 关联需求：REQ-001\n- TP_COMP_ORDER_501：iOS 17 / Safari 17 登录后展示最近三笔订单\n  - 设计方法：判定表\n  - 关联需求：REQ-001\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic compatibility matrix\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\"],\"stale_reason\":\"cases not generated\",\"next_skill\":\"testcase-generate\",\"design_methods\":[\"判定表\"]}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Generates schema v2 compatibility cases for both declared matrix rows",
+          "check": "programmatic",
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-compatibility-matrix/artifacts/testcases.json')); c=d['testcases']; refs={r for x in c for r in x.get('tp_refs',[])}; assert d['schema_version']==2 and {'TP_COMP_ORDER_500','TP_COMP_ORDER_501'}<=refs and all(x.get('type')=='兼容性矩阵' for x in c); print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Each case names one declared platform, OS and browser combination and has a reproducible order-list action and decidable result",
+          "check": "qualitative"
+        },
+        {
+          "text": "Does not invent additional devices, versions, or matrix rows",
+          "check": "qualitative"
+        },
+        {
+          "text": "Keeps the existing eight business fields, TP provenance and Oracle quality requirements",
           "check": "qualitative"
         }
       ]
