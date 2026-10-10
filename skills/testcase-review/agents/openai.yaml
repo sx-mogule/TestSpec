@@ -1,0 +1,7 @@
+interface:
+  display_name: "Testcase--review"
+  short_description: "评审测试用例质量与覆盖度"
+  default_prompt: "使用 $testcase-review 评审这批测试用例并输出问题清单。"
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,79 @@
+{
+  "skill_name": "test-points",
+  "fixture_policy": {
+    "origin": "synthetic",
+    "contains_proprietary_data": false
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "运行 test-points，为 synthetic-reporting-console 生成测试点。高影响但尚未确认的权限规则不能被一律降成 p2。",
+      "expected_output": "从 revision 2 analysis 生成测试点，传播 envelope；未确认项标记 needs-confirmation，优先级按影响决定。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-reporting-console/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 报表使用 normalized series。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic reporting revision\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[\"访客是否允许导出完整报表？\"],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[\"specs/testpoints.md\",\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"access rule changed\",\"next_skill\":\"test-points\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reporting-console/requirements-analysis.md",
+          "content": "# Analysis\n\n- REQ-001 需要覆盖空序列、单序列和多序列。\n- 高影响待确认：访客导出可能造成数据暴露。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic reporting revision\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[\"访客是否允许导出完整报表？\"],\"dynamic_followups\":[],\"material_quality\":\"medium\",\"stale_downstream_artifacts\":[\"specs/testpoints.md\",\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"access rule changed\",\"next_skill\":\"test-points\",\"risks_identified\":[\"访客导出可能暴露完整数据 evidence: REQ-001\"]}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Creates deterministic testpoints with a naming dictionary and TP IDs",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-reporting-console/specs/testpoints.md && test -f \"$FILE\" && grep -q '命名字典' \"$FILE\" && grep -qE 'TP_[A-Z]+_[A-Z]+_[0-9]+' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Marks the unresolved oracle explicitly instead of fabricating a rule",
+          "check": "programmatic",
+          "script": "grep -q 'needs-confirmation' testspec/changes/synthetic-reporting-console/specs/testpoints.md && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Does not force the high-impact access ambiguity to p2",
+          "check": "qualitative"
+        },
+        {
+          "text": "Propagates revision 2 and resolves the points stale marker",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-reporting-console --through points --expected-version 2"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "运行 test-points。canonical requirements 是 version 2，但 analysis 仍是 version 1；不要生成新测试点。",
+      "expected_output": "检测版本不匹配，停止并提示先运行 prd-analysis，保留 sentinel testpoints 不变。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 同步完成后展示新头像。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"add avatar synchronization\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"requirements-analysis.md\",\"specs/testpoints.md\"],\"stale_reason\":\"new sync rule\",\"next_skill\":\"prd-analysis\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements-analysis.md",
+          "content": "# Old Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/specs/testpoints.md",
+          "content": "# SENTINEL_OLD_TESTPOINTS\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Does not overwrite the existing testpoints",
+          "check": "programmatic",
+          "script": "grep -q '^# SENTINEL_OLD_TESTPOINTS$' testspec/changes/synthetic-profile-sync/specs/testpoints.md && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Reports the canonical and upstream versions",
+          "check": "qualitative"
+        },
+        {
+          "text": "Directs the user to prd-analysis rather than rerunning points",
+          "check": "qualitative"
+        }
+      ]
+    }
+  ]
+}

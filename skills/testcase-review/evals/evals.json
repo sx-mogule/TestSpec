@@ -1,0 +1,216 @@
+{
+  "skill_name": "testcase-review",
+  "fixture_policy": {
+    "origin": "synthetic",
+    "contains_proprietary_data": false
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "运行 testcase-review，评审 synthetic-profile-sync。它是小型 Strict 用例集，没有高风险信号；auto 应保持标准深度。",
+      "expected_output": "完成 Strict 标准深度评审，生成带完整 revision envelope 的 review-report.md。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements.md",
+          "content": "# Requirements\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\",\"risks_identified\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_PROF_SYNC_001: 资料同步\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\",\"origin\":{\"kind\":\"testspec-native\",\"source_change\":\"synthetic-profile-sync\"},\"trust\":{\"status\":\"provisional\",\"basis\":\"prd-first\"}},\"testcases\":[{\"id\":\"SYN_PROFILE_001\",\"module\":\"资料\",\"submodule\":\"同步\",\"test_name\":\"资料_同步_更新完成后显示新头像\",\"preconditions\":\"1、用户已登录\",\"test_data\":\"头像：有效图片\",\"steps\":\"1、上传新头像\\n2、等待同步完成\",\"expected_result\":\"1、页面显示新头像\\n2、重新进入页面后仍显示新头像\",\"priority\":\"p0\",\"type\":\"正向\",\"regression_tier\":\"Smoke\",\"tp_refs\":[\"TP_PROF_SYNC_001\"],\"origin\":{\"kind\":\"testspec-native\",\"source_change\":\"synthetic-profile-sync\"},\"trust\":{\"status\":\"provisional\",\"basis\":\"prd-first\"}}]}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Produces a review report in Strict mode",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && test -f \"$FILE\" && grep -qi 'Strict' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Uses standard depth because Strict alone is not a deep trigger",
+          "check": "qualitative"
+        },
+        {
+          "text": "Runs all 14 review dimensions",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && grep -q 'R1' \"$FILE\" && grep -q 'R6' \"$FILE\" && grep -q 'H1' \"$FILE\" && grep -q 'H8' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Propagates revision 1 and resolves the review stale marker",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-profile-sync --through review --expected-version 1"
+        },
+        {
+          "text": "Writes a machine-readable passing review gate",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-profile-sync/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); g=d['review_gate']; assert g['status']=='pass' and g['s1_unresolved_count']==0 and g['s1_issue_ids']==[]; print('PASS')\" 2>/dev/null || echo FAIL"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "运行 testcase-review，评审 synthetic-provenance-unknown。这是无 source_revision、tp_refs、origin 和 trust 的历史格式，不能按普通 Legacy 通过。",
+      "expected_output": "进入 Provenance-Unknown，生成 GLOBAL:provenance-unknown S1，并阻断评审通过。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/proposal.md",
+          "content": "# Synthetic Legacy Import\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"material_quality\":\"medium\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"material_quality\":\"medium\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_IMP_FILE_001: 文件导入\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"material_quality\":\"medium\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"material_quality\":\"medium\"},\"testcases\":[{\"id\":\"SYN_LEGACY_001\",\"module\":\"导入\",\"submodule\":\"文件\",\"test_name\":\"导入_文件_文本文件成功\",\"preconditions\":\"\",\"test_data\":\"文件类型：文本\",\"steps\":\"1、选择文本文件\\n2、确认导入\",\"expected_result\":\"1、导入成功且显示文件名\",\"priority\":\"p1\",\"type\":\"正向\",\"tp_refs\":[]}]}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Produces a Provenance-Unknown review",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-provenance-unknown/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Creates the provenance unknown S1",
+          "check": "programmatic",
+          "script": "grep -q 'GLOBAL:provenance-unknown' testspec/changes/synthetic-provenance-unknown/review-report.md && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Does not fabricate a source revision",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-provenance-unknown --through review"
+        },
+        {
+          "text": "Writes a blocked machine-readable review gate",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-provenance-unknown/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" 2>/dev/null || echo FAIL"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "运行 testcase-review，评审 synthetic-import-quarantine。用例来自隔离导入，仍是 legacy-import + unverified。",
+      "expected_output": "进入 Import-Quarantine，生成 GLOBAL:legacy-traceability S1，并把 review gate 设为 blocked。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-import-quarantine/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：用户可以开启邮件提醒。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-import-quarantine/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_NOTICE_SUB_001：开启邮件提醒\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-import-quarantine/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"canonical_source_policy\":\"prd-first\",\"origin\":{\"kind\":\"legacy-import\"},\"trust\":{\"status\":\"unverified\"}},\"testcases\":[{\"id\":\"OLD-1\",\"module\":\"通知\",\"submodule\":\"订阅\",\"test_name\":\"通知_订阅_开启邮件提醒\",\"preconditions\":\"\",\"test_data\":\"\",\"steps\":\"1、开启邮件提醒\",\"expected_result\":\"1、状态显示为已开启\",\"priority\":\"p1\",\"type\":\"正向\",\"tp_refs\":[],\"origin\":{\"kind\":\"legacy-import\",\"source_label\":\"legacy-source\",\"source_row\":2},\"trust\":{\"status\":\"unverified\"}}]}"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Uses Import-Quarantine mode",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-import-quarantine/review-report.md && grep -q 'Import-Quarantine' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Creates the global legacy traceability S1",
+          "check": "programmatic",
+          "script": "grep -q 'GLOBAL:legacy-traceability' testspec/changes/synthetic-import-quarantine/review-report.md && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Blocks workflow completion until current PRD traceability is rebuilt",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-import-quarantine/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked' and d['review_gate']['s1_unresolved_count']>=1; print('PASS')\" 2>/dev/null || echo FAIL"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "运行 testcase-review，评审 synthetic-invalid-provenance。artifact 和 case 虽然有 origin/trust 对象，但对象为空或组合非法，不能按 Strict 通过。",
+      "expected_output": "进入 Provenance-Unknown，生成 GLOBAL:provenance-unknown S1，并阻断评审通过。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-invalid-provenance/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：用户可以关闭站内提醒。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification preference\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-invalid-provenance/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_NOTICE_PREF_001：关闭站内提醒\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification preference\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-invalid-provenance/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification preference\",\"updated_by_skill\":\"prd-analysis\"},\"origin\":{},\"trust\":{}},\"testcases\":[{\"id\":\"SYN_NOTICE_001\",\"module\":\"通知\",\"submodule\":\"偏好\",\"test_name\":\"通知_偏好_关闭站内提醒\",\"preconditions\":\"\",\"test_data\":\"\",\"steps\":\"1、关闭站内提醒\",\"expected_result\":\"1、状态显示为关闭\",\"priority\":\"p0\",\"type\":\"正向\",\"tp_refs\":[\"TP_NOTICE_PREF_001\"],\"origin\":{\"kind\":\"legacy-import\"},\"trust\":{\"status\":\"verified\"}}]}"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Does not treat empty provenance objects as Strict",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-invalid-provenance/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && grep -q 'GLOBAL:provenance-unknown' \"$FILE\" && echo PASS || echo FAIL"
+        },
+        {
+          "text": "Writes a blocked review gate",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-invalid-provenance/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Explains that empty objects and illegal origin/trust combinations are not valid provenance",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "运行 testcase-review，评审 synthetic-profile-naming 的用例。",
+      "expected_output": "R2 识别一条名称冗长和一条名称含糊的 S2 问题，逐项给出 case_id、原名称、原因和简短建议名称；建议保留展示/再次进入后保留这两个不同意图，评审不直接修改用例。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-naming/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 上传新头像并完成同步后，页面显示新头像。\n- REQ-002 同步完成后重新进入页面，仍显示新头像。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\",\"risks_identified\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/specs/testpoints.md",
+          "content": "# 测试点\n\n## 命名字典\n\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 资料 | PROF |\n\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 资料 | 同步 | SYNC |\n\n### 资料模块\n#### 同步功能\n- TP_PROF_SYNC_001: 资料_同步_完成后展示新头像\n  - 验证要点: 同步完成后页面显示新头像\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-001\n- TP_PROF_SYNC_002: 资料_同步_再次进入后保留新头像\n  - 验证要点: 同步完成后重新进入页面仍显示新头像\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"synthetic profile sync\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-review\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-profile-naming\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_PROFILE_001\",\n      \"module\": \"资料\",\n      \"submodule\": \"同步\",\n      \"test_name\": \"资料_同步_验证用户在上传新头像并等待同步操作完成之后页面能够正确显示已经上传的新头像的功能\",\n      \"preconditions\": \"1、用户已登录\",\n      \"test_data\": \"头像：有效图片\",\n      \"steps\": \"1、上传新头像\\n2、等待同步完成\",\n      \"expected_result\": \"1、页面显示新头像\",\n      \"priority\": \"p0\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Smoke\",\n      \"tp_refs\": [\n        \"TP_PROF_SYNC_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-profile-naming\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_PROFILE_002\",\n      \"module\": \"资料\",\n      \"submodule\": \"同步\",\n      \"test_name\": \"资料_同步_功能正常\",\n      \"preconditions\": \"1、用户已登录且新头像已同步完成\",\n      \"test_data\": \"头像：有效图片\",\n      \"steps\": \"1、退出当前页面\\n2、重新进入页面\",\n      \"expected_result\": \"1、页面仍显示新头像\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_PROF_SYNC_002\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-profile-naming\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "评审报告定位两条名称问题并保留 R2 记录",
+          "check": "programmatic",
+          "script": "python3 -c \"from pathlib import Path; t=Path('testspec/changes/synthetic-profile-naming/review-report.md').read_text(); assert all(s in t for s in ['R2','SYN_PROFILE_001','SYN_PROFILE_002','S2']); print('PASS')\""
+        },
+        {
+          "text": "将流程堆叠的名称和功能正常的含糊名称分别记为 R2 S2；每项给出原名称、具体原因和建议名称",
+          "check": "qualitative"
+        },
+        {
+          "text": "建议名称区分同步后展示和重新进入后保留两种意图，依据输入中的步骤与预期，不新增业务结果或只用编号区分",
+          "check": "qualitative"
+        },
+        {
+          "text": "仅在报告中提出改名建议，不直接改写输入 testcases.json；不改变现有 Review Gate 计算",
+          "check": "qualitative"
+        }
+      ]
+    }
+  ]
+}

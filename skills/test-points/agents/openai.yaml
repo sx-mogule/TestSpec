@@ -1,0 +1,7 @@
+interface:
+  display_name: "Test--points"
+  short_description: "从需求分析提炼测试覆盖点"
+  default_prompt: "使用 $test-points 根据需求分析设计完整测试点。"
+
+policy:
+  allow_implicit_invocation: true

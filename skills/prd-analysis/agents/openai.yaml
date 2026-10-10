@@ -1,0 +1,7 @@
+interface:
+  display_name: "Prd--analysis"
+  short_description: "从 PRD 或蓝湖文档梳理可验收需求与测试风险"
+  default_prompt: "使用 $prd-analysis 分析这份 PRD 或蓝湖文档，输出可验收需求和测试风险。"
+
+policy:
+  allow_implicit_invocation: true
