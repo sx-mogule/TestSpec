@@ -227,6 +227,50 @@
           "check": "qualitative"
         }
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成用例并默认导出 XMind。用例名称要简短、直白、见名知意。",
+      "expected_output": "名称场景部分用短句表达同步后显示新头像的意图，保留关键条件；JSON 保留模块/功能前缀，XMind 只显示同一场景短句，完成名称语义复核。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 同步完成后展示新头像。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"sync rule changed\",\"next_skill\":\"testcase-generate\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"sync rule changed\",\"next_skill\":\"testcase-generate\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/specs/testpoints.md",
+          "content": "# 测试点：Profile Sync\n\n## 命名字典\n\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 资料 | PROF |\n\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 资料 | 同步 | SYNC |\n\n### 资料模块\n#### 同步功能\n- TP_PROF_SYNC_001: 资料_同步_完成后展示新头像\n  - 验证要点: 同步完成后展示新头像\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-001\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":2,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"artifacts/testcases.json\",\"review-report.md\"],\"stale_reason\":\"sync rule changed\",\"next_skill\":\"testcase-generate\",\"coverage_estimate\":\"functional 100%\"}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Generates valid schema v2 cases with non-empty TP references",
+          "check": "programmatic",
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-profile-sync/artifacts/testcases.json')); assert d['schema_version']==2 and d['testcases'] and all(c.get('tp_refs') for c in d['testcases']); print('PASS')\" 2>/dev/null || echo FAIL"
+        },
+        {
+          "text": "Propagates revision 2 and resolves the cases stale marker",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-profile-sync --through generate --expected-version 2"
+        },
+        {
+          "text": "JSON 名称与分类一致，XMind 节点准确显示同一场景名称",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,zipfile,xml.etree.ElementTree as E; from pathlib import Path; a=Path('testspec/changes/synthetic-profile-sync/artifacts'); d=json.loads((a/'testcases.json').read_text()); cases=d['testcases']; prefixes=[c['module']+'_'+c['submodule']+'_' for c in cases]; assert all(c['test_name'].startswith(p) for c,p in zip(cases,prefixes)); names=[c['test_name'][len(p):] for c,p in zip(cases,prefixes)]; assert all(names) and len(names)==len(set(names)); files=list(a.glob('*.xmind')); assert files; titles=[t.text for f in files for t in E.fromstring(zipfile.ZipFile(f).read('content.xml')).iter('{urn:xmind:xmap:xmlns:content:2.0}title')]; assert all(n in titles for n in names); print('PASS')\""
+        },
+        {
+          "text": "场景名称删去验证、功能是否正常等套话，以短句写清新头像同步后的展示结果；不把上传和等待的完整步骤塞入名称",
+          "check": "qualitative"
+        },
+        {
+          "text": "名称、步骤和预期表达同一意图；保留必要条件，不为缩短名称丢失对象或改造需求结果",
+          "check": "qualitative"
+        }
+      ]
     }
   ]
 }

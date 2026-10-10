@@ -121,7 +121,7 @@ Provenance-Unknown 必须产生 `GLOBAL:provenance-unknown` S1，`review_gate.st
 ### R1-R6 规则检查
 
 1. R1 覆盖度
-2. R2 命名契约
+2. R2 命名契约（同时按 `../_testspec-shared/references/naming-contract.md` 复核名称是否简短、直白、见名知意）
 3. R3 优先级分布
 4. R4 字段完整性
 5. R5 可执行性最小条件

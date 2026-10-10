@@ -169,6 +169,48 @@
           "check": "qualitative"
         }
       ]
+    },
+    {
+      "id": 5,
+      "prompt": "运行 testcase-review，评审 synthetic-profile-naming 的用例。",
+      "expected_output": "R2 识别一条名称冗长和一条名称含糊的 S2 问题，逐项给出 case_id、原名称、原因和简短建议名称；建议保留展示/再次进入后保留这两个不同意图，评审不直接修改用例。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-naming/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 上传新头像并完成同步后，页面显示新头像。\n- REQ-002 同步完成后重新进入页面，仍显示新头像。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\",\"risks_identified\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/specs/testpoints.md",
+          "content": "# 测试点\n\n## 命名字典\n\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 资料 | PROF |\n\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 资料 | 同步 | SYNC |\n\n### 资料模块\n#### 同步功能\n- TP_PROF_SYNC_001: 资料_同步_完成后展示新头像\n  - 验证要点: 同步完成后页面显示新头像\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-001\n- TP_PROF_SYNC_002: 资料_同步_再次进入后保留新头像\n  - 验证要点: 同步完成后重新进入页面仍显示新头像\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-review\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"synthetic profile sync\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-review\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-profile-naming\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_PROFILE_001\",\n      \"module\": \"资料\",\n      \"submodule\": \"同步\",\n      \"test_name\": \"资料_同步_验证用户在上传新头像并等待同步操作完成之后页面能够正确显示已经上传的新头像的功能\",\n      \"preconditions\": \"1、用户已登录\",\n      \"test_data\": \"头像：有效图片\",\n      \"steps\": \"1、上传新头像\\n2、等待同步完成\",\n      \"expected_result\": \"1、页面显示新头像\",\n      \"priority\": \"p0\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Smoke\",\n      \"tp_refs\": [\n        \"TP_PROF_SYNC_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-profile-naming\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_PROFILE_002\",\n      \"module\": \"资料\",\n      \"submodule\": \"同步\",\n      \"test_name\": \"资料_同步_功能正常\",\n      \"preconditions\": \"1、用户已登录且新头像已同步完成\",\n      \"test_data\": \"头像：有效图片\",\n      \"steps\": \"1、退出当前页面\\n2、重新进入页面\",\n      \"expected_result\": \"1、页面仍显示新头像\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_PROF_SYNC_002\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-profile-naming\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "评审报告定位两条名称问题并保留 R2 记录",
+          "check": "programmatic",
+          "script": "python3 -c \"from pathlib import Path; t=Path('testspec/changes/synthetic-profile-naming/review-report.md').read_text(); assert all(s in t for s in ['R2','SYN_PROFILE_001','SYN_PROFILE_002','S2']); print('PASS')\""
+        },
+        {
+          "text": "将流程堆叠的名称和功能正常的含糊名称分别记为 R2 S2；每项给出原名称、具体原因和建议名称",
+          "check": "qualitative"
+        },
+        {
+          "text": "建议名称区分同步后展示和重新进入后保留两种意图，依据输入中的步骤与预期，不新增业务结果或只用编号区分",
+          "check": "qualitative"
+        },
+        {
+          "text": "仅在报告中提出改名建议，不直接改写输入 testcases.json；不改变现有 Review Gate 计算",
+          "check": "qualitative"
+        }
+      ]
     }
   ]
 }

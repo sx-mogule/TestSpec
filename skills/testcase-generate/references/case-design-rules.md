@@ -35,7 +35,7 @@
 用例至少包含以下八项业务字段及追溯元数据：
 - `module`：模块
 - `submodule`：子模块
-- `test_name`：测试名称
+- `test_name`：测试名称，场景部分须简短、直白、见名知意；写法和示例统一见 `../../_testspec-shared/references/naming-contract.md`
 - `preconditions`：前置条件，可为空
 - `test_data`：测试数据，可为空
 - `steps`：按序号编号的操作步骤

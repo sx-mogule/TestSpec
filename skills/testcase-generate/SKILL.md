@@ -167,6 +167,7 @@ TestSpec 用例生成进度：
 - 业务字段必须包含 `module`、`submodule`、`test_name`、`preconditions`、`test_data`、`steps`、`expected_result`、`priority`；其中 `preconditions` 和 `test_data` 可为空
 - `steps`、`expected_result` 使用按序号编号的可执行、可验证文本
 - 用例输出保持短句：一个步骤/预期一行，避免长篇背景说明和重复表述
+- 用例场景名称必须简短、直白、见名知意，按共享命名契约保留关键条件和主要意图、删除套话；写完步骤和预期后再复核名称，不把完整流程塞进标题。
 - `priority` 只允许 `p0` / `p1` / `p2`
 - `id` 在当前变更内唯一；`test_name` 建议使用 `{模块}_{功能点}_{场景}`；`title`、`feature` 作为旧格式兼容字段保留
 - `tp_refs` 非空且只引用当前变更 TP；多 TP 用例的步骤和预期覆盖每个引用
