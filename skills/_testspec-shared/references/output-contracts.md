@@ -2,6 +2,8 @@
 
 > 适用于 `prd-analysis → test-points → testcase-generate → testcase-review`。
 
+正式用例产物为 `artifacts/testcases.json` 与 `artifacts/<name>_cases.xmind`。两者参与本流程的输出校验与交付；Excel 不属于默认产物或验收门禁。
+
 ## 通用原则
 
 - PRD 和用户确认内容是需求事实来源；不得用实现现状覆盖需求。
@@ -74,13 +76,23 @@
 
 内部追溯字段可包含 `id`、`tp_refs`、`type`、`regression_tier`、`origin` 和 `trust`；兼容旧数据时可保留 `title` 和 `feature`，但不得替代八项业务字段。
 
-`test_name` 的场景部分须简短、直白、见名知意，统一遵循 `naming-contract.md`；JSON、Excel、XMind 表达同一测试意图，`title` 兼容别名与 `test_name` 同步。XMind 仅剥离分类前缀，不自动截断或改写场景名称。
+`test_name` 的场景部分须简短、直白、见名知意，统一遵循 `naming-contract.md`；JSON 与 XMind 表达同一测试意图，`title` 兼容别名与 `test_name` 同步。XMind 仅剥离分类前缀，不自动截断或改写场景名称。
 
 埋点用例须使用 `type=埋点` 并引用 Tracking 测试点；兼容性矩阵用例须使用 `type=兼容性矩阵` 并引用 Compatibility 测试点。两类均纳入原有 TP 覆盖率、字段、步骤、Oracle、来源与 Review 门禁。
 
-## Excel 输出契约
+## Smoke 执行集
 
-仅在用户明确要求时生成。工作表 `测试用例` 的列头固定为：
+- 完整集固定为 `artifacts/testcases.json`，覆盖率分母为当前 `specs/testpoints.md` 的全部 TP，沿用现有 ≥95% 门槛。
+- 完整集校验为 PASS，且当前版本 Review Gate 为 `pass`、`s1_unresolved_count=0`、`s1_issue_ids=[]` 后，才调用 `testcase-generate/scripts/select_smoke.py --change-dir <变更目录>`。
+- Review 的 `reviewed_artifacts` 必须记录实际评审的完整 JSON 与测试点的 SHA-256；缺少或不匹配时先重新 Review，不沿用过期结论。
+- 选取条件为 `regression_tier=Smoke` 且全部为 p0，不自动把所有 p0 纳入。不存在候选或候选优先级不合法时停止，不补造或改写源用例。
+- 固定输出 `artifacts/smoke-testcases.json`，顶层保持 `schema_version=2`、`_context` 和 `testcases`；`_context.artifact_kind=smoke-execution-set`，记录源文件、已评审哈希、选取规则、case/TP 范围、完整集校验及 Review 结论。完整集覆盖率仅放在 `full_set_validation.coverage` 下，不表述为 Smoke 对全部 TP 的覆盖率。
+- 每条选中用例完整保留源对象与顺序，包括 ID、八项业务字段、步骤、预期、优先级和 TP 追溯；不覆盖源 JSON、测试点、Review 报告或完整 XMind。
+- 按需使用现有 XMind 导出脚本生成 `artifacts/smoke-cases.xmind`，沿用同一八字段与层级契约。执行集不作为新的完整集再次送入全量覆盖校验，也不增加公开 Skill 阶段。
+
+## 可选 Excel 格式约定（不参与默认验收）
+
+Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆盖率及 Review 门禁。只有用户单独明确要求，且当前工作区已有明确可用的导出流程时，才可作为附加格式处理；本约定不构成 Excel 导出实现。若处理，工作表 `测试用例` 的列头固定为：
 
 1. 模块
 2. 子模块
@@ -121,4 +133,4 @@
 
 ## 变更控制
 
-修改 Excel 列头、XMind 层级或 JSON 八字段时，必须同步修改生成脚本、校验器、示例和单测。
+修改正式 JSON 八字段或 XMind 层级时，必须同步修改生成脚本、校验器、示例和单测。若用户单独要求 Excel 附加输出并修改其格式约定，也须同步检查相应导出流程和验证材料。

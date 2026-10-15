@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-brightgreen.svg)](https://www.python.org/)
-[![Testing: Passed](https://img.shields.io/badge/tests-45%20passed-success.svg)]()
+[![Testing: Passed](https://img.shields.io/badge/tests-63%20passed-success.svg)]()
 [![Type: AI Agent Skills](https://img.shields.io/badge/Agent%20Skills-Standardized-orange.svg)]()
 [![Code Style: SDET Grade](https://img.shields.io/badge/Quality-SDET%20Grade-purple.svg)]()
 
@@ -67,7 +67,7 @@ flowchart TD
 |---|---|---|---|---|
 | **1. `prd-analysis`** | 深度拆解需求边界、等价类、状态迁移与潜在风险 | PRD 文档 / 蓝湖原型链接 | `requirements.md`<br/>`requirements-analysis.md` | 需求事实可追溯，明确风险与待确认清单 |
 | **2. `test-points`** | 提炼纯粹验证目标（What），拒绝混入步骤（How） | `requirements-analysis.md` | `specs/testpoints.md` | 独立 `TP_ID`、命名字典、Oracle 状态及优先级清晰 |
-| **3. `testcase-generate`** | 扩展为 8 字段可执行用例，导出原生 XMind 导图 | `specs/testpoints.md` | `artifacts/testcases.json`<br/>`artifacts/testcases.xmind` | 8 字段完整；TP 覆盖率 ≥95%；契约自检通过 |
+| **3. `testcase-generate`** | 扩展为 8 字段可执行用例，导出原生 XMind 导图 | `specs/testpoints.md` | `artifacts/testcases.json`<br/>`artifacts/testcases.xmind` | 8 字段完整；TP 覆盖率 ≥95%；JSON/XMind 契约自检通过 |
 | **4. `testcase-review`** | 独立第三方交叉评审，执行 14 维度深度检查 | `testcases.json`<br/>`specs/testpoints.md` | `review-report.md` | 14 维度检查完成；**0 个未解决 S1 阻塞缺陷** |
 
 ---
@@ -100,6 +100,17 @@ TestSpec 原生适配 Claude Code、Codex、Google Antigravity、Cursor、Windsu
 
 ---
 
+### 完整集通过后选取 Smoke 执行集
+
+先生成完整用例集，通过现有校验（对全部 TP 覆盖率 ≥95%）与 Review Gate，再按 `regression_tier=Smoke` 选取 p0 核心闭环。Review 报告记录已评审完整 JSON 和测试点的 SHA-256；文件变化后先重新 Review。
+
+```bash
+python3 -B skills/testcase-generate/scripts/select_smoke.py \
+  --change-dir testspec/changes/<name>
+```
+
+输出 `artifacts/smoke-testcases.json`，保留原用例 ID、八字段、TP 追溯和顺序。完整 JSON 与 XMind 继续保留；需要冒烟导图时，用现有 XMind 脚本将执行集导出到 `artifacts/smoke-cases.xmind`。Smoke 是评审后的执行子集，覆盖统计仍以完整集为准。
+
 ### 方式二：使用内置 CLI 工具
 
 仓库内置开箱即用的轻量 Python 脚本（纯标准库，无重量级三方依赖）：
@@ -126,6 +137,8 @@ python3 skills/testcase-generate/scripts/generate_xmind.py \
 ---
 
 ## 📐 核心规范与交付物标准
+
+正式用例交付与验收产物为 `artifacts/testcases.json` 和 `artifacts/testcases.xmind`；Excel 不属于本流程的默认产物或验收门禁。
 
 ### 1. 严格的 8 大标准业务字段
 每条用例格式严格统一，兼容 Jira、MeterSphere、TestRail 等主流管理平台：
@@ -189,7 +202,7 @@ python3 skills/testcase-generate/scripts/generate_xmind.py \
 仓库内置了完善的自动化测试与契约自检套件，确保流水线稳定性：
 
 ```bash
-# 1. 运行全部单元测试 (45 项测试全部通过)
+# 1. 运行全部单元测试 (63 项测试全部通过)
 python3 -m unittest discover -s skills/prd-analysis/tests
 python3 -m unittest discover -s skills/testcase-generate/tests
 python3 -m unittest discover -s skills/_testspec-shared/tests

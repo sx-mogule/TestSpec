@@ -17,26 +17,28 @@
 - **无信号** → 跳过，不生成该类型的用例
 - 用户指定独立 API、安全、性能等未允许类型时，说明范围限制，不将它们混入允许类型
 - 未指定且无明显信号时，默认 `functional`
-- 本文件只约束覆盖重点、设计技术和粒度，不改变 `testcases.json`、Excel、XMind 的字段结构
+- 本文件只约束覆盖重点、设计技术和粒度，不改变 `testcases.json` 与 XMind 的字段结构
 
 ## smoke
 
 - 名称：冒烟测试
-- 目标：最小化验证核心主流程是否可用
+- 目标：从已通过完整校验和 Review 的用例集中，选取最短核心业务闭环供执行；不缩减完整集生成范围
 - 推理触发信号：
   - 用户提到"快速验证""冒烟""基本可用"
   - 材料中有明确的核心业务闭环
   - 上线前紧急测试场景
-- 设计策略：
-  - 每个核心功能点最多展开 1-2 条用例
-  - 优先覆盖最短业务闭环
-  - 只保留阻塞性强、失败影响大的场景
+- 选取策略：
+  - 完整集先按全部 TP 通过现有 ≥95% 覆盖门槛和 Review Gate
+  - 从完整集保留最短核心业务闭环，依据既有 `regression_tier=Smoke` 选取，不设固定条数
+  - 不将所有 p0 自动视为 Smoke；缺少标记时回到生成阶段确认并重新 Review
+  - 保持源用例 ID、八项业务字段、TP 追溯及顺序不变
 - 推荐技术：
   - 主流程场景法
   - 关键节点错误推测
-- 输出倾向：
-  - 优先生成 `type=冒烟`
-  - 必须为 `p0`
+- 输出：
+  - 生成完整集时可用 `type=冒烟` 标记核心候选，并同步 `regression_tier=Smoke`
+  - 选取时以 `regression_tier=Smoke` 为准，且必须为 `p0`
+  - Review 通过后调用 `scripts/select_smoke.py` 输出独立的 `artifacts/smoke-testcases.json`；执行集不代替完整集覆盖报告
 
 ## functional
 
@@ -136,7 +138,7 @@
 
 - `functional + boundary`：主路径及有依据的临界值分别形成独立用例
 - `functional + exception`：主路径和关键失败路径分别验证
-- `smoke + functional`：冒烟是 p0 核心业务闭环的子集，不替代完整功能覆盖
+- `smoke + functional`：先完整生成功能用例并通过现有校验与 Review，再选取 Smoke 执行子集；≥95% 覆盖率始终按完整集与全部 TP 计算
 - `functional + permission`：按已确认角色矩阵验证允许与拒绝后的业务结果
 - `functional + integration`：只断言当前系统可观察的功能结果
 

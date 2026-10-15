@@ -163,6 +163,8 @@ S1 只用于真正阻断问题，禁止滥用。
 9. **计算总体置信度**
 10. **输出评审结论与逐项修复动作**
 
+评审对象始终是完整 `artifacts/testcases.json`。写报告时对实际评审的完整 JSON 和 `specs/testpoints.md` 计算 SHA-256，填入 `reviewed_artifacts.testcases_sha256` 和 `reviewed_artifacts.testpoints_sha256`，用于后续 Smoke 选取核对；该绑定不改变 S1 分级或 Review Gate 计算。用户需要 Smoke 时，仅在完整集现有校验为 PASS、Review Gate 通过后调用 `../testcase-generate/scripts/select_smoke.py --change-dir <变更目录>`，路径从当前 Skill 目录解析。完整集或测试点改变后先重新评审，再选取。
+
 H3/H7 必须检查组件与 Oracle 范围：`indirect` 用例不得断言下游副作用已完成，`out-of-scope` 不应成为正式用例。
 H3/H2 还须按测试点“设计方法”核对新增三种方法的场景和 Oracle：基于属性的测试核对各数据组的不变量，变形测试核对成对操作与前后结果关系，语法规则分析核对合法/非法结构及可判定结果；缺少需求依据或无法独立判定时不得通过 Review。
 H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵用例允许通过；事件口径、环境组合或预期缺失时记 S1。独立 API、安全、性能及其他未授权类型仍不得通过 Review，发现时以 S1 阻断并退回上游。
@@ -179,6 +181,7 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 - 需求去向核对：对照 canonical source（优先 `requirements.md`，否则 `proposal.md`）、`testpoints.md` 和用例，列出每条已确认需求对应的测试点及用例，待澄清/范围外项列明原因；此记录不改变现有检查项分级或 Review Gate 计算
 - S1/S2/S3 问题列表（每条带稳定 issue ID、`open/resolved/accepted` 状态、`case_id`/`TP_ID`/`GLOBAL:<rule>`、影响和建议）
 - 机器可读 `review_gate`：`status`、`s1_unresolved_count`、`s1_issue_ids`
+- `reviewed_artifacts`：实际评审的完整 JSON 与测试点 SHA-256，供 Smoke 选取核对
 - 总体结论（通过/有问题）
 - 置信度（高/中/低）
 
@@ -222,6 +225,7 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
   "material_quality": "<从上游继承>",
   "design_methods": ["<从 testcase-generate 继承的正式方法名>"],
   "stale_downstream_artifacts": [],
+  "reviewed_artifacts": {"testcases_sha256": "<实际完整 JSON 的 SHA-256>", "testpoints_sha256": "<实际测试点的 SHA-256>"},
   "review_gate": {
     "status": "pass/blocked",
     "s1_unresolved_count": 0,

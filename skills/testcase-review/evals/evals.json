@@ -31,7 +31,7 @@
         {
           "text": "Produces a review report in Strict mode",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && test -f \"$FILE\" && grep -qi 'Strict' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && test -f \"$FILE\" && grep -qi 'Strict' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Uses standard depth because Strict alone is not a deep trigger",
@@ -40,7 +40,7 @@
         {
           "text": "Runs all 14 review dimensions",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && grep -q 'R1' \"$FILE\" && grep -q 'R6' \"$FILE\" && grep -q 'H1' \"$FILE\" && grep -q 'H8' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && grep -q 'R1' \"$FILE\" && grep -q 'R6' \"$FILE\" && grep -q 'H1' \"$FILE\" && grep -q 'H8' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Propagates revision 1 and resolves the review stale marker",
@@ -50,7 +50,7 @@
         {
           "text": "Writes a machine-readable passing review gate",
           "check": "programmatic",
-          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-profile-sync/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); g=d['review_gate']; assert g['status']=='pass' and g['s1_unresolved_count']==0 and g['s1_issue_ids']==[]; print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-profile-sync/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); g=d['review_gate']; assert g['status']=='pass' and g['s1_unresolved_count']==0 and g['s1_issue_ids']==[]; print('PASS')\" || { echo FAIL; exit 1; }"
         }
       ]
     },
@@ -80,12 +80,12 @@
         {
           "text": "Produces a Provenance-Unknown review",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-provenance-unknown/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-provenance-unknown/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Creates the provenance unknown S1",
           "check": "programmatic",
-          "script": "grep -q 'GLOBAL:provenance-unknown' testspec/changes/synthetic-provenance-unknown/review-report.md && echo PASS || echo FAIL"
+          "script": "grep -q 'GLOBAL:provenance-unknown' testspec/changes/synthetic-provenance-unknown/review-report.md && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Does not fabricate a source revision",
@@ -95,7 +95,7 @@
         {
           "text": "Writes a blocked machine-readable review gate",
           "check": "programmatic",
-          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-provenance-unknown/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-provenance-unknown/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" || { echo FAIL; exit 1; }"
         }
       ]
     },
@@ -121,17 +121,17 @@
         {
           "text": "Uses Import-Quarantine mode",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-import-quarantine/review-report.md && grep -q 'Import-Quarantine' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-import-quarantine/review-report.md && grep -q 'Import-Quarantine' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Creates the global legacy traceability S1",
           "check": "programmatic",
-          "script": "grep -q 'GLOBAL:legacy-traceability' testspec/changes/synthetic-import-quarantine/review-report.md && echo PASS || echo FAIL"
+          "script": "grep -q 'GLOBAL:legacy-traceability' testspec/changes/synthetic-import-quarantine/review-report.md && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Blocks workflow completion until current PRD traceability is rebuilt",
           "check": "programmatic",
-          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-import-quarantine/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked' and d['review_gate']['s1_unresolved_count']>=1; print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-import-quarantine/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked' and d['review_gate']['s1_unresolved_count']>=1; print('PASS')\" || { echo FAIL; exit 1; }"
         }
       ]
     },
@@ -157,12 +157,12 @@
         {
           "text": "Does not treat empty provenance objects as Strict",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-invalid-provenance/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && grep -q 'GLOBAL:provenance-unknown' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-invalid-provenance/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && grep -q 'GLOBAL:provenance-unknown' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Writes a blocked review gate",
           "check": "programmatic",
-          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-invalid-provenance/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-invalid-provenance/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Explains that empty objects and illegal origin/trust combinations are not valid provenance",

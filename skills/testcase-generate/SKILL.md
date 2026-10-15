@@ -1,7 +1,7 @@
 ---
 name: testcase-generate
 license: MIT
-description: TestSpec 生成测试用例（流程第 3 步）- 根据测试点（specs/*.md）生成完整测试用例并默认导出 XMind (.xmind)。当用户要「生成用例」「写测试用例」「导出 XMind」或执行 testcase-generate / testcase generate 时使用。也适用于用户说「把测试点展开成用例」「帮我出一份测试用例表」的场景。使用内置 Python 脚本生成 XMind 文件，不依赖外部技能。
+description: TestSpec 生成测试用例（流程第 3 步）- 根据测试点（specs/*.md）生成完整测试用例并默认导出 XMind (.xmind)。当用户要「生成用例」「写测试用例」「导出 XMind」或执行 testcase-generate / testcase generate 时使用。也适用于用户说「把测试点展开成用例」「帮我出一份测试用例表」或「选取 Smoke 执行集」的场景。使用内置 Python 脚本生成 XMind 文件，不依赖外部技能。
 ---
 
 # testcase-generate：用例生成
@@ -83,7 +83,7 @@ TestSpec 用例生成进度：
 通过 3 个核心问题推导测试类型策略，而非关键词匹配：
 
 - **”用户需要什么粒度的测试？”**
-  - 上线前快速验证 → smoke 策略
+  - 上线前快速验证 → 完整集通过现有校验和 Review 后，按 smoke 策略选取执行集；完整生成范围不变
   - 完整功能验证 → functional 策略
   - 回归测试 → functional + boundary + exception
 
@@ -134,7 +134,17 @@ TestSpec 用例生成进度：
 
 ## 用例类型与冒烟用例
 
-测试类型和策略定义见 `references/test-type-strategies.md`。冒烟用例是 p0 的核心子集，只覆盖最短业务闭环、阻塞性功能和高频主流程；质量优先于数量。
+测试类型和策略定义见 `references/test-type-strategies.md`。先按当前需求的全部 TP 生成完整用例集，通过现有校验（TP 覆盖率 ≥95%）与 Review Gate，再从中选取 Smoke 执行集。冒烟请求不改变完整集的生成范围或覆盖率分母。
+
+Smoke 选取规则与产物见 `../_testspec-shared/references/output-contracts.md` 的“Smoke 执行集”。用户仅要求从已通过 Review 的完整集中选取时，直接执行以下脚本，不重新生成源用例：
+
+```bash
+python "<testcase-generate-skill-dir>/scripts/select_smoke.py" --change-dir <变更目录>
+```
+
+脚本复用完整集校验和上下文检查，再核对当前 Review Gate 与已评审文件哈希，仅选取 `regression_tier=Smoke` 的 p0 用例。固定输出 `artifacts/smoke-testcases.json`，逐条保留原用例内容与顺序。无 Smoke 标记或门禁未通过时停止并明确原因；需要修正层级或优先级时回到完整集生成并重新 Review。
+
+需要 XMind 时，再用现有 `scripts/generate_xmind.py` 将该执行集导出为 `artifacts/smoke-cases.xmind`；保留完整集 JSON 与 XMind。Smoke 是评审后派生的执行集，不增加公开流程阶段。
 
 ### 回归套件层级继承
 
@@ -144,6 +154,7 @@ TestSpec 用例生成进度：
 - **允许降级**：Agent 可将复杂测试点的部分衍生用例降级（如 Smoke 测试点的边界用例降为 Full）
 - **不允许升级**：不得将 Full/Targeted 测试点的用例升级为 Smoke，除非用户显式要求
 - **未标注兜底**：若上游 testpoints.md 未包含 `regression_tier`，所有用例默认 `Full`
+- **候选一致性**：`regression_tier=Smoke` 的用例必须为 p0；`type=冒烟` 同时标记 `regression_tier=Smoke`。生成阶段只标记候选，选取在完整集通过 Review 后进行，不按 p0 自动推断 Smoke
 
 ---
 
@@ -173,6 +184,7 @@ TestSpec 用例生成进度：
 - `tp_refs` 非空且只引用当前变更 TP；多 TP 用例的步骤和预期覆盖每个引用
 - TP 的 `oracle_scope = indirect` 时只断言当前系统可观察产物；`out-of-scope` 不生成正式用例
 - `preconditions` 可为空；`test_data` 可为空；`steps` 与 `expected_result` 必须按序号输出
+- 角色、权限或对象状态影响结果时必须写入前置条件；边界、取消等场景需排除权限干扰，具体写法见 `references/case-design-rules.md`。
 - 每条原生用例写 `origin.kind = testspec-native` 和 `trust.status = provisional`
 - JSON 合法转义；生成后必须通过结构校验
 
@@ -262,6 +274,6 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
 
 ## 产物
 
-- `testspec/changes/<name>/artifacts/<name>_cases.xmind`（默认 XMind 格式）
+- 正式产物：`testspec/changes/<name>/artifacts/testcases.json`（schema v2）与 `testspec/changes/<name>/artifacts/<name>_cases.xmind`（默认 XMind 格式）。Excel 不属于默认生成或验收范围。
 
 文件名可根据变更名或用户指定调整。

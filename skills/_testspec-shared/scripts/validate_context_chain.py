@@ -35,14 +35,20 @@ REQUIRED_ENVELOPE_FIELDS = {
 
 def markdown_context(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
-    matches = re.findall(
-        r"<!--\s*testspec-context\s*(\{.*?\})\s*-->",
-        text,
-        flags=re.DOTALL,
-    )
-    if not matches:
+    starts = list(re.finditer(
+        r"^[ \t]*<!--[ \t]*testspec-context\b", text, flags=re.MULTILINE,
+    ))
+    if not starts:
         raise ValueError(f"{path}: missing testspec-context block")
-    return json.loads(matches[-1])
+    if len(starts) != 1:
+        raise ValueError(f"{path}: expected exactly one testspec-context block")
+    end = text.find("-->", starts[0].end())
+    if end == -1:
+        raise ValueError(f"{path}: unclosed testspec-context block")
+    context = json.loads(text[starts[0].end():end].strip())
+    if not isinstance(context, dict):
+        raise ValueError(f"{path}: testspec-context must contain a JSON object")
+    return context
 
 
 def json_context(path: Path) -> dict[str, Any]:

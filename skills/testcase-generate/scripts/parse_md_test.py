@@ -1,81 +1,99 @@
+#!/usr/bin/env python3
+"""检查旧版 Markdown 测试用例的模块和用例数量。"""
+import argparse
 import re
+from pathlib import Path
 
-with open('/Users/qm/Documents/TestSpec_SOP/testcases/HM_add_wecom_points_testcase.md', 'r', encoding='utf-8') as f:
-    lines = f.readlines()
 
-current_module = None
-current_submodule = None
-current_case = None
-cases_by_structure = []
+def parse_markdown(md_path: Path) -> list[dict]:
+    lines = md_path.read_text(encoding="utf-8").splitlines()
+    current_module = None
+    current_submodule = None
+    current_case = None
+    cases_by_structure = []
 
-# Module pattern: ## 2. 模块一：新 UnionID ...
-# Submodule pattern: ### 2.1 触发入口...
-# Case pattern: #### TC_... [P0] ...
+    # Module pattern: ## 2. 模块一：新 UnionID ...
+    # Submodule pattern: ### 2.1 触发入口...
+    # Case pattern: #### TC_... [P0] ...
 
-for line in lines:
-    line_s = line.strip()
-    if line_s.startswith('## ') and not line_s.startswith('## 目录') and not line_s.startswith('## 1.'):
-        mod_title = re.sub(r'^##\s+(\d+\.\s*)?', '', line_s)
-        current_module = {"title": mod_title, "children": []}
-        cases_by_structure.append(current_module)
-        current_submodule = None
-        current_case = None
-    elif line_s.startswith('### ') and current_module is not None:
-        submod_title = re.sub(r'^###\s+(\d+\.\d+\s*)?', '', line_s)
-        current_submodule = {"title": submod_title, "children": []}
-        current_module["children"].append(current_submodule)
-        current_case = None
-    elif line_s.startswith('#### TC_'):
-        m = re.match(r'####\s+(TC_[A-Z]+_\d+)\s+\[(P\d)\]\s+(.*)', line_s)
-        if m:
-            tc_id, prio, name = m.groups()
-            current_case = {
-                "id": tc_id,
-                "priority": prio.lower(),
-                "title": f"[{prio}] {tc_id} {name}",
-                "method": "",
-                "preconditions": "",
-                "test_data": "",
-                "steps": "",
-                "expected": "",
-                "current_field": None
-            }
-            target = current_submodule if current_submodule is not None else current_module
-            target["children"].append(current_case)
-    elif current_case is not None:
-        if line_s.startswith('- **测试方法**：'):
-            current_case["method"] = line_s.replace('- **测试方法**：', '').strip()
-            current_case["current_field"] = "method"
-        elif line_s.startswith('- **前置条件**：'):
-            current_case["preconditions"] = line_s.replace('- **前置条件**：', '').strip()
-            current_case["current_field"] = "preconditions"
-        elif line_s.startswith('- **输入数据**：'):
-            current_case["test_data"] = line_s.replace('- **输入数据**：', '').strip()
-            current_case["current_field"] = "test_data"
-        elif line_s.startswith('- **业务流程**：'):
-            current_case["steps"] = line_s.replace('- **业务流程**：', '').strip()
-            current_case["current_field"] = "steps"
-        elif line_s.startswith('- **操作步骤**：'):
-            current_case["steps"] = line_s.replace('- **操作步骤**：', '').strip()
-            current_case["current_field"] = "steps"
-        elif line_s.startswith('- **预期输出**：'):
-            current_case["expected"] = line_s.replace('- **预期输出**：', '').strip()
-            current_case["current_field"] = "expected"
-        elif current_case["current_field"] and line_s:
-            # Multi-line continuation
-            field = current_case["current_field"]
-            if current_case[field]:
-                current_case[field] += "\n" + line_s
-            else:
-                current_case[field] = line_s
+    for line in lines:
+        line_s = line.strip()
+        if line_s.startswith('## ') and not line_s.startswith('## 目录') and not line_s.startswith('## 1.'):
+            mod_title = re.sub(r'^##\s+(\d+\.\s*)?', '', line_s)
+            current_module = {"title": mod_title, "children": []}
+            cases_by_structure.append(current_module)
+            current_submodule = None
+            current_case = None
+        elif line_s.startswith('### ') and current_module is not None:
+            submod_title = re.sub(r'^###\s+(\d+\.\d+\s*)?', '', line_s)
+            current_submodule = {"title": submod_title, "children": []}
+            current_module["children"].append(current_submodule)
+            current_case = None
+        elif line_s.startswith('#### TC_'):
+            m = re.match(r'####\s+(TC_[A-Z]+_\d+)\s+\[(P\d)\]\s+(.*)', line_s)
+            if m:
+                tc_id, prio, name = m.groups()
+                current_case = {
+                    "id": tc_id,
+                    "priority": prio.lower(),
+                    "title": f"[{prio}] {tc_id} {name}",
+                    "method": "",
+                    "preconditions": "",
+                    "test_data": "",
+                    "steps": "",
+                    "expected": "",
+                    "current_field": None
+                }
+                target = current_submodule if current_submodule is not None else current_module
+                if target is None:
+                    raise ValueError(f"{tc_id}: 用例前缺少二级模块标题")
+                target["children"].append(current_case)
+        elif current_case is not None:
+            if line_s.startswith('- **测试方法**：'):
+                current_case["method"] = line_s.replace('- **测试方法**：', '').strip()
+                current_case["current_field"] = "method"
+            elif line_s.startswith('- **前置条件**：'):
+                current_case["preconditions"] = line_s.replace('- **前置条件**：', '').strip()
+                current_case["current_field"] = "preconditions"
+            elif line_s.startswith('- **输入数据**：'):
+                current_case["test_data"] = line_s.replace('- **输入数据**：', '').strip()
+                current_case["current_field"] = "test_data"
+            elif line_s.startswith('- **业务流程**：'):
+                current_case["steps"] = line_s.replace('- **业务流程**：', '').strip()
+                current_case["current_field"] = "steps"
+            elif line_s.startswith('- **操作步骤**：'):
+                current_case["steps"] = line_s.replace('- **操作步骤**：', '').strip()
+                current_case["current_field"] = "steps"
+            elif line_s.startswith('- **预期输出**：'):
+                current_case["expected"] = line_s.replace('- **预期输出**：', '').strip()
+                current_case["current_field"] = "expected"
+            elif current_case["current_field"] and line_s:
+                # Multi-line continuation
+                field = current_case["current_field"]
+                if current_case[field]:
+                    current_case[field] += "\n" + line_s
+                else:
+                    current_case[field] = line_s
+    return cases_by_structure
 
-print(f"Parsed modules: {len(cases_by_structure)}")
-for m in cases_by_structure:
-    print(f"Module: {m['title']}, submodules: {len(m['children'])}")
-    total_cases = 0
-    for sub in m['children']:
-        if "children" in sub:
-            total_cases += len(sub["children"])
-        else:
-            total_cases += 1
-    print(f"  Total cases: {total_cases}")
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", required=True, type=Path, help="旧版 Markdown 用例文件")
+    args = parser.parse_args()
+    try:
+        modules = parse_markdown(args.input)
+        if not any(item.get("id") or item.get("children") for module in modules for item in module["children"]):
+            raise ValueError("未找到 #### TC_... [P0/P1/P2] 格式的测试用例")
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    print(f"Parsed modules: {len(modules)}")
+    for module in modules:
+        print(f"Module: {module['title']}, submodules: {len(module['children'])}")
+        count = sum(len(item["children"]) if "children" in item else 1 for item in module["children"])
+        print(f"  Total cases: {count}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

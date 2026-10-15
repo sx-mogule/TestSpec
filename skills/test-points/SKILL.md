@@ -147,6 +147,7 @@ TestSpec 测试点进度：
 
 - 按模块/功能点组织，并按 Functional / Boundary / Exception / Integration / Tracking / Compatibility 分类分区；后两类仅在需求明确规定事件口径或环境组合及可判定预期时生成
 - 每条测试点必须包含：TP_ID、测试点名称、验证要点、优先级（p0/p1/p2）、关联需求
+- Smoke/Full/Targeted 只标记回归层级；即使用户需要冒烟，仍保留当前需求的完整测试点范围，供完整用例集按全部 TP 校验。Smoke 执行集在完整集通过校验和 Review 后选取。
 - 每条正式测试点标注 `oracle_scope: direct/contract/indirect`；`indirect` 不得声称下游副作用完成；`out-of-scope` 记录在范围说明，不分配正式 TP_ID
 - 确保覆盖 analysis 中识别的风险点和边界值
 - 若需求来源是可交互 HTML，逐项核对 analysis 的 `BTN_ID` 清单：已确认的按钮行为关联到 TP；禁用、不可达、未执行或结果含糊的项保留原因及澄清问题，不得当作已覆盖功能

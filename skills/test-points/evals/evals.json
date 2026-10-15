@@ -23,12 +23,12 @@
         {
           "text": "Creates deterministic testpoints with a naming dictionary and TP IDs",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-reporting-console/specs/testpoints.md && test -f \"$FILE\" && grep -q '命名字典' \"$FILE\" && grep -qE 'TP_[A-Z]+_[A-Z]+_[0-9]+' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-reporting-console/specs/testpoints.md && test -f \"$FILE\" && grep -q '命名字典' \"$FILE\" && grep -qE 'TP_[A-Z]+_[A-Z]+_[0-9]+' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Marks the unresolved oracle explicitly instead of fabricating a rule",
           "check": "programmatic",
-          "script": "grep -q 'needs-confirmation' testspec/changes/synthetic-reporting-console/specs/testpoints.md && echo PASS || echo FAIL"
+          "script": "grep -q 'needs-confirmation' testspec/changes/synthetic-reporting-console/specs/testpoints.md && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Does not force the high-impact access ambiguity to p2",
@@ -63,7 +63,7 @@
         {
           "text": "Does not overwrite the existing testpoints",
           "check": "programmatic",
-          "script": "grep -q '^# SENTINEL_OLD_TESTPOINTS$' testspec/changes/synthetic-profile-sync/specs/testpoints.md && echo PASS || echo FAIL"
+          "script": "grep -q '^# SENTINEL_OLD_TESTPOINTS$' testspec/changes/synthetic-profile-sync/specs/testpoints.md && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Reports the canonical and upstream versions",
