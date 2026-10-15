@@ -7,8 +7,8 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成 schema v2 用例并导出 Excel。",
-      "expected_output": "从 revision 2 testpoints 生成可追溯用例，testcases._context 传播完整 envelope，并导出 Excel。",
+      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成 schema v2 用例并导出 XMind。",
+      "expected_output": "从 revision 2 testpoints 生成可追溯 JSON 用例，testcases._context 传播完整 envelope，并生成 XMind。",
       "files": [
         {
           "path": "testspec/changes/synthetic-profile-sync/requirements.md",
@@ -27,7 +27,7 @@
         {
           "text": "Generates valid schema v2 cases with non-empty TP references",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-profile-sync/artifacts/testcases.json')); assert d['schema_version']==2 and d['testcases'] and all(c.get('tp_refs') for c in d['testcases']); print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-profile-sync/artifacts/testcases.json')); assert d['schema_version']==2 and d['testcases'] and all(c.get('tp_refs') for c in d['testcases']); print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Propagates revision 2 and resolves the cases stale marker",
@@ -35,9 +35,9 @@
           "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-profile-sync --through generate --expected-version 2"
         },
         {
-          "text": "Exports an Excel artifact using the skill-local script",
+          "text": "Exports XMind content consistent with the generated schema v2 JSON",
           "check": "programmatic",
-          "script": "test -f testspec/changes/synthetic-profile-sync/artifacts/synthetic-profile-sync_cases.xlsx && echo PASS || echo FAIL"
+          "script": "python3 -c \"import json,zipfile,xml.etree.ElementTree as ET; p='testspec/changes/synthetic-profile-sync/artifacts/'; d=json.load(open(p+'testcases.json',encoding='utf-8')); assert d['schema_version']==2 and d['testcases']; z=zipfile.ZipFile(p+'synthetic-profile-sync_cases.xmind'); assert z.testzip() is None; root=ET.fromstring(z.read('content.xml')); titles={e.text or '' for e in root.iter() if e.tag.endswith('title')}; scenario=lambda c: c['test_name'][len(c['module']+'_'+c['submodule']+'_'):] if c['test_name'].startswith(c['module']+'_'+c['submodule']+'_') else c['test_name']; assert all(scenario(c) in titles for c in d['testcases']); print('PASS')\""
         },
         {
           "text": "Reports generated paths and validation status",
@@ -67,7 +67,7 @@
         {
           "text": "Does not create testcases JSON",
           "check": "programmatic",
-          "script": "test ! -e testspec/changes/synthetic-notification-rules/artifacts/testcases.json && test ! -e testspec/changes/synthetic-notification-rules/testcases.json && echo PASS || echo FAIL"
+          "script": "test ! -e testspec/changes/synthetic-notification-rules/artifacts/testcases.json && test ! -e testspec/changes/synthetic-notification-rules/testcases.json && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Reports version 3 versus version 2",
@@ -105,12 +105,12 @@
         {
           "text": "Improves only the targeted case oracle",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-export/artifacts/testcases.json')); a={c['id']:c for c in d['testcases']}; assert '文件名' in a['CASE-1']['expected_result'] and '记录数' in a['CASE-1']['expected_result'] and a['CASE-2']['expected_result']=='1、对话框关闭'; print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-export/artifacts/testcases.json')); a={c['id']:c for c in d['testcases']}; assert '文件名' in a['CASE-1']['expected_result'] and '记录数' in a['CASE-1']['expected_result'] and a['CASE-2']['expected_result']=='1、对话框关闭'; print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Records RV-S2-001 in review_repairs",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-export/artifacts/testcases.json')); assert any(x.get('issue_id')=='RV-S2-001' for x in d['_context']['review_repairs']); print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-export/artifacts/testcases.json')); assert any(x.get('issue_id')=='RV-S2-001' for x in d['_context']['review_repairs']); print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Does not mark the review finding resolved; re-review owns resolution",
@@ -136,7 +136,7 @@
         {
           "text": "Generates schema v2 cases for every tracking test point",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-checkout-tracking/artifacts/testcases.json')); refs={r for c in d['testcases'] for r in c.get('tp_refs',[])}; assert d['schema_version']==2 and all(f'TP_TRACK_{x}' in refs for x in ['EVENT_400','EVENT_401','CHAIN_402','DEDUP_403','ENV_404']); print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-checkout-tracking/artifacts/testcases.json')); refs={r for c in d['testcases'] for r in c.get('tp_refs',[])}; assert d['schema_version']==2 and all(f'TP_TRACK_{x}' in refs for x in ['EVENT_400','EVENT_401','CHAIN_402','DEDUP_403','ENV_404']); print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Generated cases include success and failure events, conditional error_code validation, and do not reduce failure testing to a UI message",
@@ -182,7 +182,7 @@
         {
           "text": "Does not call the supplied API URL or execute the network probe",
           "check": "programmatic",
-          "script": "test ! -e network-contact.marker && echo PASS || echo FAIL"
+          "script": "test ! -e network-contact.marker && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Derives the expected active state from REQ-001 rather than an observed response",
@@ -212,7 +212,7 @@
         {
           "text": "Generates schema v2 compatibility cases for both declared matrix rows",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-compatibility-matrix/artifacts/testcases.json')); c=d['testcases']; refs={r for x in c for r in x.get('tp_refs',[])}; assert d['schema_version']==2 and {'TP_COMP_ORDER_500','TP_COMP_ORDER_501'}<=refs and all(x.get('type')=='兼容性矩阵' for x in c); print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-compatibility-matrix/artifacts/testcases.json')); c=d['testcases']; refs={r for x in c for r in x.get('tp_refs',[])}; assert d['schema_version']==2 and {'TP_COMP_ORDER_500','TP_COMP_ORDER_501'}<=refs and all(x.get('type')=='兼容性矩阵' for x in c); print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Each case names one declared platform, OS and browser combination and has a reproducible order-list action and decidable result",
@@ -250,7 +250,7 @@
         {
           "text": "Generates valid schema v2 cases with non-empty TP references",
           "check": "programmatic",
-          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-profile-sync/artifacts/testcases.json')); assert d['schema_version']==2 and d['testcases'] and all(c.get('tp_refs') for c in d['testcases']); print('PASS')\" 2>/dev/null || echo FAIL"
+          "script": "python3 -c \"import json; d=json.load(open('testspec/changes/synthetic-profile-sync/artifacts/testcases.json')); assert d['schema_version']==2 and d['testcases'] and all(c.get('tp_refs') for c in d['testcases']); print('PASS')\" || { echo FAIL; exit 1; }"
         },
         {
           "text": "Propagates revision 2 and resolves the cases stale marker",
@@ -268,6 +268,54 @@
         },
         {
           "text": "名称、步骤和预期表达同一意图；保留必要条件，不为缩短名称丢失对象或改造需求结果",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "运行 testcase-generate，为 synthetic-smoke-fullset 生成完整用例集。覆盖全部3个TP，保留核心闭环的 type=冒烟、regression_tier=Smoke、p0 分类，并导出包含全部用例的完整集XMind；不得生成独立Smoke文件。",
+      "expected_output": "输出 schema v2 的完整 artifacts/testcases.json 及匹配的完整集 XMind；完整 JSON 保留查询、提交、取消三个TP的用例，冒烟用例仍在完整集内并为p0；不生成独立 Smoke JSON 或 XMind。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-smoke-fullset/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成订单闭环\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"design_methods\": [\n      \"流程分析\"\n    ],\n    \"next_skill\": \"testcase-review\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-smoke\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN-SMOKE-001\",\n      \"module\": \"订单\",\n      \"submodule\": \"查询\",\n      \"test_name\": \"订单_查询_订单详情展示明细\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、打开已有订单详情并查看商品明细\",\n      \"expected_result\": \"1、订单详情列出原商品名称、购买数量与应付金额\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Full\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_QUERY_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN-SMOKE-002\",\n      \"module\": \"订单\",\n      \"submodule\": \"提交\",\n      \"test_name\": \"订单_提交_创建后显示待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、选择可购买商品并提交创建订单\",\n      \"expected_result\": \"1、创建的订单详情显示独立订单编号与待支付状态\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Smoke\",\n      \"type\": \"冒烟\",\n      \"tp_refs\": [\n        \"TP_ORDER_SUBMIT_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN-SMOKE-003\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后关闭待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、对待支付订单点击取消并确认关闭\",\n      \"expected_result\": \"1、目标订单更新为已关闭状态且不可继续支付\",\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-smoke-fullset/requirements-analysis.md",
+          "content": "# 合成分析\n提交为最短核心闭环，查询和取消仍需完整覆盖。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"next_skill\": \"test-points\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-smoke-fullset/requirements.md",
+          "content": "# 合成需求\nREQ-001：提交后显示待支付订单。\nREQ-002：查询展示订单明细。\nREQ-003：取消后订单关闭。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-smoke-fullset/review-report.md",
+          "content": "# 合成评估评审报告\n\n本文件为公开合成评估夹具。\n评审范围：完整 artifacts/testcases.json；按现有 Review Gate 提供上下文。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"reviewed_artifacts\": {\n    \"testcases_sha256\": \"d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526\",\n    \"testpoints_sha256\": \"774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47\"\n  },\n  \"review_gate\": {\n    \"status\": \"pass\",\n    \"s1_unresolved_count\": 0,\n    \"s1_issue_ids\": []\n  }\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-smoke-fullset/specs/testpoints.md",
+          "content": "# 测试点：合成订单\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 订单 | ORDER |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 订单 | 提交 | SUBMIT |\n| 订单 | 查询 | QUERY |\n| 订单 | 取消 | CANCEL |\n### 订单模块\n#### 提交功能\n##### 功能验证点 (Functional)\n- TP_ORDER_SUBMIT_001: 订单_提交_确认业务结果\n  - 验证要点: 提交后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 查询功能\n##### 功能验证点 (Functional)\n- TP_ORDER_QUERY_001: 订单_查询_确认业务结果\n  - 验证要点: 查询后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 取消功能\n##### 功能验证点 (Functional)\n- TP_ORDER_CANCEL_001: 订单_取消_确认业务结果\n  - 验证要点: 取消后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"next_skill\": \"testcase-generate\"\n}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Produces a complete schema v2 JSON set with all TP references and retains the Smoke case classification",
+          "check": "programmatic",
+          "script": "python3 -B -c \"import json; d=json.load(open('testspec/changes/synthetic-smoke-fullset/artifacts/testcases.json',encoding='utf-8')); cases=d['testcases']; refs={r for c in cases for r in c.get('tp_refs',[])}; expected={'TP_ORDER_QUERY_001','TP_ORDER_SUBMIT_001','TP_ORDER_CANCEL_001'}; smoke=[c for c in cases if c.get('type')=='冒烟' or c.get('regression_tier')=='Smoke']; assert d['schema_version']==2 and len(cases)>=3 and refs>=expected and smoke and all(c.get('priority')=='p0' for c in smoke) and any(c.get('type')=='冒烟' and c.get('regression_tier')=='Smoke' for c in smoke); print('PASS')\""
+        },
+        {
+          "text": "Exports a valid XMind whose case topics match every case in the full JSON",
+          "check": "programmatic",
+          "script": "python3 -B -c \"import json,zipfile,xml.etree.ElementTree as ET; from pathlib import Path; a=Path('testspec/changes/synthetic-smoke-fullset/artifacts'); d=json.loads((a/'testcases.json').read_text(encoding='utf-8')); z=zipfile.ZipFile(a/'synthetic-smoke-fullset_cases.xmind'); assert z.testzip() is None; root=ET.fromstring(z.read('content.xml')); titles={e.text or '' for e in root.iter() if e.tag.endswith('title')}; scenario=lambda c: c['test_name'][len(c['module']+'_'+c['submodule']+'_'):] if c['test_name'].startswith(c['module']+'_'+c['submodule']+'_') else c['test_name']; assert all(scenario(c) in titles for c in d['testcases']); print('PASS')\""
+        },
+        {
+          "text": "Creates only the complete-set JSON and its matching XMind, with no extra Smoke file in any format",
+          "check": "programmatic",
+          "script": "python3 -B -c \"from pathlib import Path; a=Path('testspec/changes/synthetic-smoke-fullset/artifacts'); expected={'testcases.json','synthetic-smoke-fullset_cases.xmind'}; assert {p.name for p in a.iterdir()}==expected; print('PASS')\""
+        },
+        {
+          "text": "Reports the complete-set JSON and XMind paths, TP coverage result, and preserved Smoke classification",
           "check": "qualitative"
         }
       ]

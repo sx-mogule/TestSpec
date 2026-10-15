@@ -88,6 +88,44 @@ class TestFourStageContext(unittest.TestCase):
             write_markdown(root / "review-report.md", reviewed)
             self.assertEqual(chain.validate(root, "review", 1), [])
 
+    def test_unclosed_marker_before_valid_context_blocks_chain(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            path = root / "requirements-analysis.md"
+            path.write_text("<!-- testspec-context\n" + path.read_text(), encoding="utf-8")
+            self.assertTrue(any("exactly one" in error for error in chain.validate(root, "review", 1)))
+
+    def test_two_complete_contexts_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.md"
+            write_markdown(path, {"source_skill": "test-points"})
+            path.write_text(path.read_text() * 2, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "exactly one"):
+                chain.markdown_context(path)
+
+    def test_unclosed_context_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.md"
+            path.write_text('<!-- testspec-context\n{"source_skill":"test-points"}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unclosed"):
+                chain.markdown_context(path)
+
+    def test_context_must_be_an_object(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.md"
+            path.write_text('<!-- testspec-context\n[]\n-->\n', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "JSON object"):
+                chain.markdown_context(path)
+
+    def test_inline_documentation_does_not_create_a_second_context(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "artifact.md"
+            expected = {"source_skill": "test-points"}
+            write_markdown(path, expected)
+            path.write_text("正文提及 `<!-- testspec-context` 标记。\n" + path.read_text(), encoding="utf-8")
+            self.assertEqual(chain.markdown_context(path), expected)
+
 
 if __name__ == "__main__":
     unittest.main()

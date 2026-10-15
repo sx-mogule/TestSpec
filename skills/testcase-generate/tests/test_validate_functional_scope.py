@@ -32,6 +32,35 @@ class TestFunctionalScope(unittest.TestCase):
         result = self.validate("##### 功能验证点 (Functional)\n- TP_ORDER_SUBMIT_001: 提交后显示订单号", ["TP_ORDER_SUBMIT_001"])
         self.assertEqual(result["status"], "PASS", result)
 
+    def test_prose_labels_and_references_do_not_reduce_coverage(self):
+        result = self.validate(
+            "说明中的 TP_ID 与 TP_OTHER_PROSE_999 不是测试点定义。\n"
+            "| 需求 | TP_ID |\n| REQ-001 | TP_ORDER_SUBMIT_001 |\n"
+            "- TP_ID: 模板字段说明\n- TP_<MODULE>_<FEATURE>_001: 模板占位\n"
+            "- TP_ORDER_SUBMIT_001: 提交后显示订单号",
+            ["TP_ORDER_SUBMIT_001"],
+        )
+        self.assertEqual(result["status"], "PASS", result)
+        self.assertEqual(result["coverage"]["total_tp"], 1)
+        self.assertEqual(result["coverage"]["coverage_rate"], 1)
+
+    def test_reference_in_prose_cannot_create_a_valid_testpoint(self):
+        result = self.validate(
+            "- TP_ORDER_SUBMIT_001: 提交后显示订单号\n"
+            "待确认的引用 TP_ORDER_SUBMIT_002 尚未定义。",
+            ["TP_ORDER_SUBMIT_001", "TP_ORDER_SUBMIT_002"],
+        )
+        self.assertIn("INVALID_TP_REFS", {issue["type"] for issue in result["errors"]})
+
+    def test_uncovered_star_bullet_with_chinese_colon_is_counted(self):
+        result = self.validate(
+            "- TP_ORDER_SUBMIT_001: 提交后显示订单号\n"
+            "* TP_ORDER_SUBMIT_002：拒绝非法提交",
+            ["TP_ORDER_SUBMIT_001"],
+        )
+        self.assertEqual(result["coverage"]["total_tp"], 2)
+        self.assertIn("TP_COVERAGE_BELOW_THRESHOLD", {issue["type"] for issue in result["errors"]})
+
     def test_non_functional_point_is_blocked(self):
         result = self.validate("##### 非功能性验证点 (Non-Functional)\n- TP_ORDER_SUBMIT_001: 性能", ["TP_ORDER_SUBMIT_001"])
         self.assertEqual(result["status"], "FAIL")

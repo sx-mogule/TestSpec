@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[3]
 EVAL_PATHS = sorted((ROOT / "skills").glob("*/evals/evals.json"))
 
 AMBIENT_SELECTORS = ("find testspec/changes", "head -1")
+MASKED_FAILURE_PATTERN = re.compile(r"\|\|\s*echo\s+['\"]?FAIL\b")
 URL_PATTERN = re.compile(r"https?://[^\s\"'<>]+")
 EXTERNAL_TICKET_PATTERN = re.compile(r"\bT\d{3,}\b")
 ABSOLUTE_HOME_PATTERN = re.compile(r"(?:/Users/|/home/|[A-Za-z]:\\Users\\)")
@@ -99,6 +100,8 @@ def validate_eval_file(path: Path) -> list[str]:
                     errors.append(f"{prefix}: programmatic assertion lacks script")
                 if any(token in script for token in AMBIENT_SELECTORS):
                     errors.append(f"{prefix}: assertion uses ambient workspace selector")
+                if MASKED_FAILURE_PATTERN.search(script):
+                    errors.append(f"{prefix}: assertion masks failure exit status; propagate a nonzero exit code")
 
         for text in iter_strings(case):
             if EXTERNAL_TICKET_PATTERN.search(text):

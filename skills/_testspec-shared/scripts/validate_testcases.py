@@ -47,6 +47,10 @@ ACTION_VERBS = [
 ]
 MIN_FIELD_LEN = 10
 SIMILARITY_THRESHOLD = 0.75
+TP_ENTRY_PATTERN = re.compile(
+    r"^[ \t]*[-*][ \t]+(TP_[A-Z0-9]+_[A-Z0-9_]+_[0-9]+)[ \t]*[:：]",
+    re.MULTILINE,
+)
 
 
 # ── 工具函数 ──────────────────────────────────────────────────────
@@ -75,8 +79,8 @@ def _count_numbered_items(text: str) -> int:
 
 
 def _extract_tp_ids_from_md(md_text: str) -> set[str]:
-    """从当前变更的 testpoints.md 中提取所有 TP_ID。"""
-    return set(re.findall(r"\bTP_[A-Z0-9_]+\b", md_text))
+    """只统计正式测试点条目，不把说明、引用或模板字段计入覆盖率。"""
+    return set(TP_ENTRY_PATTERN.findall(md_text))
 
 
 def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[dict]:
@@ -85,7 +89,7 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
     listed_tps: set[str] = set()
     current_tp = None
     for line in tp_text.splitlines():
-        tp_match = re.match(r"^\s*-\s*(TP_[A-Z0-9_]+)\s*[:：]", line)
+        tp_match = TP_ENTRY_PATTERN.match(line)
         if tp_match:
             current_tp = tp_match.group(1)
             listed_tps.add(current_tp)
@@ -293,7 +297,7 @@ def check_special_scope_type_matches(cases: list[dict], tp_text: str) -> list[di
             continue
 
         if current_category:
-            tp_match = re.match(r"^\s*[-*]\s*(TP_[A-Z0-9_]+)\s*[:：]", line)
+            tp_match = TP_ENTRY_PATTERN.match(line)
             if tp_match:
                 tp_categories.setdefault(tp_match.group(1), set()).add(current_category)
 

@@ -2,6 +2,8 @@
 
 > 适用于 `prd-analysis → test-points → testcase-generate → testcase-review`。
 
+正式用例产物为 `artifacts/testcases.json` 与 `artifacts/<name>_cases.xmind`。两者参与本流程的输出校验与交付；Excel 不属于默认产物或验收门禁。
+
 ## 通用原则
 
 - PRD 和用户确认内容是需求事实来源；不得用实现现状覆盖需求。
@@ -74,13 +76,15 @@
 
 内部追溯字段可包含 `id`、`tp_refs`、`type`、`regression_tier`、`origin` 和 `trust`；兼容旧数据时可保留 `title` 和 `feature`，但不得替代八项业务字段。
 
-`test_name` 的场景部分须简短、直白、见名知意，统一遵循 `naming-contract.md`；JSON、Excel、XMind 表达同一测试意图，`title` 兼容别名与 `test_name` 同步。XMind 仅剥离分类前缀，不自动截断或改写场景名称。
+`test_name` 的场景部分须简短、直白、见名知意，统一遵循 `naming-contract.md`；JSON 与 XMind 表达同一测试意图，`title` 兼容别名与 `test_name` 同步。XMind 仅剥离分类前缀，不自动截断或改写场景名称。
+
+`type=冒烟`、`regression_tier=Smoke` 和 `priority=p0` 是完整集内的场景分类元数据。它们不缩小生成或覆盖范围，也不触发独立 JSON/XMind 产物；所有场景统一交付在 `artifacts/testcases.json` 和对应的完整集 XMind 中。
 
 埋点用例须使用 `type=埋点` 并引用 Tracking 测试点；兼容性矩阵用例须使用 `type=兼容性矩阵` 并引用 Compatibility 测试点。两类均纳入原有 TP 覆盖率、字段、步骤、Oracle、来源与 Review 门禁。
 
-## Excel 输出契约
+## 可选 Excel 格式约定（不参与默认验收）
 
-仅在用户明确要求时生成。工作表 `测试用例` 的列头固定为：
+Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆盖率及 Review 门禁。只有用户单独明确要求，且当前工作区已有明确可用的导出流程时，才可作为附加格式处理；本约定不构成 Excel 导出实现。若处理，工作表 `测试用例` 的列头固定为：
 
 1. 模块
 2. 子模块
@@ -121,4 +125,4 @@
 
 ## 变更控制
 
-修改 Excel 列头、XMind 层级或 JSON 八字段时，必须同步修改生成脚本、校验器、示例和单测。
+修改正式 JSON 八字段或 XMind 层级时，必须同步修改生成脚本、校验器、示例和单测。若用户单独要求 Excel 附加输出并修改其格式约定，也须同步检查相应导出流程和验证材料。

@@ -9,6 +9,12 @@
 **Unresolved S1**: <count>
 **Provenance Gate**: <pass/blocked>
 
+### 已评审完整集
+
+- 完整用例：`artifacts/testcases.json`
+- 测试点：`specs/testpoints.md`
+- 两个文件的实际 SHA-256 写入末尾 `reviewed_artifacts`，用于追溯本次 Review 对应的完整集与测试点版本；完整集变化后须重新评审。不改变现有 Review Gate 计算。
+
 ### 深度决策记录
 
 - **执行模式**: <auto/--deep>
@@ -205,6 +211,7 @@
   "material_quality": "<从上游继承>",
   "design_methods": ["<从 testcase-generate 继承的正式方法名>"],
   "stale_downstream_artifacts": [],
+  "reviewed_artifacts": {"testcases_sha256": "<实际完整 JSON 的 SHA-256>", "testpoints_sha256": "<实际测试点的 SHA-256>"},
   "canonical_source_policy": "prd-first",
   "origin": {"kind": "<testspec-native/legacy-import/mixed>"},
   "trust": {"status": "<verified/provisional/unverified/mixed>"},

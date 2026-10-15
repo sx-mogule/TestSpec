@@ -12,6 +12,7 @@
           -> 预期结果：\n...
 """
 
+import argparse
 import os
 import re
 import sys
@@ -19,6 +20,7 @@ import time
 import uuid
 import zipfile
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 NS = "urn:xmind:xmap:xmlns:content:2.0"
@@ -149,15 +151,16 @@ def create_xmind_file(structure: List[Dict], output_path: str, root_title: str, 
         zf.writestr("styles.xml", _create_styles_xml())
         zf.writestr("meta.xml", _create_meta_xml())
 
-def parse_markdown_to_xmind_tree(md_path: str) -> List[Dict]:
+def parse_markdown_to_xmind_tree(md_path: str, root_title: Optional[str] = None) -> List[Dict]:
     with open(md_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
-    root_title = "HM 添加企微送积分活动（RE-0480）测试用例集"
+    root_title = root_title or Path(md_path).stem
     modules = []
     current_module = None
     current_submodule = None
     current_case = None
+    case_count = 0
 
     for line in lines:
         line_s = line.strip()
@@ -189,7 +192,10 @@ def parse_markdown_to_xmind_tree(md_path: str) -> List[Dict]:
                     "current_field": None
                 }
                 target = current_submodule if current_submodule is not None else current_module
+                if target is None:
+                    raise ValueError(f"{tc_id}: 用例前缺少二级模块标题")
                 target["children"].append(current_case)
+                case_count += 1
         elif current_case is not None:
             if line_s.startswith('- **测试方法**：'):
                 current_case["current_field"] = "method"
@@ -246,12 +252,29 @@ def parse_markdown_to_xmind_tree(md_path: str) -> List[Dict]:
                 "children": [build_node(c) for c in item.get("children", [])]
             }
 
+    if not case_count:
+        raise ValueError("未找到 #### TC_... [P0/P1/P2] 格式的测试用例")
     root_children = [build_node(m) for m in modules]
     return [{"title": root_title, "children": root_children}]
 
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", required=True, type=Path, help="旧版 Markdown 用例文件")
+    parser.add_argument("--output", required=True, type=Path, help="输出的 .xmind 文件")
+    parser.add_argument("--root-title", help="根节点标题，默认为输入文件名（不含扩展名）")
+    parser.add_argument("--sheet-title", default="测试用例")
+    args = parser.parse_args()
+    if args.input.resolve() == args.output.resolve():
+        parser.error("输入和输出路径不能相同")
+    try:
+        tree = parse_markdown_to_xmind_tree(str(args.input), args.root_title)
+        create_xmind_file(tree, str(args.output), root_title=tree[0]["title"], sheet_title=args.sheet_title)
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    print(f"XMind 生成成功：{args.output}")
+    return 0
+
+
 if __name__ == "__main__":
-    md_file = "/Users/qm/Documents/TestSpec_SOP/testcases/HM_add_wecom_points_testcase.md"
-    out_file = "/Users/qm/Documents/TestSpec_SOP/testcases/HM_add_wecom_points_testcase.xmind"
-    tree = parse_markdown_to_xmind_tree(md_file)
-    create_xmind_file(tree, out_file, root_title="HM 添加企微送积分活动（RE-0480）测试用例集")
-    print(f"XMind 生成成功：{out_file}")
+    raise SystemExit(main())

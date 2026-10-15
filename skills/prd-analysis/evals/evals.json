@@ -23,7 +23,7 @@
         {
           "text": "Regenerates active analysis from the new response contract",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-reporting-console/requirements-analysis.md && grep -qi 'normalized series' \"$FILE\" && ! grep -q '直接使用 vendor chart config' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-reporting-console/requirements-analysis.md && grep -qi 'normalized series' \"$FILE\" && test -f \"$FILE\" && ! grep -q '直接使用 vendor chart config' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Propagates revision 2 and resolves the analysis stale marker",
@@ -54,7 +54,7 @@
         {
           "text": "Creates analysis for the deterministic change",
           "check": "programmatic",
-          "script": "test -f testspec/changes/synthetic-admin-access/requirements-analysis.md && echo PASS || echo FAIL"
+          "script": "test -f testspec/changes/synthetic-admin-access/requirements-analysis.md && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Covers authorization, data exposure, and expired-session behavior",
@@ -85,7 +85,7 @@
         {
           "text": "Completes analysis without requiring code access",
           "check": "programmatic",
-          "script": "test -f testspec/changes/synthetic-preferences/requirements-analysis.md && echo PASS || echo FAIL"
+          "script": "test -f testspec/changes/synthetic-preferences/requirements-analysis.md && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Keeps PRD as the canonical source and code evidence disabled",
@@ -94,7 +94,7 @@
         {
           "text": "Does not add missing code access to blocking questions",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-preferences/requirements-analysis.md && ! grep -qi '必须.*代码\\|代码.*阻塞' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-preferences/requirements-analysis.md && test -f \"$FILE\" && ! grep -qi '必须.*代码\\|代码.*阻塞' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Propagates revision 1",
@@ -121,7 +121,7 @@
         {
           "text": "Records stable button IDs for all three controls, including the button revealed after a click",
           "check": "programmatic",
-          "script": "FILE=testspec/changes/synthetic-html-buttons/requirements-analysis.md && test -f \"$FILE\" && grep -q 'BTN-001' \"$FILE\" && grep -q 'BTN-002' \"$FILE\" && grep -q 'BTN-003' \"$FILE\" && echo PASS || echo FAIL"
+          "script": "FILE=testspec/changes/synthetic-html-buttons/requirements-analysis.md && test -f \"$FILE\" && grep -q 'BTN-001' \"$FILE\" && grep -q 'BTN-002' \"$FILE\" && grep -q 'BTN-003' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
         },
         {
           "text": "Actually clicks the open and close buttons and records before/after evidence rather than inferring behavior from HTML source",
