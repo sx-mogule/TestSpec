@@ -30,10 +30,6 @@ prd-analysis → test-points → testcase-generate → testcase-review
 | `testcase-generate` | testpoints 与 canonical revision 一致 | JSON 8 字段完整，TP 引用有效，JSON/XMind 通过格式校验 | 回到 `test-points` 或本阶段修复 |
 | `testcase-review` | 用例和测试点版本一致 | 14 项检查完成，`review_gate` 明确，未解决 S1 为 0 才能通过 | 回到 `testcase-generate` |
 
-## Smoke 执行集
-
-需要冒烟时仍先完成完整四阶段链路：全部 TP → 完整用例集 → 现有校验通过（TP ≥95%）→ Review Gate 通过 → 按 `regression_tier=Smoke` 选取 p0 执行集。选取属于评审后的产物派生，不增加阶段；完整集继续作为覆盖统计与追溯依据。具体契约见 `output-contracts.md`。
-
 ## 智能编排指引
 
 ### 步骤跳转决策
@@ -77,7 +73,6 @@ testspec/changes/<name>/
     ├── api-doc.md             # 接口口径归档（可选）
     ├── update-log.md          # 口径更新记录（可选）
     ├── testcases.json         # 统一完整功能用例 JSON（testcase-generate）
-    ├── smoke-testcases.json   # 完整集通过校验和 Review 后按需选取的执行集
     └── <name>_cases.xmind     # 统一 XMind 8（testcase-generate）
 ```
 

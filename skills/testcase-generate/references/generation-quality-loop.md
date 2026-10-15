@@ -22,7 +22,7 @@
 
 - 完整集对全部 TP 的覆盖率至少 95%，并列出所有未覆盖 TP；Smoke 请求不缩小分母。
 - Functional/boundary/exception 覆盖必须符合当前证据。
-- `type=冒烟` 和 `regression_tier=Smoke` 的用例必须为 p0，类型为冒烟时同步 Smoke 层级。完整集通过现有校验和 Review 后才选取执行集。
+- `type=冒烟` 和 `regression_tier=Smoke` 的用例必须为 p0，类型为冒烟时同步 Smoke 层级；分类仍保留在完整集交付中，不派生独立文件。
 - 全 p0 或全 p2 分布触发检查，不能按配额重写。
 - 标题模块与 `feature` 一致。
 

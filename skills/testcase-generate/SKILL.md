@@ -1,7 +1,7 @@
 ---
 name: testcase-generate
 license: MIT
-description: TestSpec 生成测试用例（流程第 3 步）- 根据测试点（specs/*.md）生成完整测试用例并默认导出 XMind (.xmind)。当用户要「生成用例」「写测试用例」「导出 XMind」或执行 testcase-generate / testcase generate 时使用。也适用于用户说「把测试点展开成用例」「帮我出一份测试用例表」或「选取 Smoke 执行集」的场景。使用内置 Python 脚本生成 XMind 文件，不依赖外部技能。
+description: TestSpec 生成测试用例（流程第 3 步）- 根据测试点（specs/*.md）生成完整测试用例并默认导出 XMind (.xmind)。当用户要「生成用例」「写测试用例」「导出 XMind」或执行 testcase-generate / testcase generate 时使用。也适用于用户说「把测试点展开成用例」或「帮我出一份测试用例表」的场景。使用内置 Python 脚本生成 XMind 文件，不依赖外部技能。
 ---
 
 # testcase-generate：用例生成
@@ -83,7 +83,7 @@ TestSpec 用例生成进度：
 通过 3 个核心问题推导测试类型策略，而非关键词匹配：
 
 - **”用户需要什么粒度的测试？”**
-  - 上线前快速验证 → 完整集通过现有校验和 Review 后，按 smoke 策略选取执行集；完整生成范围不变
+  - 上线前快速验证或冒烟 → 仍生成并交付当前需求的完整用例集；在完整集中标记核心闭环候选
   - 完整功能验证 → functional 策略
   - 回归测试 → functional + boundary + exception
 
@@ -91,9 +91,9 @@ TestSpec 用例生成进度：
   - 权限交叉、并发操作、状态边界 → 补充对应类型
   - 上游标注的风险区域 → 加深覆盖
 
-- **”冒烟用例应该覆盖哪条业务主线？”**
+- **“哪些场景属于冒烟候选？”**
   - 识别最短业务闭环
-  - 失败影响最大的功能优先
+  - 优先标记失败影响最大的核心路径
 
 用户显式指定类型时，按需求证据选取；未指定时默认 `functional`。独立 API、安全、性能等类型不进入本流程；埋点与兼容性矩阵仅在需求有明确口径时允许。策略从 `references/test-type-strategies.md` 选取，但选择理由来自推理。
 
@@ -132,29 +132,19 @@ TestSpec 用例生成进度：
 
 ---
 
-## 用例类型与冒烟用例
+## 用例类型与冒烟分类
 
-测试类型和策略定义见 `references/test-type-strategies.md`。先按当前需求的全部 TP 生成完整用例集，通过现有校验（TP 覆盖率 ≥95%）与 Review Gate，再从中选取 Smoke 执行集。冒烟请求不改变完整集的生成范围或覆盖率分母。
-
-Smoke 选取规则与产物见 `../_testspec-shared/references/output-contracts.md` 的“Smoke 执行集”。用户仅要求从已通过 Review 的完整集中选取时，直接执行以下脚本，不重新生成源用例：
-
-```bash
-python "<testcase-generate-skill-dir>/scripts/select_smoke.py" --change-dir <变更目录>
-```
-
-脚本复用完整集校验和上下文检查，再核对当前 Review Gate 与已评审文件哈希，仅选取 `regression_tier=Smoke` 的 p0 用例。固定输出 `artifacts/smoke-testcases.json`，逐条保留原用例内容与顺序。无 Smoke 标记或门禁未通过时停止并明确原因；需要修正层级或优先级时回到完整集生成并重新 Review。
-
-需要 XMind 时，再用现有 `scripts/generate_xmind.py` 将该执行集导出为 `artifacts/smoke-cases.xmind`；保留完整集 JSON 与 XMind。Smoke 是评审后派生的执行集，不增加公开流程阶段。
+测试类型和策略定义见 `references/test-type-strategies.md`。无论用户是否提出冒烟或快速验证，均按当前需求的全部 TP 生成完整用例集，并对完整集执行现有校验（TP 覆盖率 ≥95%）及 Review Gate。冒烟场景作为完整集中的用例分类，仍写入统一 schema v2 JSON，并包含在对应的完整集 XMind 中；不得按 `regression_tier` 或 `type` 单独选取、导出或交付文件。
 
 ### 回归套件层级继承
 
-用例从测试点继承 `regression_tier`（Smoke / Full / Targeted），作为回归测试选取的分层依据：
+用例从测试点继承 `regression_tier`（Smoke / Full / Targeted），作为完整集内的回归层级分类元数据：
 
 - **继承规则**：用例的 `regression_tier` 默认等于其 `tp_refs` 中最高层级的测试点（Smoke > Full > Targeted）
 - **允许降级**：Agent 可将复杂测试点的部分衍生用例降级（如 Smoke 测试点的边界用例降为 Full）
 - **不允许升级**：不得将 Full/Targeted 测试点的用例升级为 Smoke，除非用户显式要求
 - **未标注兜底**：若上游 testpoints.md 未包含 `regression_tier`，所有用例默认 `Full`
-- **候选一致性**：`regression_tier=Smoke` 的用例必须为 p0；`type=冒烟` 同时标记 `regression_tier=Smoke`。生成阶段只标记候选，选取在完整集通过 Review 后进行，不按 p0 自动推断 Smoke
+- **分类一致性**：`regression_tier=Smoke` 的用例必须为 p0；`type=冒烟` 同时标记 `regression_tier=Smoke`。仅按有依据的分类标记场景，不按 p0 自动推断 Smoke；层级元数据不触发独立输出
 
 ---
 

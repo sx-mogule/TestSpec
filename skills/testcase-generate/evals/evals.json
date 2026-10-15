@@ -274,134 +274,48 @@
     },
     {
       "id": 8,
-      "prompt": "运行 testcase-generate，为 synthetic-smoke-passed 从已通过完整校验与 Review 的完整用例集中选取 Smoke 执行集。不要重新生成源用例；不是所有 p0 都属于 Smoke。",
-      "expected_output": "调用选取脚本，生成 artifacts/smoke-testcases.json；仅包含原有 Smoke 层级的 p0 用例，完整集和评审文件保持不变，完整集覆盖率不当作子集全量覆盖。",
+      "prompt": "运行 testcase-generate，为 synthetic-smoke-fullset 生成完整用例集。覆盖全部3个TP，保留核心闭环的 type=冒烟、regression_tier=Smoke、p0 分类，并导出包含全部用例的完整集XMind；不得生成独立Smoke文件。",
+      "expected_output": "输出 schema v2 的完整 artifacts/testcases.json 及匹配的完整集 XMind；完整 JSON 保留查询、提交、取消三个TP的用例，冒烟用例仍在完整集内并为p0；不生成独立 Smoke JSON 或 XMind。",
       "files": [
         {
-          "path": "testspec/changes/synthetic-smoke-passed/artifacts/testcases.json",
+          "path": "testspec/changes/synthetic-smoke-fullset/artifacts/testcases.json",
           "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成订单闭环\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"design_methods\": [\n      \"流程分析\"\n    ],\n    \"next_skill\": \"testcase-review\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-smoke\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN-SMOKE-001\",\n      \"module\": \"订单\",\n      \"submodule\": \"查询\",\n      \"test_name\": \"订单_查询_订单详情展示明细\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、打开已有订单详情并查看商品明细\",\n      \"expected_result\": \"1、订单详情列出原商品名称、购买数量与应付金额\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Full\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_QUERY_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN-SMOKE-002\",\n      \"module\": \"订单\",\n      \"submodule\": \"提交\",\n      \"test_name\": \"订单_提交_创建后显示待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、选择可购买商品并提交创建订单\",\n      \"expected_result\": \"1、创建的订单详情显示独立订单编号与待支付状态\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Smoke\",\n      \"type\": \"冒烟\",\n      \"tp_refs\": [\n        \"TP_ORDER_SUBMIT_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN-SMOKE-003\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后关闭待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、对待支付订单点击取消并确认关闭\",\n      \"expected_result\": \"1、目标订单更新为已关闭状态且不可继续支付\",\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
         },
         {
-          "path": "testspec/changes/synthetic-smoke-passed/requirements-analysis.md",
+          "path": "testspec/changes/synthetic-smoke-fullset/requirements-analysis.md",
           "content": "# 合成分析\n提交为最短核心闭环，查询和取消仍需完整覆盖。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"next_skill\": \"test-points\"\n}\n-->\n"
         },
         {
-          "path": "testspec/changes/synthetic-smoke-passed/requirements.md",
+          "path": "testspec/changes/synthetic-smoke-fullset/requirements.md",
           "content": "# 合成需求\nREQ-001：提交后显示待支付订单。\nREQ-002：查询展示订单明细。\nREQ-003：取消后订单关闭。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ]\n}\n-->\n"
         },
         {
-          "path": "testspec/changes/synthetic-smoke-passed/review-report.md",
+          "path": "testspec/changes/synthetic-smoke-fullset/review-report.md",
           "content": "# 合成评估评审报告\n\n本文件为公开合成评估夹具。\n评审范围：完整 artifacts/testcases.json；按现有 Review Gate 提供上下文。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"reviewed_artifacts\": {\n    \"testcases_sha256\": \"d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526\",\n    \"testpoints_sha256\": \"774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47\"\n  },\n  \"review_gate\": {\n    \"status\": \"pass\",\n    \"s1_unresolved_count\": 0,\n    \"s1_issue_ids\": []\n  }\n}\n-->\n"
         },
         {
-          "path": "testspec/changes/synthetic-smoke-passed/specs/testpoints.md",
+          "path": "testspec/changes/synthetic-smoke-fullset/specs/testpoints.md",
           "content": "# 测试点：合成订单\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 订单 | ORDER |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 订单 | 提交 | SUBMIT |\n| 订单 | 查询 | QUERY |\n| 订单 | 取消 | CANCEL |\n### 订单模块\n#### 提交功能\n##### 功能验证点 (Functional)\n- TP_ORDER_SUBMIT_001: 订单_提交_确认业务结果\n  - 验证要点: 提交后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 查询功能\n##### 功能验证点 (Functional)\n- TP_ORDER_QUERY_001: 订单_查询_确认业务结果\n  - 验证要点: 查询后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 取消功能\n##### 功能验证点 (Functional)\n- TP_ORDER_CANCEL_001: 订单_取消_确认业务结果\n  - 验证要点: 取消后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"next_skill\": \"testcase-generate\"\n}\n-->\n"
         }
       ],
       "assertions": [
         {
-          "text": "Preserves canonical requirements, complete cases, testpoints and Review byte for byte",
+          "text": "Produces a complete schema v2 JSON set with all TP references and retains the Smoke case classification",
           "check": "programmatic",
-          "script": "python3 -c 'from pathlib import Path; import hashlib; r=Path('\"'\"'testspec/changes/synthetic-smoke-passed'\"'\"'); expected={'\"'\"'requirements.md'\"'\"': '\"'\"'fa57e8ac738bfcbed7cd39a2c98020b9455a8f0f3a179d993c02191b0d5d695d'\"'\"', '\"'\"'review-report.md'\"'\"': '\"'\"'1ccab818a52a6cb60569e3320f82f9398d8c5b819eca1c734105e56660c6e3ed'\"'\"', '\"'\"'requirements-analysis.md'\"'\"': '\"'\"'34d98d97b4a44633e1cf5b45ffc4a23cc890542d83b52d9b046153a24344217c'\"'\"', '\"'\"'artifacts/testcases.json'\"'\"': '\"'\"'d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526'\"'\"', '\"'\"'specs/testpoints.md'\"'\"': '\"'\"'774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47'\"'\"'}; assert all(hashlib.sha256((r/p).read_bytes()).hexdigest()==h for p,h in expected.items()); print('\"'\"'PASS'\"'\"')'"
+          "script": "python3 -B -c \"import json; d=json.load(open('testspec/changes/synthetic-smoke-fullset/artifacts/testcases.json',encoding='utf-8')); cases=d['testcases']; refs={r for c in cases for r in c.get('tp_refs',[])}; expected={'TP_ORDER_QUERY_001','TP_ORDER_SUBMIT_001','TP_ORDER_CANCEL_001'}; smoke=[c for c in cases if c.get('type')=='冒烟' or c.get('regression_tier')=='Smoke']; assert d['schema_version']==2 and len(cases)>=3 and refs>=expected and smoke and all(c.get('priority')=='p0' for c in smoke) and any(c.get('type')=='冒烟' and c.get('regression_tier')=='Smoke' for c in smoke); print('PASS')\""
         },
         {
-          "text": "Selects exactly the existing Smoke case and preserves the entire case object",
+          "text": "Exports a valid XMind whose case topics match every case in the full JSON",
           "check": "programmatic",
-          "script": "python3 -c 'import json; from pathlib import Path; r=Path('\"'\"'testspec/changes/synthetic-smoke-passed'\"'\"'); full=json.loads((r/'\"'\"'artifacts/testcases.json'\"'\"').read_text()); selected=json.loads((r/'\"'\"'artifacts/smoke-testcases.json'\"'\"').read_text()); assert selected['\"'\"'testcases'\"'\"']==[c for c in full['\"'\"'testcases'\"'\"'] if c.get('\"'\"'regression_tier'\"'\"')=='\"'\"'Smoke'\"'\"']; assert len(selected['\"'\"'testcases'\"'\"'])==1 and selected['\"'\"'testcases'\"'\"'][0]['\"'\"'priority'\"'\"']=='\"'\"'p0'\"'\"'; print('\"'\"'PASS'\"'\"')'"
+          "script": "python3 -B -c \"import json,zipfile,xml.etree.ElementTree as ET; from pathlib import Path; a=Path('testspec/changes/synthetic-smoke-fullset/artifacts'); d=json.loads((a/'testcases.json').read_text(encoding='utf-8')); z=zipfile.ZipFile(a/'synthetic-smoke-fullset_cases.xmind'); assert z.testzip() is None; root=ET.fromstring(z.read('content.xml')); titles={e.text or '' for e in root.iter() if e.tag.endswith('title')}; scenario=lambda c: c['test_name'][len(c['module']+'_'+c['submodule']+'_'):] if c['test_name'].startswith(c['module']+'_'+c['submodule']+'_') else c['test_name']; assert all(scenario(c) in titles for c in d['testcases']); print('PASS')\""
         },
         {
-          "text": "Labels the derivative and keeps full-set coverage separate from selected TP scope",
+          "text": "Creates only the complete-set JSON and its matching XMind, with no extra Smoke file in any format",
           "check": "programmatic",
-          "script": "python3 -c 'import json; from pathlib import Path; c=json.loads((Path('\"'\"'testspec/changes/synthetic-smoke-passed'\"'\"')/'\"'\"'artifacts/smoke-testcases.json'\"'\"').read_text())['\"'\"'_context'\"'\"']; assert c['\"'\"'artifact_kind'\"'\"']=='\"'\"'smoke-execution-set'\"'\"' and c['\"'\"'full_set_validation'\"'\"']['\"'\"'coverage'\"'\"']['\"'\"'total_tp'\"'\"']==3 and c['\"'\"'full_set_validation'\"'\"']['\"'\"'coverage'\"'\"']['\"'\"'coverage_rate'\"'\"']==1.0 and c['\"'\"'selected_tp_ids'\"'\"']==['\"'\"'TP_ORDER_SUBMIT_001'\"'\"']; print('\"'\"'PASS'\"'\"')'"
+          "script": "python3 -B -c \"from pathlib import Path; a=Path('testspec/changes/synthetic-smoke-fullset/artifacts'); expected={'testcases.json','synthetic-smoke-fullset_cases.xmind'}; assert {p.name for p in a.iterdir()}==expected; print('PASS')\""
         },
         {
-          "text": "Explains that the full set passed and the execution set contains only the shortest confirmed core flow; does not claim full TP coverage for the subset",
-          "check": "qualitative"
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "运行 testcase-generate，为 synthetic-smoke-blocked 选取 Smoke 执行集。注意：Review Gate 被阻断。按已确认的先完整通过再选取流程执行，不降低门槛，不修改输入。",
-      "expected_output": "停止选取并明确完整集或Review未通过的原因；不生成 Smoke 执行集，不改写输入或评审门禁。",
-      "files": [
-        {
-          "path": "testspec/changes/synthetic-smoke-blocked/artifacts/testcases.json",
-          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成订单闭环\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"design_methods\": [\n      \"流程分析\"\n    ],\n    \"next_skill\": \"testcase-review\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-smoke\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN-SMOKE-001\",\n      \"module\": \"订单\",\n      \"submodule\": \"查询\",\n      \"test_name\": \"订单_查询_订单详情展示明细\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、打开已有订单详情并查看商品明细\",\n      \"expected_result\": \"1、订单详情列出原商品名称、购买数量与应付金额\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Full\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_QUERY_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN-SMOKE-002\",\n      \"module\": \"订单\",\n      \"submodule\": \"提交\",\n      \"test_name\": \"订单_提交_创建后显示待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、选择可购买商品并提交创建订单\",\n      \"expected_result\": \"1、创建的订单详情显示独立订单编号与待支付状态\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Smoke\",\n      \"type\": \"冒烟\",\n      \"tp_refs\": [\n        \"TP_ORDER_SUBMIT_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN-SMOKE-003\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后关闭待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、对待支付订单点击取消并确认关闭\",\n      \"expected_result\": \"1、目标订单更新为已关闭状态且不可继续支付\",\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-blocked/requirements-analysis.md",
-          "content": "# 合成分析\n提交为最短核心闭环，查询和取消仍需完整覆盖。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"next_skill\": \"test-points\"\n}\n-->\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-blocked/requirements.md",
-          "content": "# 合成需求\nREQ-001：提交后显示待支付订单。\nREQ-002：查询展示订单明细。\nREQ-003：取消后订单关闭。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ]\n}\n-->\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-blocked/review-report.md",
-          "content": "# 合成评估评审报告\n\n本文件为公开合成评估夹具。\n评审范围：完整 artifacts/testcases.json；按现有 Review Gate 提供上下文。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"reviewed_artifacts\": {\n    \"testcases_sha256\": \"d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526\",\n    \"testpoints_sha256\": \"774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47\"\n  },\n  \"review_gate\": {\n    \"status\": \"blocked\",\n    \"s1_unresolved_count\": 1,\n    \"s1_issue_ids\": [\n      \"SYN-S1-001\"\n    ]\n  }\n}\n-->\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-blocked/specs/testpoints.md",
-          "content": "# 测试点：合成订单\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 订单 | ORDER |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 订单 | 提交 | SUBMIT |\n| 订单 | 查询 | QUERY |\n| 订单 | 取消 | CANCEL |\n### 订单模块\n#### 提交功能\n##### 功能验证点 (Functional)\n- TP_ORDER_SUBMIT_001: 订单_提交_确认业务结果\n  - 验证要点: 提交后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 查询功能\n##### 功能验证点 (Functional)\n- TP_ORDER_QUERY_001: 订单_查询_确认业务结果\n  - 验证要点: 查询后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 取消功能\n##### 功能验证点 (Functional)\n- TP_ORDER_CANCEL_001: 订单_取消_确认业务结果\n  - 验证要点: 取消后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"next_skill\": \"testcase-generate\"\n}\n-->\n"
-        }
-      ],
-      "assertions": [
-        {
-          "text": "Preserves canonical requirements, complete cases, testpoints and Review byte for byte",
-          "check": "programmatic",
-          "script": "python3 -c 'from pathlib import Path; import hashlib; r=Path('\"'\"'testspec/changes/synthetic-smoke-blocked'\"'\"'); expected={'\"'\"'requirements.md'\"'\"': '\"'\"'fa57e8ac738bfcbed7cd39a2c98020b9455a8f0f3a179d993c02191b0d5d695d'\"'\"', '\"'\"'review-report.md'\"'\"': '\"'\"'f4316432d0bf01257415201929f7dc40b41f284e82f7233a53f31afdd78b7a1d'\"'\"', '\"'\"'requirements-analysis.md'\"'\"': '\"'\"'34d98d97b4a44633e1cf5b45ffc4a23cc890542d83b52d9b046153a24344217c'\"'\"', '\"'\"'artifacts/testcases.json'\"'\"': '\"'\"'d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526'\"'\"', '\"'\"'specs/testpoints.md'\"'\"': '\"'\"'774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47'\"'\"'}; assert all(hashlib.sha256((r/p).read_bytes()).hexdigest()==h for p,h in expected.items()); print('\"'\"'PASS'\"'\"')'"
-        },
-        {
-          "text": "Does not create or substitute an execution set while prerequisites fail",
-          "check": "programmatic",
-          "script": "python3 -c 'from pathlib import Path; r=Path('\"'\"'testspec/changes/synthetic-smoke-blocked'\"'\"'); assert not (r/'\"'\"'artifacts/smoke-testcases.json'\"'\"').exists() and not (r/'\"'\"'artifacts/smoke-cases.xmind'\"'\"').exists(); print('\"'\"'PASS'\"'\"')'"
-        },
-        {
-          "text": "Reports the failing full-set validation or blocked Review and directs repair to the full set rather than narrowing the denominator",
-          "check": "qualitative"
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "运行 testcase-generate，为 synthetic-smoke-incomplete 选取 Smoke 执行集。注意：完整集只覆盖3个TP中的1个，未通过原有95%门槛。按已确认的先完整通过再选取流程执行，不降低门槛，不修改输入。",
-      "expected_output": "停止选取并明确完整集或Review未通过的原因；不生成 Smoke 执行集，不改写输入或评审门禁。",
-      "files": [
-        {
-          "path": "testspec/changes/synthetic-smoke-incomplete/artifacts/testcases.json",
-          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成订单闭环\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"design_methods\": [\n      \"流程分析\"\n    ],\n    \"next_skill\": \"testcase-review\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-smoke\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN-SMOKE-002\",\n      \"module\": \"订单\",\n      \"submodule\": \"提交\",\n      \"test_name\": \"订单_提交_创建后显示待支付订单\",\n      \"preconditions\": \"已准备可操作的独立订单与商品数据\",\n      \"test_data\": \"使用当前用例独立准备的业务数据\",\n      \"steps\": \"1、选择可购买商品并提交创建订单\",\n      \"expected_result\": \"1、创建的订单详情显示独立订单编号与待支付状态\",\n      \"priority\": \"p0\",\n      \"regression_tier\": \"Smoke\",\n      \"type\": \"冒烟\",\n      \"tp_refs\": [\n        \"TP_ORDER_SUBMIT_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-smoke\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-incomplete/requirements-analysis.md",
-          "content": "# 合成分析\n提交为最短核心闭环，查询和取消仍需完整覆盖。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"next_skill\": \"test-points\"\n}\n-->\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-incomplete/requirements.md",
-          "content": "# 合成需求\nREQ-001：提交后显示待支付订单。\nREQ-002：查询展示订单明细。\nREQ-003：取消后订单关闭。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ]\n}\n-->\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-incomplete/review-report.md",
-          "content": "# 合成评估评审报告\n\n本文件为公开合成评估夹具。\n评审范围：完整 artifacts/testcases.json；按现有 Review Gate 提供上下文。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"reviewed_artifacts\": {\n    \"testcases_sha256\": \"56d283e5cb496737f19949d79dec9207f514d29fdf9c8e5c295c38ed30e43bb1\",\n    \"testpoints_sha256\": \"774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47\"\n  },\n  \"review_gate\": {\n    \"status\": \"pass\",\n    \"s1_unresolved_count\": 0,\n    \"s1_issue_ids\": []\n  }\n}\n-->\n"
-        },
-        {
-          "path": "testspec/changes/synthetic-smoke-incomplete/specs/testpoints.md",
-          "content": "# 测试点：合成订单\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 订单 | ORDER |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 订单 | 提交 | SUBMIT |\n| 订单 | 查询 | QUERY |\n| 订单 | 取消 | CANCEL |\n### 订单模块\n#### 提交功能\n##### 功能验证点 (Functional)\n- TP_ORDER_SUBMIT_001: 订单_提交_确认业务结果\n  - 验证要点: 提交后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 查询功能\n##### 功能验证点 (Functional)\n- TP_ORDER_QUERY_001: 订单_查询_确认业务结果\n  - 验证要点: 查询后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n#### 取消功能\n##### 功能验证点 (Functional)\n- TP_ORDER_CANCEL_001: 订单_取消_确认业务结果\n  - 验证要点: 取消后展示已确认的订单状态\n  - 设计方法: 流程分析\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001/REQ-002/REQ-003\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"next_skill\": \"testcase-generate\"\n}\n-->\n"
-        }
-      ],
-      "assertions": [
-        {
-          "text": "Preserves canonical requirements, complete cases, testpoints and Review byte for byte",
-          "check": "programmatic",
-          "script": "python3 -c 'from pathlib import Path; import hashlib; r=Path('\"'\"'testspec/changes/synthetic-smoke-incomplete'\"'\"'); expected={'\"'\"'requirements.md'\"'\"': '\"'\"'fa57e8ac738bfcbed7cd39a2c98020b9455a8f0f3a179d993c02191b0d5d695d'\"'\"', '\"'\"'review-report.md'\"'\"': '\"'\"'5cfab45e633700863805c882668750c607e6b59621d6051f4a96d7ebdd0feed4'\"'\"', '\"'\"'requirements-analysis.md'\"'\"': '\"'\"'34d98d97b4a44633e1cf5b45ffc4a23cc890542d83b52d9b046153a24344217c'\"'\"', '\"'\"'artifacts/testcases.json'\"'\"': '\"'\"'56d283e5cb496737f19949d79dec9207f514d29fdf9c8e5c295c38ed30e43bb1'\"'\"', '\"'\"'specs/testpoints.md'\"'\"': '\"'\"'774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47'\"'\"'}; assert all(hashlib.sha256((r/p).read_bytes()).hexdigest()==h for p,h in expected.items()); print('\"'\"'PASS'\"'\"')'"
-        },
-        {
-          "text": "Does not create or substitute an execution set while prerequisites fail",
-          "check": "programmatic",
-          "script": "python3 -c 'from pathlib import Path; r=Path('\"'\"'testspec/changes/synthetic-smoke-incomplete'\"'\"'); assert not (r/'\"'\"'artifacts/smoke-testcases.json'\"'\"').exists() and not (r/'\"'\"'artifacts/smoke-cases.xmind'\"'\"').exists(); print('\"'\"'PASS'\"'\"')'"
-        },
-        {
-          "text": "Reports the failing full-set validation or blocked Review and directs repair to the full set rather than narrowing the denominator",
+          "text": "Reports the complete-set JSON and XMind paths, TP coverage result, and preserved Smoke classification",
           "check": "qualitative"
         }
       ]

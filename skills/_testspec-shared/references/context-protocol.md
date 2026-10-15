@@ -67,7 +67,7 @@ Markdown 产物在文件末尾保存：
 | `iteration_count` | 生成或修正轮次 |
 | `iteration_summary` | 修正摘要 |
 | `origin` / `trust` | 用例来源与信任状态 |
-| `reviewed_artifacts` | Review 记录实际评审的完整 `testcases.json` 与 `testpoints.md` 的 SHA-256；Smoke 选取据此核对，字段为 `testcases_sha256`、`testpoints_sha256`，不改变 Review Gate 计算 |
+| `reviewed_artifacts` | Review 记录实际评审的完整 `testcases.json` 与 `testpoints.md` 的 SHA-256，用于评审追溯，字段为 `testcases_sha256`、`testpoints_sha256`，不改变 Review Gate 计算 |
 
 ## 版本规则
 
@@ -94,7 +94,7 @@ Markdown 产物在文件末尾保存：
 | `testcase-generate` | `artifacts/testcases.json`、`artifacts/<name>_cases.xmind` | `testcase-review` |
 | `testcase-review` | `review-report.md` | 无 |
 
-Review 通过后保留 `testcase-generate` 输出的统一 JSON 和 XMind，`review-report.md` 记录最终门禁；发现问题时按回溯规则返修并重新 Review。需要 Smoke 时在此后派生执行集，完整集或测试点变化后须重新 Review、再重新选取；执行集不传播完整集的 `coverage_estimate` 或下一阶段指令。
+Review 通过后保留 `testcase-generate` 输出的完整集 JSON 和 XMind，`review-report.md` 记录最终门禁；冒烟分类仍作为完整集内元数据，不派生独立文件。发现问题时按回溯规则返修并重新 Review。
 
 ## 消费规则
 

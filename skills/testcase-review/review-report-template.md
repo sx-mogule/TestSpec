@@ -13,7 +13,7 @@
 
 - 完整用例：`artifacts/testcases.json`
 - 测试点：`specs/testpoints.md`
-- 两个文件的实际 SHA-256 写入末尾 `reviewed_artifacts`，供 Review 通过后选取 Smoke 时核对；完整集变化后须重新评审。不改变现有 Review Gate 计算。
+- 两个文件的实际 SHA-256 写入末尾 `reviewed_artifacts`，用于追溯本次 Review 对应的完整集与测试点版本；完整集变化后须重新评审。不改变现有 Review Gate 计算。
 
 ### 深度决策记录
 

@@ -100,17 +100,6 @@ TestSpec 原生适配 Claude Code、Codex、Google Antigravity、Cursor、Windsu
 
 ---
 
-### 完整集通过后选取 Smoke 执行集
-
-先生成完整用例集，通过现有校验（对全部 TP 覆盖率 ≥95%）与 Review Gate，再按 `regression_tier=Smoke` 选取 p0 核心闭环。Review 报告记录已评审完整 JSON 和测试点的 SHA-256；文件变化后先重新 Review。
-
-```bash
-python3 -B skills/testcase-generate/scripts/select_smoke.py \
-  --change-dir testspec/changes/<name>
-```
-
-输出 `artifacts/smoke-testcases.json`，保留原用例 ID、八字段、TP 追溯和顺序。完整 JSON 与 XMind 继续保留；需要冒烟导图时，用现有 XMind 脚本将执行集导出到 `artifacts/smoke-cases.xmind`。Smoke 是评审后的执行子集，覆盖统计仍以完整集为准。
-
 ### 方式二：使用内置 CLI 工具
 
 仓库内置开箱即用的轻量 Python 脚本（纯标准库，无重量级三方依赖）：

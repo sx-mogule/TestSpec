@@ -22,23 +22,22 @@
 ## smoke
 
 - 名称：冒烟测试
-- 目标：从已通过完整校验和 Review 的用例集中，选取最短核心业务闭环供执行；不缩减完整集生成范围
+- 目标：在完整用例集中标记最短核心业务闭环；不缩减完整集生成或交付范围
 - 推理触发信号：
   - 用户提到"快速验证""冒烟""基本可用"
   - 材料中有明确的核心业务闭环
   - 上线前紧急测试场景
-- 选取策略：
-  - 完整集先按全部 TP 通过现有 ≥95% 覆盖门槛和 Review Gate
-  - 从完整集保留最短核心业务闭环，依据既有 `regression_tier=Smoke` 选取，不设固定条数
-  - 不将所有 p0 自动视为 Smoke；缺少标记时回到生成阶段确认并重新 Review
-  - 保持源用例 ID、八项业务字段、TP 追溯及顺序不变
+- 分类策略：
+  - 按全部 TP 生成完整用例集，并通过现有 ≥95% 覆盖门槛和 Review Gate
+  - 在完整集中对最短核心业务闭环标记 `regression_tier=Smoke`，不设固定条数
+  - 不将所有 p0 自动视为 Smoke；缺少需求依据时不补造冒烟分类
+  - 所有分类均保留在完整集，不单独选取或输出文件
 - 推荐技术：
   - 主流程场景法
   - 关键节点错误推测
 - 输出：
-  - 生成完整集时可用 `type=冒烟` 标记核心候选，并同步 `regression_tier=Smoke`
-  - 选取时以 `regression_tier=Smoke` 为准，且必须为 `p0`
-  - Review 通过后调用 `scripts/select_smoke.py` 输出独立的 `artifacts/smoke-testcases.json`；执行集不代替完整集覆盖报告
+  - 完整集内可用 `type=冒烟` 标记核心业务闭环，并同步 `regression_tier=Smoke`
+  - 冒烟分类必须为 `p0`，但仍与其他场景一起参与完整集覆盖校验、Review 和 XMind 导出
 
 ## functional
 
@@ -138,7 +137,7 @@
 
 - `functional + boundary`：主路径及有依据的临界值分别形成独立用例
 - `functional + exception`：主路径和关键失败路径分别验证
-- `smoke + functional`：先完整生成功能用例并通过现有校验与 Review，再选取 Smoke 执行子集；≥95% 覆盖率始终按完整集与全部 TP 计算
+- `smoke + functional`：在完整集内标记核心冒烟闭环，并同时生成其余功能场景；≥95% 覆盖率始终按完整集与全部 TP 计算
 - `functional + permission`：按已确认角色矩阵验证允许与拒绝后的业务结果
 - `functional + integration`：只断言当前系统可观察的功能结果
 
