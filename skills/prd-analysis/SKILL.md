@@ -25,6 +25,8 @@ TestSpec 分析进度：
 
 **与 test-points 的分工**：analysis 做深度拆解（"为什么要测、有哪些风险"），points 从 analysis 中提炼精简清单（"要测什么"，一句话一条）。
 
+首次按 `../_testspec-shared/references/execution-efficiency.md` 的相关章节核对输入哈希和读取范围；同一会话已读且未变的内容可复用，不重复加载本阶段无关章节。阶段与门禁照常执行。
+
 ## 当前变更目录
 
 参见 `../_testspec-shared/references/common.md` 中的「当前变更目录定位规则」。
@@ -92,15 +94,7 @@ TestSpec 分析进度：
 - 未找到证据的假设保留在 `intuition_flags`，不得自动提高 points 优先级或增加 generate 用例
 - 扫描控制在 30 秒到 1 分钟
 
-**产出**：在 requirements-analysis.md 的「分析摘要」后增加「假设扫描」小节：
-
-```markdown
-## 假设扫描
-
-- 待验证：<模块/功能名> — <可能遗漏的方向> — 状态：unverified/confirmed/rejected
-- 证据：<REQ/API/设计稿/testlib 位置；unverified 时写“暂无”>
-- 整体信心：<X/10>
-```
+**产出**：按 `references/requirements-analysis-template.md` 的假设扫描小节记录模块、待核查方向、状态、证据和整体信心。
 
 **下游影响**：
 
@@ -110,22 +104,7 @@ TestSpec 分析进度：
 
 ### 模式推理
 
-通过 3 个核心问题推导分析模式，而非关键词匹配：
-
-- **"这份材料最大的测试风险在哪里？"**
-  - 信息缺失多 → completeness 权重高
-  - 逻辑状态复杂 → logic 权重高
-  - 预期结果模糊 → testability 权重高
-
-- **”材料中是否有业务依赖/歧义/矛盾特征？”**
-  - 涉及跨功能依赖或不可判定的业务结果 → 增加 testability
-  - 术语不一致、一词多义 → 增加 clarity
-  - 前后规则冲突 → 增加 consistency
-
-- **"用户的实际关注点是什么？"**
-  - 用户明确指定模式时，直接使用
-  - 用户描述了关注方向时，推导对应模式
-  - 未指定时，按推理结论选择，兜底 completeness + testability + logic
+根据材料的主要风险、歧义和用户目标选择 `references/analysis-modes.md` 中适用的模式。信息缺失关注completeness，状态逻辑关注logic，验收含糊关注testability，术语和冲突分别关注clarity、consistency；用户明确指定时遵从其选择。未指定时以completeness、testability、logic兜底，说明理由，不机械按关键词匹配。
 
 ### 工具使用决策
 
@@ -156,37 +135,12 @@ TestSpec 分析进度：
 
 ### 上下文播种
 
-在 requirements-analysis.md 末尾，按 `../_testspec-shared/references/context-protocol.md` 播种元数据：
+按 `../_testspec-shared/references/context-protocol.md` 写入唯一闭合的 context，传播 canonical 版本、来源策略、证据、问题、质量和 stale 信息。`source_skill` 为 `prd-analysis`，下一步为 `test-points`。
 
-```markdown
-<!-- testspec-context
-{
-  "source_skill": "prd-analysis",
-  "canonical_source_policy": "prd-first",
-  "evidence_sources": [{"type": "<prd/api/ui/code/testlib>", "source_ref": "<从上游继承>", "authority": "<canonical/reference>"}],
-  "questions": [{"id": "Q-001", "status": "<open/resolved/invalidated/deferred>", "blocking": true, "question": "<问题>", "resolution": ""}],
-  "thinking_summary": "<推理过程摘要>",
-  "risks_identified": ["<有材料证据的关键风险，附证据位置>"],
-  "intuition_flags": [{"signal": "<待验证假设>", "status": "unverified/confirmed/rejected", "evidence": "<证据位置或空>"}],
-  "blocking_open_questions": ["<不确认就不能进入下一步的问题>"],
-  "dynamic_followups": ["<执行期跟进项>"],
-  "material_quality": "<high/medium/low>",
-  "strategy_used": "<使用的分析模式组合>",
-  "source_revision": {"version": "<从 requirements.md 消费的版本号>", "summary": "<需求源摘要>", "updated_by_skill": "<上游 skill>"},
-  "stale_downstream_artifacts": ["<移除 requirements-analysis.md 后仍过期的下游产物>"],
-  "stale_reason": "<仍有 stale 产物时继承>",
-  "next_skill": "<仍有 stale 产物时通常为 test-points>",
-  "testlib_coverage": {
-    "scanned": true,
-    "related_modules": ["<匹配到的 testlib 模块>"],
-    "existing_case_count": 0,
-    "reusable_features": ["<可复用的功能点>"],
-    "regression_risk_features": ["<可能需要回归的功能点>"],
-    "trust_filter": "exclude legacy-import+unverified from facts/oracles"
-  }
-}
--->
-```
+本阶段补充：
+- `thinking_summary`、`strategy_used`：简要记录分析模式及原因。
+- `risks_identified`：仅写有来源依据的风险；`intuition_flags` 保留假设的状态和证据。
+- `testlib_coverage`：实际扫描状态、相关模块、已有用例数、可复用项、回归风险及信任过滤条件；未命中不虚构复用结论。
 
 ## 反模式识别（Agent 自检参照）
 
@@ -209,69 +163,9 @@ TestSpec 分析进度：
 
 ---
 
-## 分析目标
+## 分析基线与边界
 
-识别需要验证的业务行为，按 **Functional / Boundary / Exception / Integration** 四个维度覆盖。角色权限、状态迁移及错误反馈归入相应功能维度。分析聚焦"验证什么"和"为什么值得验证"，不涉及"如何执行测试步骤"。
-
-## 通用分析方法
-
-按需使用以下方法，不机械套用：
-
-- **功能拆解**：将大功能拆为可独立验证的子功能
-- **等价类划分**：识别输入/条件的有效类与无效类
-- **边界值分析**：找出临界值（0/1、空/满、最大/最小+1）
-- **状态迁移**：梳理状态机，关注非法状态转换
-- **错误推测**：推测高风险异常场景（网络断开、并发操作、极端数据）
-- **业务结果审视**：角色可见范围、状态变化、异常恢复后的可观察结果
-
-## 分析内容基线
-
-从需求中识别以下内容，按 **模块 → 功能点** 层级组织：
-
-- 核心业务模块
-- 独立业务动作
-- 明确状态变化
-- 明确规则或约束
-- 关键异常与恢复路径
-
-以下内容优先作为独立分析项：
-
-- CRUD 行为
-- 业务动作（登录、支付、审核、发布等）
-- 状态变更（启用/禁用、成功/失败、通过/拒绝）
-- 权限与角色控制
-- 关键系统反馈（成功提示、错误提示、跳转、回退、重试）
-
-必须覆盖以下异常类型：
-
-- **输入异常**：空值、非法值、超长、特殊字符
-- **权限异常**：未登录、无权限、会话失效
-- **系统异常**：服务不可用、网络异常、超时
-
-需求明确规定角色权限、错误提示或异常恢复后的业务状态时，分析其可观察的功能结果。需求明确规定埋点事件口径或兼容性矩阵的环境组合与验收结果时，也下传到对应测试点；缺少事件触发/字段或环境版本/预期时列为待确认，不自行补造。独立性能、安全等其他质量属性不下传为本流程的测试点或用例；如影响功能验收，则仅记录待确认的业务规则。
-
-## 粒度控制
-
-- 一个分析项只聚焦一个业务意图
-- 不以字段为单位拆分
-- 不以接口参数为单位拆分
-- 出现"且 / 并且 / 同时"时，评估是否拆分为多个分析项
-- 分析结论应长期稳定，不随实现细节变化
-
-## 需求不明确处理
-
-当需求未明确说明某行为时：
-
-- 仍进行分析，但标注"需与产品确认"
-- 不补充假设性业务规则
-- 不推断实现细节
-
-## 禁止事项
-
-- 不包含操作步骤（点击、输入、跳转等）
-- 不包含具体测试数据
-- 默认正文不包含接口字段名、表结构或实现方式
-- 不生成测试用例形式内容
+分析覆盖Functional、Boundary、Exception、Integration的可观察行为，有明确口径时下传Tracking和Compatibility。各分析项聚焦单一业务意图；需求不明确进入澄清，不生成步骤、测试数据、接口字段或实现细节。通用方法、功能拆解基线及禁止项见 `references/analysis-modes.md` 的“分析基线与边界”，需要时读取，不重复加载全部模式。
 
 ## 产出结构
 

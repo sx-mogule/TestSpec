@@ -27,6 +27,8 @@ TestSpec 评审进度：
 
 以独立评审视角，对统一的 `artifacts/testcases.json` 做 14 维度交叉验证，输出结构化 `review-report.md`。Review 是流程终点；只有门禁通过，生成的 JSON 与 XMind 才作为最终用例产物。
 
+首次按 `../_testspec-shared/references/execution-efficiency.md` 的相关章节核对输入哈希和读取范围；同一会话已读且未变的内容可复用，不重复加载本阶段无关章节。阶段与门禁照常执行。
+
 ## 当前变更目录
 
 参见 `../_testspec-shared/references/common.md` 中的「当前变更目录定位规则」。
@@ -210,31 +212,13 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 
 ### 上下文播种
 
-在 `review-report.md` 末尾按 `../_testspec-shared/references/context-protocol.md` 写入：
+按 `../_testspec-shared/references/context-protocol.md` 和 `review-report-template.md` 写入唯一闭合的 context：
 
-```markdown
-<!-- testspec-context
-{
-  "source_skill": "testcase-review",
-  "canonical_source_policy": "prd-first",
-  "evidence_sources": [{"type": "<prd/api/ui/code/testlib>", "source_ref": "<从上游继承>", "authority": "<canonical/reference>"}],
-  "questions": [{"id": "Q-001", "status": "<open/resolved/invalidated/deferred>", "blocking": true, "question": "<从上游继承>", "resolution": ""}],
-  "source_revision": {"version": "<canonical 版本>", "summary": "<原样继承>", "updated_by_skill": "<原样继承>"},
-  "blocking_open_questions": ["<从上游继承>"],
-  "dynamic_followups": ["<从上游继承>"],
-  "material_quality": "<从上游继承>",
-  "design_methods": ["<从 testcase-generate 继承的正式方法名>"],
-  "stale_downstream_artifacts": [],
-  "reviewed_artifacts": {"testcases_sha256": "<实际完整 JSON 的 SHA-256>", "testpoints_sha256": "<实际测试点的 SHA-256>"},
-  "review_gate": {
-    "status": "pass/blocked",
-    "s1_unresolved_count": 0,
-    "s1_issue_ids": []
-  },
-  "risks_identified": ["<评审中新发现的风险>"]
-}
--->
-```
+- 原样传播 canonical 版本、来源、问题、质量及 `design_methods`，`source_skill` 为 `testcase-review`。
+- 终点清空 `stale_downstream_artifacts`，省略 `next_skill` 和 `stale_reason`。
+- `reviewed_artifacts` 记录本次实际评审的完整JSON和测试点SHA-256。
+- `review_gate` 写 `status`、`s1_unresolved_count`、`s1_issue_ids`；只有未解决S1为0且列表为空才可为pass。
+- `risks_identified` 只记录本次有依据的风险。完整模板只在首次生成或需要格式修复时读取。
 
 ---
 

@@ -25,6 +25,8 @@ TestSpec 用例生成进度：
 
 本阶段只消费已确认的 PRD、分析、允许范围内的测试点和经允许的参考证据。不得发送探索请求、访问真实 API、用当前实现响应生成 oracle，或把实现缺陷固化成预期结果。需求或接口事实不足时，回到需求分析阶段补充 canonical 输入。允许 Tracking 与 Compatibility 测试点按专属类型生成；其他非功能测试点停止生成并返回 test-points 清理范围，不以 `type=其他` 绕过。
 
+首次按 `../_testspec-shared/references/execution-efficiency.md` 的相关章节核对输入哈希和读取范围；同一会话已读且未变的内容可复用，不重复加载本阶段无关章节。阶段与门禁照常执行。
+
 ## 当前变更目录
 
 参见 `../_testspec-shared/references/common.md` 中的「当前变更目录定位规则」。
@@ -33,12 +35,13 @@ TestSpec 用例生成进度：
 
 - 测试类型策略单一数据源：`references/test-type-strategies.md`
 - 用例设计规则：`references/case-design-rules.md`
-- 十二种测试方法及示例：`references/test-design-methods.md`（生成前按测试点特征选择）
+- 十二种测试方法及示例：`references/test-design-methods.md`（按上游已选方法读取对应章节）
 - 输出契约：`../_testspec-shared/references/output-contracts.md`
 - 命名契约：`../_testspec-shared/references/naming-contract.md`
 - 来源与信任：`../_testspec-shared/references/source-provenance.md`
 
 ---
+
 
 ## 测试点到用例的转换规则
 
@@ -66,36 +69,11 @@ TestSpec 用例生成进度：
 
 #### testlib 参考用例检索
 
-当 testlib 中存在与当前变更相关的已有用例时，读取作为参考以保持一致性：
-
-1. 每次生成前先检查仓库当前工作区中的 `testspec/testlib/index.json` 是否存在
-2. 若存在，通过 testpoints.md 的命名字典匹配 index 中的模块/功能
-3. 对匹配到的功能，只读取 2-3 条可用参考：排除 `legacy-import + unverified`；缺少新版 provenance 的历史用例只参考命名和格式
-4. 参考用例的作用：
-   - **步骤风格一致性**：新用例的步骤写法（编号格式、动作动词、粒度）与同模块已有用例保持一致
-   - **预期结果格式一致性**：验证标准的描述粒度和格式与已有用例对齐
-   - **前置条件模式复用**：同模块用例的公共前置条件可直接复用
-5. 参考用例不影响用例内容设计（场景选择、覆盖策略仍由测试点驱动），仅影响表达风格
-6. 若 testlib 不存在或无匹配，兜底走默认生成逻辑（保持兼容）
+每次检查当前工作区 `testspec/testlib/index.json`。实际匹配模块/功能后，只读取2–3条可信参考，排除 `legacy-import + unverified`；缺新版来源元数据的历史用例只参考命名和格式。参考步骤、预期和前置条件的表达风格，不据此决定场景、覆盖策略或需求结果。无匹配时使用默认表达规则，仍以当前TP驱动生成。
 
 #### 测试策略推理
 
-通过 3 个核心问题推导测试类型策略，而非关键词匹配：
-
-- **”用户需要什么粒度的测试？”**
-  - 上线前快速验证或冒烟 → 仍生成并交付当前需求的完整用例集；在完整集中标记核心闭环候选
-  - 完整功能验证 → functional 策略
-  - 回归测试 → functional + boundary + exception
-
-- **”哪些场景最容易被遗漏？”**
-  - 权限交叉、并发操作、状态边界 → 补充对应类型
-  - 上游标注的风险区域 → 加深覆盖
-
-- **“哪些场景属于冒烟候选？”**
-  - 识别最短业务闭环
-  - 优先标记失败影响最大的核心路径
-
-用户显式指定类型时，按需求证据选取；未指定时默认 `functional`。独立 API、安全、性能等类型不进入本流程；埋点与兼容性矩阵仅在需求有明确口径时允许。策略从 `references/test-type-strategies.md` 选取，但选择理由来自推理。
+根据用户目标、容易遗漏的场景和主业务闭环，从 `references/test-type-strategies.md` 选当前策略；只读取适用章节。完整功能与回归覆盖由TP和证据驱动，冒烟仅作完整集内分类，不缩小范围。用户显式指定类型时按需求依据执行，未指定默认functional。独立 API、安全、性能等类型不进入本流程；埋点与兼容性矩阵须有明确口径。选择理由来自推理，不机械按关键词匹配。
 
 #### 推理结论记录
 
@@ -128,7 +106,7 @@ TestSpec 用例生成进度：
 
 ## 用例设计方法
 
-生成用例前加载 `references/case-design-rules.md` 和 `references/test-design-methods.md`。继承每个 TP 已选的方法，按十二种方法的规则展开可执行场景；若需补选方法，先返回 `test-points` 更新对应 TP 与测试点上下文。`_context.design_methods` 与所有被正式用例引用的 TP 方法集合一致；中等及以上复杂度的 TP 额外做创意测试探索，并在 `_context` 记录新增场景数量。
+生成前读取 `references/case-design-rules.md`；从 `references/test-design-methods.md` 按上游已选方法读取对应章节，不把十二种方法全文重复加载。继承每个 TP 已选的方法，按十二种方法的规则展开可执行场景；若需补选方法，先返回 `test-points` 更新对应 TP 与测试点上下文。`_context.design_methods` 与所有被正式用例引用的 TP 方法集合一致；中等及以上复杂度的 TP 额外做创意测试探索，并在 `_context` 记录新增场景数量。
 
 ---
 
@@ -167,7 +145,7 @@ TestSpec 用例生成进度：
 
 - 业务字段必须包含 `module`、`submodule`、`test_name`、`preconditions`、`test_data`、`steps`、`expected_result`、`priority`；其中 `preconditions` 和 `test_data` 可为空
 - `steps`、`expected_result` 使用按序号编号的可执行、可验证文本
-- 用例输出保持短句：一个步骤/预期一行，避免长篇背景说明和重复表述
+- 前置条件、测试数据、操作步骤、预期结果必须简短、直白、去套话、通顺易懂；按 `references/case-design-rules.md` 的“四项描述要求”输出，一个步骤/预期一行，保留执行和判断必需的信息。
 - 用例场景名称必须简短、直白、见名知意，按共享命名契约保留关键条件和主要意图、删除套话；写完步骤和预期后再复核名称，不把完整流程塞进标题。
 - `priority` 只允许 `p0` / `p1` / `p2`
 - `id` 在当前变更内唯一；`test_name` 建议使用 `{模块}_{功能点}_{场景}`；`title`、`feature` 作为旧格式兼容字段保留
@@ -193,6 +171,8 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
 
 导出前解决全部错误和未通过的 TP 覆盖，直到门禁通过；缺少产品 Oracle 时返回上游澄清，不虚构预期。warning 必须逐项检查，不得自动忽略。
 
+脚本 PASS 只表示确定性校验通过。`review_candidates` 是待复核的相似用例，不单独阻断导出，须交由 Review H1 比较业务差异；主要目标是否有完整预期，仍须在生成自检和 Review H2/H3 中逐条核对。
+
 ## Review 定向返修
 
 用户要求根据 `review-report.md` 修复时进入 repair 模式：
@@ -207,47 +187,21 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
 
 - 每条用例按以下顺序生成：模块、子模块、测试名称、前置条件（可为空）、测试数据（可为空）、操作步骤（按序号）、预期结果（按序号）、优先级（仅允许 `p0`、`p1`、`p2`）。`id`、`tp_refs`、`type`、`origin`、`trust` 等字段仅用于内部追溯和评审。
 - 面向用户的用例只保留必要信息：字段值用短句表达，不输出方法论解释、推理过程或重复背景。
-- **XMind（默认）**：生成 .xmind 思维导图（XMind 8 格式，兼容 XMind 桌面版打开），层级严格为 `模块 → 子模块 → 用例名称`；XMind 用例节点只显示用例名称，不重复模块和子模块，JSON `test_name` 保持完整。导出时仅剥离与父节点精确匹配的 `{模块}_{子模块}_` 前缀，三段式名称的前缀不匹配时拒绝导出。用例名称下并列前置条件、测试数据、操作步骤三个节点，仅预期结果是操作步骤的子节点。四个详情节点的标题均为“标签独占第一行，内容从第二行开始”，多条编号内容在同一个节点内逐行保留，不创建额外内容节点；空的前置条件和测试数据不创建节点，缺少操作步骤而有预期结果时拒绝导出。优先级只使用 marker：`p0` 不标记，`p1` 使用 1 号 marker，`p2` 使用 2 号 marker，不再额外生成优先级文本节点。
+- **XMind（默认）**：XMind 8格式，层级为 `模块 → 子模块 → 用例名称`。场景节点剥离精确匹配的分类前缀，JSON保留完整名称；前缀不符拒绝导出。前置条件、测试数据、操作步骤并列，预期结果在操作步骤下；标签独占首行，内容从下一行开始，空的前置条件和数据省略，多条内容保留在单个节点。`p0`无标记，`p1`/`p2`用对应marker，不增加优先级文本节点。详细约定见共享输出契约。
 
 导出契约统一以 `../_testspec-shared/references/output-contracts.md` 和当前 skill 目录下的 `scripts/generate_xmind.py` 及单测为准。如文档表述与实现冲突，必须以脚本与单测为准，不得擅自改动历史格式。
 
 ## 执行步骤
 
-1. **确定当前变更目录**（按上规则）。
-2. **读取上下文**：读取 `specs/*.md`（必须）；若存在 `strategy.md`、`requirements-analysis.md` 或 `proposal.md` 可一并读取以保持策略与优先级一致，否则按默认策略展开。
-3. **从 specs 提取测试用例**：解析每个 spec 文件中的测试点，运用上述设计方法和转换规则将其展开为结构化测试用例列表。每个用例包含：
-   - 模块（必须来自 points 文档的标题层级 `### {模块}模块`）
-   - 子模块（必须来自 points 文档的标题层级 `#### {功能点}功能`）
-   - 测试名称（格式建议为 `{模块}_{子模块}_{测试场景}`；`title` 可同步写入作为兼容别名）
-   - 类型：冒烟 / 正向 / 负向 / 边界 / 异常
-   - 前置条件（可以为空）、测试数据（可以为空）、按序号的操作步骤、按序号的预期结果
-   - 优先级：p0 / p1 / p2
-4. **生成 testcases.json**（schema v2 格式）：
-
-   顶层为对象，包含 `schema_version`、`_context` 和 `testcases` 数组。canonical source 有版本时，`_context.source_revision` 必须与 `specs/testpoints.md` 完全一致。原生生成写 `_context.origin.kind = testspec-native`、`_context.trust.status = provisional`，不得冒充已 review。
-
-### JSON 写入策略
-
-统一输出时，每条用例的模块值必须直接来自测试点文档的模块标题；同一个 JSON 保留各模块用例的完整八字段、`source_revision` 和 TP 追溯。
-
-为确保 JSON 格式正确且写入成功：
-
-1. **首选方案**：使用当前执行环境的标准文件编辑机制写入 schema v2 对象
-2. **兜底方案**：如果手写转义风险较高，使用结构化 JSON 序列化方式生成文件，避免手动拼接字符串
-3. **验证**：`python3 -m json.tool <变更目录>/artifacts/testcases.json > /dev/null && echo "JSON OK"`
-
-固定写入 `<变更目录>/artifacts/testcases.json`，不在变更根目录创建第二份副本。需要字段示例时加载 `references/testcases-json-example.md`。
-
-> 注意：字段值中若包含双引号必须转义（`\"`），推荐用「」替代以避免转义问题。详见「JSON 字符串转义规则」。
-
-5. **调用生成脚本**：
-   - **XMind（默认）**：执行
-     ```bash
-     python "<testcase-generate-skill-dir>/scripts/generate_xmind.py" --input <变更目录>/artifacts/testcases.json --output <变更目录>/artifacts/<name>_cases.xmind --title "测试用例"
-     ```
-   `<testcase-generate-skill-dir>` 必须从当前已加载 SKILL.md 所在目录解析为绝对路径。
-6. **保留源文件**：默认保留 `artifacts/testcases.json` 供 review 复用；仅在用户明确要求时清理。
-7. **告知用户**：列出生成的文件路径及简要说明。
+1. 按共享约定定位当前变更，读取 canonical 和直接上游，检查版本及 stale。
+2. 消费 TP 的方法、风险、Oracle 范围和回归层级，按相关规则展开完整集；参考资料按需读取。
+3. 用标准文件编辑机制写入 schema v2 `artifacts/testcases.json`，不另建根目录副本。字段结构见 `references/testcases-json-example.md`；使用结构化序列化或合法JSON转义。
+4. 按本文件“校验与迭代”执行完整校验，修正具体问题；候选交Review复核，不删减用例绕过检查。
+5. **XMind（默认）**：从当前已加载SKILL目录解析脚本绝对路径，执行：
+   ```bash
+   python "<testcase-generate-skill-dir>/scripts/generate_xmind.py" --input <变更目录>/artifacts/testcases.json --output <变更目录>/artifacts/<name>_cases.xmind --title "测试用例"
+   ```
+6. 保留完整源JSON供Review使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-review`。
 
 ---
 

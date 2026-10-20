@@ -24,3 +24,4 @@ testspec/
 artifacts/
 output/
 *.xmind.bak
+.testspec-cache/

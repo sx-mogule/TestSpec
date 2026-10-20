@@ -4,8 +4,8 @@ testcases.json 自检工具 —— Agent 生成用例后自主调用，返回结
 
 用途：
 - 格式合规检查（必填字段、枚举值、编号格式）
-- 步骤↔预期结果编号连续性
-- 重复检测（标题+步骤相似度）
+- 明确含糊的步骤和预期检查；关键结果覆盖由 Review 复核
+- 内容重复检查和相似用例复核候选
 - 覆盖度报告（对照当前变更的 testpoints.md 中的 TP_ID）
 - 优先级/类型分布统计
 
@@ -21,9 +21,12 @@ testcases.json 自检工具 —— Agent 生成用例后自主调用，返回结
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
-from collections import Counter
+import tempfile
+from collections import Counter, defaultdict
+from itertools import combinations
 from pathlib import Path
 
 
@@ -45,7 +48,6 @@ ACTION_VERBS = [
     "打开", "提交", "确认", "删除", "修改", "搜索",
     "上传", "下载", "切换", "拖拽", "长按", "滑动",
 ]
-MIN_FIELD_LEN = 10
 SIMILARITY_THRESHOLD = 0.75
 TP_ENTRY_PATTERN = re.compile(
     r"^[ \t]*[-*][ \t]+(TP_[A-Z0-9]+_[A-Z0-9_]+_[0-9]+)[ \t]*[:：]",
@@ -71,11 +73,36 @@ def _simple_similarity(a: str, b: str) -> float:
     return intersection / union if union else 0.0
 
 
-def _count_numbered_items(text: str) -> int:
-    """统计形如 '1、xxx' 或 '1. xxx' 的编号行数。"""
-    if not text:
-        return 0
-    return len(re.findall(r"(?:^|\n)\s*\d+[、.]", text))
+def _content_lines(text: str, *, numbered: bool = True) -> list[str]:
+    """去掉行首编号和空白，保留正文中的数值、单位和顺序。"""
+    if text is None:
+        return []
+    if not isinstance(text, str):
+        return [json.dumps(text, ensure_ascii=False, sort_keys=True)]
+    lines = []
+    for line in text.splitlines():
+        if numbered:
+            line = re.sub(r"^[ \t]*\d+(?:、|\.(?!\d))[ \t]*", "", line)
+        if line.strip():
+            lines.append(line.strip())
+    return lines
+
+
+def _comparison_fields(case: dict) -> dict[str, str]:
+    """比较实际内容，不用标题、优先级或 TP 编号代替业务差异。"""
+    return {
+        "module": case.get("module") or case.get("feature", ""),
+        "submodule": case.get("submodule", ""),
+        **{
+            field: "\n".join(_content_lines(value, numbered=field != "test_data"))
+            for field, value in {
+                "preconditions": case.get("preconditions", ""),
+                "test_data": case.get("test_data", ""),
+                "steps": case.get("steps", ""),
+                "expected_result": case.get("expected_result") or case.get("expected", ""),
+            }.items()
+        },
+    }
 
 
 def _extract_tp_ids_from_md(md_text: str) -> set[str]:
@@ -182,26 +209,19 @@ def check_required_fields(cases: list[dict]) -> list[dict]:
 
 
 def check_field_quality(cases: list[dict]) -> list[dict]:
-    """检查字段内容质量：长度、动作动词、模糊表述。"""
+    """检查动作和明确含糊的表达，不按字数判断质量。"""
     issues = []
-    vague_words = ["正常", "成功", "正确", "显示", "提示"]
+    vague_step = re.compile(r"(?:(?:进行|执行|完成)(?:相关|上述|必要)?操作|操作|点击|输入|选择)")
+    vague_expected = re.compile(
+        r"(?:(?:系统|页面|功能|操作|结果|显示|提示|保存|提交|执行|处理)\s*)*"
+        r"(?:正常|成功|正确|符合预期|无异常)(?:显示|展示|完成)?"
+    )
 
     for tc in cases:
         case_id = tc.get("id", "UNKNOWN")
         title = tc.get("test_name") or tc.get("title", "")
 
-        # 步骤长度
         steps = tc.get("steps", "")
-        if steps and len(steps.strip()) < MIN_FIELD_LEN:
-            issues.append({
-                "type": "SHORT_STEPS",
-                "severity": "warning",
-                "case_id": case_id,
-                "title": title,
-                "value_len": len(steps.strip()),
-                "fix_hint": "操作步骤过短，补充具体操作描述",
-            })
-
         # 步骤中是否有动作动词
         if steps and not any(v in steps for v in ACTION_VERBS):
             issues.append({
@@ -209,34 +229,27 @@ def check_field_quality(cases: list[dict]) -> list[dict]:
                 "severity": "warning",
                 "case_id": case_id,
                 "title": title,
-                "fix_hint": "操作步骤中缺少动作动词（点击/输入/选择等）",
+                "fix_hint": "写清要做什么，如「点击保存」或「输入测试数据中的手机号」。",
             })
 
-        # 预期结果长度
+        for index, line in enumerate(_content_lines(steps), 1):
+            if vague_step.fullmatch(line.rstrip("。.!！；;")) and any(v in steps for v in ACTION_VERBS):
+                issues.append({
+                    "type": "VAGUE_STEP", "severity": "warning",
+                    "case_id": case_id, "title": title, "line_number": index,
+                    "fix_hint": "写清这一行的动作和对象，不用「进行操作」等泛称。",
+                })
+
         expected = tc.get("expected_result", "") or tc.get("expected", "")
-        if expected and len(expected.strip()) < MIN_FIELD_LEN:
-            issues.append({
-                "type": "SHORT_EXPECTED",
-                "severity": "warning",
-                "case_id": case_id,
-                "title": title,
-                "value_len": len(expected.strip()),
-                "fix_hint": "预期结果过短，补充具体验证标准",
-            })
-
-        # 模糊表述检测
-        if expected:
-            found_vague = [w for w in vague_words if w in expected]
-            # 只在模糊词是预期结果的主体时报告（如"操作成功"整句只有模糊词）
-            stripped = _normalize(expected)
-            if found_vague and len(stripped) < 15:
+        for index, line in enumerate(_content_lines(expected), 1):
+            if vague_expected.fullmatch(line.rstrip("。.!！；;")):
                 issues.append({
                     "type": "VAGUE_EXPECTED",
                     "severity": "warning",
                     "case_id": case_id,
                     "title": title,
-                    "vague_words": found_vague,
-                    "fix_hint": f"预期结果含模糊表述 {found_vague}，改为可验证的具体状态/数值/文案",
+                    "line_number": index,
+                    "fix_hint": "写清可观察的状态、值或文案，不只写「正常」「成功」「符合预期」。",
                 })
 
     return issues
@@ -372,63 +385,143 @@ def check_naming_contract(cases: list[dict]) -> list[dict]:
     return issues
 
 
-def check_step_expected_alignment(cases: list[dict]) -> list[dict]:
-    """检查步骤和预期结果编号数量是否对齐。"""
-    issues = []
-    for tc in cases:
-        case_id = tc.get("id", "UNKNOWN")
-        steps = tc.get("steps", "")
-        expected = tc.get("expected_result", "") or tc.get("expected", "")
-
-        step_count = _count_numbered_items(steps)
-        expected_count = _count_numbered_items(expected)
-
-        # 只在两边都有编号且差异明显时报告
-        if step_count > 0 and expected_count > 0 and abs(step_count - expected_count) > 2:
-            issues.append({
-                "type": "STEP_EXPECTED_MISMATCH",
-                "severity": "warning",
-                "case_id": case_id,
-                "title": tc.get("test_name") or tc.get("title", ""),
-                "step_count": step_count,
-                "expected_count": expected_count,
-                "fix_hint": f"步骤 {step_count} 条 vs 预期 {expected_count} 条，差异较大",
-            })
-
-    return issues
-
-
 def check_duplicates(cases: list[dict]) -> list[dict]:
-    """检测疑似重复用例（标题+步骤相似度）。"""
-    issues = []
-    n = len(cases)
-    for i in range(n):
-        for j in range(i + 1, n):
-            title_sim = _simple_similarity(
-                cases[i].get("test_name") or cases[i].get("title", ""),
-                cases[j].get("test_name") or cases[j].get("title", "")
-            )
-            steps_sim = _simple_similarity(
-                cases[i].get("steps", ""), cases[j].get("steps", "")
-            )
-            # 标题高度相似 且 步骤也相似
-            if title_sim > 0.8 and steps_sim > SIMILARITY_THRESHOLD:
-                issues.append({
-                    "type": "DUPLICATE",
-                    "severity": "warning",
-                    "case_ids": [
-                        cases[i].get("id", f"index-{i}"),
-                        cases[j].get("id", f"index-{j}"),
-                    ],
-                    "titles": [
-                        cases[i].get("test_name") or cases[i].get("title", ""),
-                        cases[j].get("test_name") or cases[j].get("title", ""),
-                    ],
+    """兼容返回完整逐对结果；命令行按组摘要并将明细写入本地。"""
+    return list(iter_duplicate_issues(cases))
+
+
+def iter_duplicate_issues(cases: list[dict]):
+    """只比较同组用例，复用文本集合和内容分组，不改变判定条件。"""
+    fields = [_comparison_fields(case) for case in cases]
+    groups = defaultdict(list)
+    content_groups = {}
+    content_ids = []
+    text_sets = {}
+
+    def tokens(text):
+        text = text if isinstance(text, str) else ""
+        if text not in text_sets:
+            text_sets[text] = frozenset(_normalize(text))
+        return text_sets[text]
+
+    titles = [tokens(case.get("test_name") or case.get("title", "")) for case in cases]
+    steps = [tokens(case.get("steps", "")) for case in cases]
+    for index, field in enumerate(fields):
+        key = tuple(field.items())
+        content_ids.append(content_groups.setdefault(key, len(content_groups)))
+        if field["steps"] and field["expected_result"]:
+            groups[(field["module"], field["submodule"])].append(index)
+
+    def similarity(left, right):
+        if not left or not right:
+            return 0.0
+        common = len(left & right)
+        return common / (len(left) + len(right) - common)
+
+    for indices in groups.values():
+        for i, j in combinations(indices, 2):
+            left, right = fields[i], fields[j]
+            exact = content_ids[i] == content_ids[j]
+            if not exact:
+                title_sim = similarity(titles[i], titles[j])
+                if title_sim <= 0.8:
+                    continue
+                steps_sim = similarity(steps[i], steps[j])
+                if steps_sim <= SIMILARITY_THRESHOLD:
+                    continue
+            common = {
+                "case_ids": [cases[i].get("id", f"index-{i}"), cases[j].get("id", f"index-{j}")],
+                "titles": [cases[i].get("test_name") or cases[i].get("title", ""),
+                           cases[j].get("test_name") or cases[j].get("title", "")],
+            }
+            if exact:
+                yield {
+                    **common, "type": "DUPLICATE", "severity": "warning",
+                    "fix_hint": "前置条件、数据、步骤和预期相同。请确认是否重复，再决定合并。",
+                }
+            else:
+                yield {
+                    **common, "type": "SIMILAR_CASES", "severity": "info",
+                    "different_fields": [field for field in left if left[field] != right[field]],
                     "title_similarity": round(title_sim, 2),
                     "steps_similarity": round(steps_sim, 2),
-                    "fix_hint": "疑似重复用例，考虑合并或区分测试场景",
-                })
-    return issues
+                    "fix_hint": "比较条件、数据、边界位置和预期。有必要差异就保留，不用改写标题避开相似度。",
+                }
+
+
+class _DuplicateGroups:
+    """按实际候选边归组；组内未相连的成员不被当成相似对。"""
+
+    def __init__(self):
+        self.parent = {}
+        self.count = {}
+        self.differences = {}
+
+    def find(self, node):
+        self.parent.setdefault(node, node)
+        root = node
+        while self.parent[root] != root:
+            root = self.parent[root]
+        while node != root:
+            parent = self.parent[node]
+            self.parent[node] = root
+            node = parent
+        return root
+
+    def add(self, issue):
+        nodes = [(issue["type"], case_id) for case_id in issue["case_ids"]]
+        left, right = map(self.find, nodes)
+        if left != right:
+            self.parent[right] = left
+            self.count[left] = self.count.get(left, 0) + self.count.pop(right, 0)
+            self.differences.setdefault(left, set()).update(self.differences.pop(right, set()))
+        self.count[left] = self.count.get(left, 0) + 1
+        self.differences.setdefault(left, set()).update(issue.get("different_fields", []))
+
+    def results(self):
+        members = defaultdict(list)
+        for node in self.parent:
+            members[self.find(node)].append(node[1])
+        results = []
+        for root, ids in members.items():
+            exact = root[0] == "DUPLICATE"
+            results.append({
+                "type": root[0], "severity": "warning" if exact else "info",
+                "case_ids": ids,
+                "pair_count": self.count[root],
+                "different_fields": sorted(self.differences[root]),
+                "fix_hint": "读取逐对明细，核对所有成员；同组不表示任意两条都重复或相似。",
+            })
+        return results
+
+
+def _duplicate_summary(cases, details_path):
+    """逐行保存完整明细，内存中只保留候选组。"""
+    path = Path(details_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    groups = _DuplicateGroups()
+    counts = Counter()
+    digest = hashlib.sha256()
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+            for issue in iter_duplicate_issues(cases):
+                line = (json.dumps(issue, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
+                stream.write(line)
+                digest.update(line)
+                groups.add(issue)
+                counts[issue["type"]] += 1
+        temporary.replace(path)
+    finally:
+        if temporary and temporary.exists():
+            temporary.unlink()
+    return groups.results(), {
+        "path": str(path.resolve()), "format": "jsonl", "sha256": digest.hexdigest(),
+        "pair_count": sum(counts.values()),
+        "duplicate_pair_count": counts["DUPLICATE"],
+        "similar_pair_count": counts["SIMILAR_CASES"],
+    }
 
 
 def check_tp_coverage(cases: list[dict], tp_ids: set[str]) -> dict:
@@ -501,7 +594,7 @@ def compute_distribution(cases: list[dict]) -> dict:
 
 # ── 主流程 ──────────────────────────────────────────────────────
 
-def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
+def validate(testcases_path: str, testpoints_path: str | None = None, *, details_path: str | None = None) -> dict:
     """执行全量校验，返回结构化 JSON 结果。"""
 
     # 加载 testcases.json
@@ -534,6 +627,7 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
     # 执行所有检查
     errors = []
     warnings = []
+    review_candidates = []
 
     ids = [case.get("id") for case in cases]
     if any(not isinstance(case_id, str) or not case_id.strip() for case_id in ids) or len(ids) != len(set(ids)):
@@ -582,11 +676,13 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
     for issue in check_field_quality(cases):
         warnings.append(issue)
 
-    for issue in check_step_expected_alignment(cases):
-        warnings.append(issue)
-
-    for issue in check_duplicates(cases):
-        warnings.append(issue)
+    details = None
+    if details_path is None:
+        duplicate_issues = check_duplicates(cases)
+    else:
+        duplicate_issues, details = _duplicate_summary(cases, details_path)
+    for issue in duplicate_issues:
+        (review_candidates if issue["severity"] == "info" else warnings).append(issue)
 
     # 覆盖度
     coverage = check_tp_coverage(cases, tp_ids)
@@ -601,18 +697,107 @@ def validate(testcases_path: str, testpoints_path: str | None = None) -> dict:
     # 汇总
     status = "FAIL" if errors else ("WARN" if warnings else "PASS")
 
-    return {
+    result = {
         "status": status,
         "summary": {
             "total_cases": len(cases),
             "error_count": len(errors),
             "warning_count": len(warnings),
+            "review_candidate_count": len(review_candidates),
         },
         "errors": errors,
         "warnings": warnings,
+        "review_candidates": review_candidates,
         "coverage": coverage,
         "distribution": distribution,
     }
+    if details is not None:
+        result["duplicate_details"] = details
+        exact_groups = sum(issue["type"] == "DUPLICATE" for issue in duplicate_issues)
+        result["summary"].update(
+            warning_count=len(warnings) - exact_groups + details["duplicate_pair_count"],
+            review_candidate_count=details["similar_pair_count"],
+            review_candidate_group_count=len(review_candidates),
+        )
+    return result
+
+
+def _file_digest(path):
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _validation_manifest(testcases_path, testpoints_path):
+    """使用内容哈希识别输入和规则变化，不仅依赖版本号或修改时间。"""
+    source = Path(testcases_path).resolve()
+    change = source.parent.parent if source.parent.name == "artifacts" else source.parent
+    rules = Path(__file__).resolve().parents[2]
+    paths = {source, Path(__file__).resolve(), *rules.rglob("*.md")}
+    if testpoints_path:
+        paths.add(Path(testpoints_path).resolve())
+    # canonical 或分析内容变化后，即使版本号未更新也不复用旧检查结果。
+    for name in ("requirements.md", "proposal.md", "requirements-analysis.md"):
+        path = change / name
+        if path.exists():
+            paths.add(path)
+    return {
+        str(path): _file_digest(path)
+        for path in sorted(paths)
+    }
+
+
+def _atomic_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        temporary.replace(path)
+    finally:
+        if temporary and temporary.exists():
+            temporary.unlink()
+
+
+def _result_digest(result):
+    return hashlib.sha256(json.dumps(result, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def validate_report(testcases_path, testpoints_path=None, *, report_dir=None, use_cache=True):
+    """命令行使用按组摘要；保留完整逐对明细，缓存只复用确定性检查。"""
+    source = Path(testcases_path).resolve()
+    change = source.parent.parent if source.parent.name == "artifacts" else source.parent
+    try:
+        manifest = _validation_manifest(testcases_path, testpoints_path)
+    except OSError:
+        return validate(testcases_path, testpoints_path)
+    key = hashlib.sha256(json.dumps(manifest, sort_keys=True).encode("utf-8")).hexdigest()
+    directory = Path(report_dir) if report_dir else change / ".testspec-cache" / "validation"
+    report_path = directory / key / "result.json"
+    details_path = directory / key / "pairs.jsonl"
+    if use_cache:
+        try:
+            saved = json.loads(report_path.read_text(encoding="utf-8"))
+            result = saved["result"]
+            details = result["duplicate_details"]
+            if (saved["key"] == key and saved["result_sha256"] == _result_digest(result)
+                    and details["path"] == str(details_path.resolve())
+                    and _file_digest(details_path) == details["sha256"]):
+                return {**result, "cache": {"hit": True, "key": key}}
+        except (OSError, ValueError, KeyError, TypeError):
+            pass  # 缓存损坏、缺失或明细不完整时重新校验。
+    try:
+        result = validate(testcases_path, testpoints_path, details_path=str(details_path))
+        if manifest != _validation_manifest(testcases_path, testpoints_path):
+            return {"status": "ERROR", "message": "校验期间输入或规则发生变化，请重跑。"}
+        if use_cache and result.get("status") in {"PASS", "WARN", "FAIL"}:
+            _atomic_json(report_path, {"key": key, "result_sha256": _result_digest(result), "result": result})
+        return {**result, "cache": {"hit": False, "key": key}}
+    except OSError as exc:
+        return {"status": "ERROR", "message": f"输入读取或检查结果写入失败：{exc}。请检查输入及 --report-dir；只读检查可用 --full。"}
 
 
 def main() -> int:
@@ -620,9 +805,14 @@ def main() -> int:
     parser.add_argument("--input", required=True, help="testcases.json 路径")
     parser.add_argument("--testpoints", default=None, help="testpoints.md 路径（可选）")
     parser.add_argument("--pretty", action="store_true", help="格式化 JSON 输出")
+    parser.add_argument("--full", action="store_true", help="输出完整逐对结果，不创建缓存或明细文件")
+    parser.add_argument("--no-cache", action="store_true", help="重新校验，不复用或保存结果缓存；仍保存逐对明细")
+    parser.add_argument("--report-dir", help="内部明细和缓存目录；默认位于变更目录的 .testspec-cache/validation")
     args = parser.parse_args()
 
-    result = validate(args.input, args.testpoints)
+    result = validate(args.input, args.testpoints) if args.full else validate_report(
+        args.input, args.testpoints, report_dir=args.report_dir, use_cache=not args.no_cache,
+    )
 
     indent = 2 if args.pretty else None
     print(json.dumps(result, ensure_ascii=False, indent=indent))

@@ -37,7 +37,7 @@ TestSpec 测试点进度：
 - 粒度、禁止内容和反模式
 
 同时加载 `../_testspec-shared/references/naming-contract.md`。仅在涉及 TestLib 复用或信任分类时，加载 `../_testspec-shared/references/source-provenance.md`。
-同时加载 `references/test-design-methods.md`，根据需求特征选择测试点设计方法；该文件与 `testcase-generate` 的方法集合保持一致。
+读取 `references/test-design-methods.md` 的十二种方法目录，按需求特征展开适用章节；该文件与 `testcase-generate` 的方法集合保持一致。
 
 不可妥协的规则：
 
@@ -48,6 +48,8 @@ TestSpec 测试点进度：
 - 每个测试点记录所采用的方法名（可多个），供 `testcase-generate` 继承并展开。
 
 ---
+
+首次按 `../_testspec-shared/references/execution-efficiency.md` 的相关章节核对输入哈希和读取范围；同一会话已读且未变的内容可复用，不重复加载本阶段无关章节。阶段与门禁照常执行。
 
 ## 当前变更目录
 
@@ -94,27 +96,7 @@ TestSpec 测试点进度：
 
 ### 可复用资产识别
 
-> 工作流中不应只找问题和风险——发现"我们已经有什么"同样重要，能显著提升效率。
-
-在 testlib 检索完成后、覆盖策略推理前，回答以下问题：
-
-1. **已有覆盖复用**：testlib 中哪些已有用例可以直接复用或微调？
-2. **测试数据共享**：哪些模块之间可以共享测试前置数据（同一用户、同一订单贯穿多个模块）？
-3. **快速收益点**：哪些测试点投入最小但覆盖价值最大（如一条冒烟用例覆盖核心链路）？
-
-**产出**：在 testpoints.md 的「知识库复用摘要」之后增加「可复用资产」小节：
-
-```markdown
-## 可复用资产
-
-- testlib 可直接复用：<功能点列表及对应 testlib 路径>
-- 可共享测试数据：<数据类型及适用模块>
-- 快速收益点：<TP_ID 及收益说明>
-```
-
-**下游影响**：
-- testlib 已覆盖的功能点标记为"复用优先"，generate 阶段优先参考已有用例风格
-- 快速收益点在覆盖策略中获得优先安排
+实际命中TestLib时，按 `references/testpoints-template.md` 的“可复用资产”记录可复用功能、可共享数据及高收益TP。已覆盖功能标为复用优先，供生成阶段参考表达风格；高收益点优先安排，不改变需求范围、完整覆盖或来源信任要求。未命中不输出空的复用小节。
 
 ### 覆盖策略推理
 
@@ -135,13 +117,9 @@ TestSpec 测试点进度：
    - 若不存在，读 `proposal.md`（直接提炼）
 3. **生成 specs/testpoints.md**：
 
-### 写入策略（重要）
+### 写入策略
 
-为确保大文件写入成功，按以下优先级执行：
-
-1. **首选方案**：使用当前执行环境的标准文件编辑机制写入完整内容
-2. **兜底方案**：如果一次性写入失败，分段写入同一文件并保持 Markdown 结构完整
-3. **验证写入**：读回文件前 10 行和末尾上下文元数据，确认内容正确
+使用标准文件编辑机制写入完整内容；一次写入失败时分段写入同一文件，保持Markdown结构。读回开头和末尾context，核对写入结果。
 
 ### 提炼原则
 
@@ -195,39 +173,6 @@ TestSpec 测试点进度：
 
 ### 上下文播种
 
-在 specs/testpoints.md 末尾，按 `../_testspec-shared/references/context-protocol.md` 播种元数据：
+按 `../_testspec-shared/references/context-protocol.md` 原样传播 canonical 版本、来源、问题、质量和 stale 信息，`source_skill` 为 `test-points`，下一步为 `testcase-generate`。
 
-```markdown
-<!-- testspec-context
-{
-  "source_skill": "test-points",
-  "canonical_source_policy": "prd-first",
-  "evidence_sources": [{"type": "<prd/api/ui/code/testlib>", "source_ref": "<从上游继承>", "authority": "<canonical/reference>"}],
-  "questions": [{"id": "Q-001", "status": "<open/resolved/invalidated/deferred>", "blocking": true, "question": "<从上游继承>", "resolution": ""}],
-  "coverage_estimate": "<各类别覆盖情况>",
-  "risks_identified": ["<从上游继承或新发现的风险>"],
-  "blocking_open_questions": ["<从上游继承的阻塞问题>"],
-  "dynamic_followups": ["<从上游继承的执行期跟进项>"],
-  "material_quality": "<从上游继承>",
-  "design_methods": ["<本次选择的方法名>"],
-  "source_revision": {"version": "<canonical 版本>", "summary": "<原样继承>", "updated_by_skill": "<原样继承>"},
-  "stale_downstream_artifacts": ["<移除 specs/testpoints.md 后仍过期的产物>"],
-  "stale_reason": "<仍有 stale 产物时继承>",
-  "next_skill": "<仍有 stale 产物时为 testcase-generate>",
-  "regression_tiers": {
-    "smoke": ["<Smoke 层级的 TP_ID>"],
-    "full": ["<Full 层级的 TP_ID>"],
-    "targeted": ["<Targeted 层级的 TP_ID>"]
-  },
-  "testlib_reuse": {
-    "trust_filter": "exclude legacy-import+unverified from facts/oracles",
-    "existing_tp_ids": ["<testlib 中已覆盖的 TP_ID>"],
-    "new_tp_ids": ["<本次新增的 TP_ID>"]
-  }
-}
--->
-```
-
-## 产物
-
-- `testspec/changes/<name>/specs/testpoints.md`
+补充 `coverage_estimate`、`risks_identified` 和 `"design_methods"`；方法集合与各 TP 标注一致。`regression_tiers` 记录 smoke/full/targeted 的 TP 归属；`testlib_reuse` 记录实际复用、新增 TP 及信任过滤条件。完整结构使用 `references/testpoints-template.md`。

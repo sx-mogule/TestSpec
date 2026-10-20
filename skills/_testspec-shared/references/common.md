@@ -48,6 +48,8 @@ prd-analysis → test-points → testcase-generate → testcase-review
 
 所有 TestSpec skill 遵循 `context-protocol.md` 进行跨 skill 上下文传播。上游 skill 在产物中播种元数据，下游 skill 在执行前读取并纳入推理。
 
+已读材料、按需加载及检查缓存按 `execution-efficiency.md` 执行；缓存只减少重复工作，不跳过阶段或替代业务评审。内部 `.testspec-cache/` 不属于正式交付。
+
 ### 推理式决策
 
 所有 TestSpec skill 使用 `thinking-protocol.md` 进行策略决策，使用 `reflection-protocol.md` 进行产物质量反思。详见各协议文件。
