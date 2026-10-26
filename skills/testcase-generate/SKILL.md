@@ -145,7 +145,8 @@ TestSpec 用例生成进度：
 
 - 业务字段必须包含 `module`、`submodule`、`test_name`、`preconditions`、`test_data`、`steps`、`expected_result`、`priority`；其中 `preconditions` 和 `test_data` 可为空
 - `steps`、`expected_result` 使用按序号编号的可执行、可验证文本
-- 前置条件、测试数据、操作步骤、预期结果必须简短、直白、去套话、通顺易懂；按 `references/case-design-rules.md` 的“四项描述要求”输出，一个步骤/预期一行，保留执行和判断必需的信息。
+- 前置条件、测试数据、操作步骤、预期结果能简单就别复杂，只写执行和判定必需的内容；按 `references/case-design-rules.md` 输出直白、通顺、去套话的短句，不增加无关准备、绕行操作或附带检查。四项描述均纳入 Review 门禁。
+- 测试数据只列本例操作和判定必需的字段和值；不抄整套配置，不逐项展开无关素材。保留关键取值、单位、边界和必要组合，不按字符数截断。
 - 用例场景名称必须简短、直白、见名知意，按共享命名契约保留关键条件和主要意图、删除套话；写完步骤和预期后再复核名称，不把完整流程塞进标题。
 - `priority` 只允许 `p0` / `p1` / `p2`
 - `id` 在当前变更内唯一；`test_name` 建议使用 `{模块}_{功能点}_{场景}`；`title`、`feature` 作为旧格式兼容字段保留
@@ -179,7 +180,7 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
 
 1. 校验 review 与 canonical revision 一致。
 2. 只消费 `status = open` 且明确分配给 generate 的 finding；points/analysis finding 必须回到对应上游。
-3. 只修改 finding 指定的 case IDs，默认保留 ID；未命中范围的用例保持字节级语义不变。
+3. 只修改 finding 指定的 case IDs 和字段，默认保留 ID；未命中范围的用例保持字节级语义不变。四项描述返修只删套话、重复和无关内容，保留必要路径、边界与 Oracle；不截断关键值，不把冗余搬到其他字段。
 4. 在 `_context.review_repairs` 记录 `issue_id`、`changed_case_ids` 和动作摘要。
 5. generate 不得自行把 finding 标记 resolved；修复后必须重跑 testcase-review。
 

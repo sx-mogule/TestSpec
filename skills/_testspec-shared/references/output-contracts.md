@@ -121,7 +121,14 @@ Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆�
 - 评审模式、深度和置信度
 - 覆盖、命名、优先级、字段、可执行性和追溯检查
 - S1/S2/S3 问题及对应 case/TP/global 定位
-- `review_gate.status`、`s1_unresolved_count`、`s1_issue_ids`
+- 前置条件、测试数据、操作步骤、预期结果的四行检查结果及对应问题 ID
+- `review_gate.status`、`s1_unresolved_count`、`s1_issue_ids`、`description_unresolved_count`、`description_issue_ids`
+
+四项描述门禁与 S1 门禁同时生效：逐条检查完整用例集的四个字段，只有未解决 S1 和四项描述问题均为 0、两个 ID 列表均为空，`review_gate.status` 才能为 `pass`。`description_unresolved_count` 为非负整数，必须等于去重后的 `description_issue_ids` 数量；ID 必须是非空字符串并指向报告中的问题。
+
+四项描述问题按现有 R5/H2/H3/H4/H6 分级，仍可为 S2/S3；严重度不代替门禁结论。确认的套话、重复背景、无关配置/操作/检查或含糊表达均进入描述问题列表，不能仅以“建议优化”放行；其他 S2/S3 不因此新增阻断。每项给出 `case_id`、字段、原文、原因和可直接替换的建议，只有复审确认 resolved 后才移出；`accepted` 不能豁免本门禁。
+
+未完成四项检查时，记录 `GLOBAL:description-review-incomplete` 范围的问题并保持 `blocked`，不得填 0 假装通过。旧报告缺少描述门禁字段时必须重新 Review，不自动补通过。脚本校验能检查字段、计数和门禁的一致性，不能代替文案语义评审；合法的 `blocked` 报告通过上下文校验也不代表用例获准交付。
 
 ## 变更控制
 

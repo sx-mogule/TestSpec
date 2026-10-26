@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-brightgreen.svg)](https://www.python.org/)
-[![Testing: Passed](https://img.shields.io/badge/tests-113%20passed-success.svg)]()
+[![Testing: Passed](https://img.shields.io/badge/tests-120%20passed-success.svg)]()
 [![Type: AI Agent Skills](https://img.shields.io/badge/Agent%20Skills-Standardized-orange.svg)]()
 [![Code Style: SDET Grade](https://img.shields.io/badge/Quality-SDET%20Grade-purple.svg)]()
 
@@ -25,12 +25,13 @@
 
 ```mermaid
 flowchart TD
-    PRD["📄 需求输入 (PRD / 蓝湖 Axure / 用户故事)"] --> S1
+    PRD["📄 需求输入 (PRD / 蓝湖 Axure / 本地 HTML / 用户故事)"] --> S1
     
     subgraph S1 ["阶段 1: 需求深度分析 (prd-analysis)"]
         A1["四维基线拆解 (Functional / Boundary / Exception / Integration)"]
-        A2["风险识别与假设扫描 (Hypothesis Scanning)"]
-        A1 --> A2 --> R1["产出 requirements-analysis.md"]
+        A2["五大模式自适应探测 + 假设扫描 (Hypothesis Scanning)"]
+        A3["高风险歧义触发需求审问闭环 (Interrogation Loop)"]
+        A1 --> A2 --> A3 --> R1["产出 requirements-analysis.md"]
     end
 
     S1 -->|"版本一致性校验 (source_revision)"| S2
@@ -38,7 +39,7 @@ flowchart TD
     subgraph S2 ["阶段 2: 测试要点提炼 (test-points)"]
         B1["提炼验证目标 (What)，严禁操作步骤 (How)"]
         B2["分配 TP_ID、回归层级 (Smoke/Full/Targeted) 与 Oracle 范围"]
-        B3["TestLib 可复用资产与高收益点识别"]
+        B3["12 种工程化方法标注 + TestLib 资产匹配"]
         B1 --> B2 --> B3 --> R2["产出 specs/testpoints.md"]
     end
 
@@ -57,7 +58,7 @@ flowchart TD
     subgraph S4 ["阶段 4: 独立用例评审 (testcase-review)"]
         D1["6 项规则检查 (R1-R6) + 8 项启发式检查 (H1-H8)"]
         D2["逐组复核候选 (Grouped Candidates Review) 剔除伪重复"]
-        D3["门禁判定：0 个未解决 S1 缺陷方可通过"]
+        D3["双轨门禁判定：未解决 S1 与四项描述问题均为 0"]
         D1 --> D2 --> D3 --> R4["产出 review-report.md (PASS)"]
     end
 
@@ -68,10 +69,87 @@ flowchart TD
 
 | 阶段 / Skill | 核心职责 (验证什么) | 主要输入 | 主要输出产物 | 出口质量门禁 |
 |---|---|---|---|---|
-| **1. `prd-analysis`** | 深度拆解需求边界，从 Functional/Boundary/Exception/Integration 四维度识别风险与待确认清单 | PRD 文档 / 蓝湖原型链接 | `requirements.md`<br/>`requirements-analysis.md` | 需求事实可追溯；异常类型覆盖完整；明确假设与待确认清单 |
-| **2. `test-points`** | 提炼纯粹验证目标（What），拒绝混入步骤（How）；划分回归层级与复用资产 | `requirements-analysis.md` | `specs/testpoints.md` | 独立 `TP_ID`、命名字典、Oracle 状态及回归层级明确 |
-| **3. `testcase-generate`** | 扩展为 8 字段用例，全量交付并标记冒烟候选，执行四项描述去套话与 XMind 导出 | `specs/testpoints.md` | `artifacts/testcases.json`<br/>`artifacts/testcases.xmind` | 8 字段完整；四项描述直白通顺；TP 覆盖率 ≥95%；确定性自检 PASS |
-| **4. `testcase-review`** | 独立第三方交叉评审，执行 14 维度深度检查与逐组候选复核 | `testcases.json`<br/>`specs/testpoints.md` | `review-report.md` | 14 维度检查完成；逐组候选已逐对核验；**0 个未解决 S1 阻塞缺陷** |
+| **1. `prd-analysis`** | 深度拆解需求边界，从 Functional/Boundary/Exception/Integration 四维度识别风险与待确认清单；执行假设扫描与审问闭环 | PRD 文档 / 蓝湖原型链接 / 交互 HTML | `requirements.md`<br/>`requirements-analysis.md` | 需求事实可追溯；异常类型覆盖完整；明确假设与待确认清单 |
+| **2. `test-points`** | 提炼纯粹验证目标（What），拒绝混入步骤（How）；标注 12 种设计方法、划分回归层级与 Oracle 范围 | `requirements-analysis.md` | `specs/testpoints.md` | 独立 `TP_ID`、命名字典、Oracle 状态及回归层级明确 |
+| **3. `testcase-generate`** | 扩展为 8 字段用例，全量交付并标记冒烟候选，执行四项描述极简去套话与原生 XMind 导出 | `specs/testpoints.md` | `artifacts/testcases.json`<br/>`artifacts/testcases.xmind` | 8 字段完整；四项描述直白通顺；TP 覆盖率 ≥95%；确定性自检 PASS |
+| **4. `testcase-review`** | 独立第三方交叉评审，执行 14 维度深度检查、逐组候选复核与双轨严苛门禁 | `testcases.json`<br/>`specs/testpoints.md` | `review-report.md` | 14 维度检查完成；逐组候选已逐对核验；**未解决 S1 和四项描述问题均为 0** |
+
+---
+
+## 🧩 技能套件详解 (Skills Suite Deep-Dive)
+
+TestSpec SOP 由 4 个核心业务技能和 1 个共享底座技能组成，遵循严格的单一职责与契约驱动流转：
+
+### 1. `prd-analysis`：需求深度分析与梳理 (流程第 1 步)
+- **核心定位**：对需求进行深度测试分析，挖掘隐含风险、业务盲区与逻辑漏洞，**严禁使用重新排版的 PRD 冒充需求分析**。
+- **多元化输入适配**：
+  - **文本/文档**：支持 Markdown、Proposal、PRD 片段及用户故事；
+  - **蓝湖 Axure 原型直连**：内置轻量解析脚本（`direct_extract_axure.py`），支持直连提取页面文字、原型图片与交互说明；
+  - **可交互 HTML 原型**：支持按钮级提取（`BTN_ID`），逐项比对点击动作与可观察状态；
+  - **TestLib 历史资产扫描**：检索历史已覆盖功能与用例，标记可复用基线。
+- **自适应探测与 5 大分析模式**：快速扫描后信号驱动选择 `completeness`（完整性）、`testability`（可测试性）、`clarity`（歧义消除）、`consistency`（一致性）、`logic`（状态与逻辑流转）。
+- **假设扫描 (Hypothesis Scanning)**：30~60 秒快速扫描潜在漏洞，标记 `unverified/confirmed/rejected`，杜绝主观臆测。
+- **需求审问闭环 (Interrogation Loop)**：发现影响用例设计或判定的高风险模糊项时，自动输出结构化问题清单并支持回答合并。
+
+### 2. `test-points`：测试要点提炼与设计 (流程第 2 步)
+- **核心定位**：从需求分析结论中提炼精炼的“要测什么”，**只描述验证目标（What），绝不描述如何执行（How）**。
+- **结构化编号与命名字典**：统一分配 `TP_<MODULE>_<FEATURE>_<SEQ>` 稳定标识符，输出规范的模块/功能命名字典。
+- **6 大功能分类分区**：Functional（正向功能）、Boundary（边界值）、Exception（异常阻断）、Integration（集成链路），以及需求有明确口径时的 Tracking（埋点事件）与 Compatibility（环境兼容性矩阵）。
+- **12 种工程化测试设计方法体系**：
+  | 序号 | 测试设计方法 | 核心适用场景 |
+  |:---:|---|---|
+  | 1 | **等价类 (Equivalence Partitioning)** | 输入域划分、有效/无效范围隔离 |
+  | 2 | **边界值 (Boundary Value Analysis)** | 上点、离点、内点，临界值与极值校验 |
+  | 3 | **判定表 (Decision Table)** | 多条件布尔组合、分支业务规则决策 |
+  | 4 | **流程分析 (Process Analysis)** | 端到端主干业务闭环与分支流转 |
+  | 5 | **状态迁移 (State Transition)** | 状态机变化、合法转移与非法逆向操作阻断 |
+  | 6 | **错误推断 (Error Guessing)** | 基于经验的极端输入、脏数据与防御性检查 |
+  | 7 | **正交实验 (Orthogonal Array)** | 多维度多状态配置组合的高效精简覆盖 |
+  | 8 | **因果图 (Cause-Effect Graphing)** | 复合输入条件之间的制约与约束推导 |
+  | 9 | **配对组合 (Pairwise Testing)** | 多参数跨环境两两交互缺陷高效筛选 |
+  | 10 | **基于属性的测试 (Property-based)** | 数据不变量、代数对称性与往返一致性验证 |
+  | 11 | **变形测试 (Metamorphic Testing)** | 缺少绝对 Oracle 时的成对操作关系恒等变换 |
+  | 12 | **语法规则分析 (Grammar/Syntax)** | 正则表达式、特定协议格式与结构约束校验 |
+  - *辅助策略：基于风险的优先级排序 (Risk-based Ranking) 与 探索式测试 (Exploratory Testing)*。
+- **Oracle 范围与状态隔离**：每条 TP 标定 `oracle_scope: direct/contract/indirect/out-of-scope`；对暂无确定判定的歧义项打标 `oracle_status: needs-confirmation` 并通过稳定 `Q-ID` 隔离，不分配正式 TP。
+- **回归套件层级**：明确标注 `Smoke / Full / Targeted` 回归层级元数据。
+
+### 3. `testcase-generate`：用例生成与全量交付 (流程第 3 步)
+- **核心定位**：将测试要点展开为符合工业级标准的结构化测试用例，统一全量交付并生成原生思维导图。
+- **全量交付机制 (Full Delivery Standard)**：生成阶段始终生成并交付覆盖当前需求全部 TP 的**完整用例集 (Full Set)**；冒烟仅在用例内部打标（`priority: p0` 或标注 `Smoke` 层级），识别最短业务闭环，**严禁通过裁剪用例范围代替冒烟策略**。
+- **四项描述极简去套话标准**：
+  - **前置条件**：仅记录执行必需的角色、权限与前置数据状态，不混入操作步骤或预期；
+  - **测试数据**：单行“字段: 值”精简罗列，保留精确取值、单位与边界，杜绝“有效数据”等泛称，不抄整套多余配置；
+  - **操作步骤**：动宾短句分步直达目标（如 `1. 点击提交订单按钮`），去除无意义修饰词与冗长说明；
+  - **预期结果**：明确可观察的对象、状态变化与可判定的客观依据（Oracle），拒绝“操作成功”等含糊用语，解除步骤与预期的机械 1:1 配数绑架。
+- **原生 XMind 8 思维导图导出**：
+  - 内置纯标准库实现脚本（`generate_xmind.py`），零外部依赖；
+  - 层级清晰：`画布中心主题 → 模块 → 子模块 → 用例场景`；
+  - 场景节点自动剥离分类前缀，前置条件/测试数据/操作步骤并列展开，预期结果作为步骤子节点挂载；
+  - `p0` 保持简洁无标，`p1`/`p2` 自动挂载对应数字 Marker。
+- **确定性自检与缓存加速**：运行 `validate_testcases.py`，实现字段完整性、转义合法性、双向追溯与 TP 覆盖率（≥95%）自动化严控。
+- **定向返修机制**：仅消费 Review 阶段已分配给 generate 的 open finding，精准定向修改指定 case ID 与字段，其他内容保持字节级稳定。
+
+### 4. `testcase-review`：独立交叉用例评审 (流程第 4 步)
+- **核心定位**：以独立第三方审计视角对全量测试用例开展 14 维度深度交叉检验，把关最终交付底线。
+- **4 种评审模式与智能深度识别**：
+  - 模式判定：`Strict`（标准规范）/ `Legacy`（旧版本兼容）/ `Provenance-Unknown`（来源未知阻断）/ `Import-Quarantine`（隔离导入阻断）；
+  - 深度选择：`auto` 智能识别规模、模块数、材料质量与风险信号，或 `--deep` 强制加深深度。
+- **14 维度深度检验体系**：
+  - **6 项规则检查 (R1-R6)**：R1 覆盖度(≥95%)、R2 命名契约、R3 优先级分布、R4 字段完整性、R5 可执行性最小条件（结合步骤与数据判断明确度，不唯字数论）、R6 双向可追溯性；
+  - **8 项启发式检查 (H1-H8)**：H1 冗余检测与逐组复核（连通组聚合呈现，逐对核验细微业务差异，严禁盲目删减边界用例）、H2 预期结果质量与 Oracle 可判定性、H3 意图一致性与闭环、H4 前置条件充分性、H5 风险与边界覆盖、H6 可维护性（套话精简与长步骤优化）、H7 回归价值评估、H8 测试亮点识别。
+- **双轨严苛门禁 (Dual Quality Gate)**：
+  - 🛑 **门禁 1：未解决 S1 阻断缺陷 = 0**；
+  - 🛑 **门禁 2：四项描述未解决问题 = 0**（`description_unresolved_count = 0` 且 `description_issue_ids` 为空，逐条检查完整集，套话与含糊问题不可通过 `accepted` 豁免）。
+- **产物签名固化**：在评审报告中固化被评审 JSON 和测试点的 SHA-256 签名（`reviewed_artifacts`），确保交付资产的真实可追溯。
+
+### 5. `_testspec-shared`：跨技能公共底座与工程支撑
+- **统一上下文元数据协议 (`context-protocol.md`)**：实现跨阶段版本链条（`source_revision`）、来源策略（`canonical_source_policy = prd-first`）、质询问题传播与下游 stale 产物级联失效机制。
+- **执行效能与指纹缓存机制 (`execution-efficiency.md`)**：
+  - 按需分节加载规则与契约，严禁无关大文件重复打满 Token 上下文；
+  - 输入指纹比对（`fingerprint_inputs.py`）：基于 SHA-256 捕获输入材料篡改；
+  - 校验结果原子缓存：为大规模用例集自检提供秒级响应。
+- **全方位质量验证工具链**：提供上下文链路校验、用例质量分析、Evals 基准自检及技能契约合规验证脚本。
 
 ---
 
@@ -82,7 +160,7 @@ flowchart TD
 - **冒烟精准标定**：冒烟验证仅作为完整集内部的分类标记（`priority: p0` 或标注 smoke 层级），识别最短业务闭环，严禁通过裁剪用例范围代替冒烟策略。
 
 ### 2. 四项描述要求 (直白、通顺、极简去套话)
-用例的核心价值在于快速执行与精准判定，杜绝“AI 套话八股文”：
+四项描述能简单就别复杂，只保留执行和判定必需的内容，不加套话、重复背景、无关操作或检查。确认违规即阻断 Review 通过；S2/S3 描述问题也须修复，不能只列为可选建议。必要的长值、边界和 Oracle 保留，不按字数截断：
 - **前置条件**：只写执行前必须具备的角色、权限、数据状态，如“已登录且订单待支付”，不混入操作步骤或预期；
 - **测试数据**：直接采用“字段：值”或明确数据组合，标明单位与边界（如 `金额: 99.99元`），避免“有效数据”、“测试账号”等泛称；
 - **操作步骤**：动宾短句直奔目标（如 `1. 点击提交订单按钮`），按序号分步，不写“请确保进行如下操作以便验证”等修饰；
@@ -96,14 +174,14 @@ flowchart TD
   - 确定性校验结果自动原子缓存，大幅缩短大型用例集重复自检耗时；
   - 缓存仅加速确定性检查，绝不替代业务语义与人工 Review。
 
-### 4. 14 维度独立 Review 与逐组复核候选体系
+### 4. 双轨严苛门禁与逐组复核体系
 - **6 项规则检查 (R1-R6)**：R1 覆盖度(≥95%)、R2 命名契约与场景质量、R3 优先级分布、R4 字段完整性、R5 可执行性（结合数据判断明确度，不唯字数论）、R6 双向可追溯性。
 - **8 项启发式检查 (H1-H8)**：
   - **H1 冗余检测与逐组复核**：基于连通组摘要呈现相似候选，逐对核验角色、状态、数值、单位与边界；必要边界用例坚决保留，严禁盲目合并或自动删减；
   - **H2 预期结果质量**：深度核验 Oracle 依据与可判定性；
   - **H3 意图一致性**：确保关键意图闭环（如取消订单必须有取消后状态预期，不能仅验证返回列表）；
   - **H4-H8**：前置条件充分性、风险与边界覆盖、可维护性、回归价值、设计方法落实度。
-- **严苛门禁**：通过门禁的唯一前提是 **0 个未解决 S1 阻塞缺陷**，并将本次评审产物的 SHA-256 固化到上下文元数据中。
+- **双轨门禁判定**：通过门禁的唯一前提是 **未解决 S1 阻断缺陷为 0** 且 **四项描述未解决问题为 0**，并将本次评审产物的 SHA-256 固化到上下文元数据中。
 
 ---
 
@@ -131,7 +209,7 @@ TestSpec 原生适配 Claude Code、Codex、Google Antigravity、Cursor、Windsu
 > - 需求存疑：回退至 `prd-analysis` 补充确认；
 > - 测试点遗漏或粒度不当：回退至 `test-points` 调整；
 > - 用例步骤模糊或预期不具体：回退至 `testcase-generate` 定向修复；
-> - Review 发现 S1 阻塞缺陷：必须修复通过后方可交付，严禁带病放行。
+> - Review 发现未解决 S1 或四项描述问题：必须修复并复审通过后方可交付。
 
 ---
 
@@ -214,27 +292,35 @@ python3 skills/_testspec-shared/scripts/validate_context_chain.py \
 └── skills/                             # 核心 Agent Skills 套件
     ├── prd-analysis/                   # [阶段 1] 需求分析技能
     │   ├── SKILL.md                    # 技能规范与入口定义
-    │   ├── references/                 # 四维分析基线、HTML/蓝湖适配、假设扫描
+    │   ├── references/                 # 五维自适应模式、HTML/蓝湖适配、假设扫描与审问模板
     │   ├── scripts/                    # 蓝湖直连提取脚本 (direct_extract_axure.py)
+    │   ├── evals/                      # 需求分析评测集
     │   └── tests/                      # 单元测试集
     ├── test-points/                    # [阶段 2] 测试点设计技能
     │   ├── SKILL.md                    # 技能规范 (提炼What/分配TP_ID/层级标定)
-    │   └── references/                 # 十二种测试方法、TP 设计规则与标准模板
+    │   ├── references/                 # 十二种测试方法论、TP 设计规则与标准模板
+    │   └── evals/                      # 测试点评测集
     ├── testcase-generate/              # [阶段 3] 用例生成与全量交付技能
     │   ├── SKILL.md                    # 技能规范 (8字段展开/全量交付/四项描述要求)
-    │   ├── references/                 # 用例粒度控制、测试类型策略、质量循环
+    │   ├── references/                 # 用例粒度控制、测试类型策略、质量循环、设计规则
     │   ├── scripts/                    # 原生 XMind 生成器 (generate_xmind.py 等)
+    │   ├── evals/                      # 用例生成评测集
     │   └── tests/                      # 全量交付、冒烟标定与 XMind 结构测试
     ├── testcase-review/                # [阶段 4] 用例独立评审技能
     │   ├── SKILL.md                    # 技能规范 (14 维度双轨门禁体系)
-    │   ├── references/                 # 14 维度深度检查指南 (含逐组候选复核细则)
-    │   └── review-report-template.md   # 标准交叉评审报告模板
+    │   ├── references/                 # 14 维度深度检查指南 (含逐组候选复核细则与四项描述检查)
+    │   ├── review-report-template.md   # 标准交叉评审报告模板
+    │   └── evals/                      # 用例评审评测集
     └── _testspec-shared/               # 跨技能公共底座与工程支撑
         ├── references/                 # 跨技能上下文、执行效能、命名与输出契约
         │   ├── common.md               # 阶段流转与变更定位规则
         │   ├── context-protocol.md     # 上下文元数据协议
         │   ├── execution-efficiency.md # 按需加载、输入指纹与缓存机制规范
-        │   └── ...                     # 溯源与思考协议
+        │   ├── naming-contract.md      # 命名规范与缩写字典
+        │   ├── output-contracts.md     # 输出契约与格式校验
+        │   ├── source-provenance.md    # 来源追溯与置信度等级
+        │   ├── thinking-protocol.md    # 推理协议
+        │   └── reflection-protocol.md  # 反思与自检协议
         ├── scripts/                    # 契约校验、输入指纹与测试用例自检工具
         │   ├── fingerprint_inputs.py   # 输入指纹哈希比对工具
         │   ├── validate_testcases.py   # 用例质量自检与增量校验工具
@@ -248,13 +334,13 @@ python3 skills/_testspec-shared/scripts/validate_context_chain.py \
 
 ## 🧪 自动化测试与质量验证 (Verification)
 
-仓库内置了 113 项自动化测试与完备的契约自检套件，确保流水线工程稳定性：
+仓库内置了 120 项自动化测试与完备的契约自检套件，确保流水线工程稳定性：
 
 ```bash
-# 1. 运行全部单元测试与质量测试 (113 项测试全部通过)
-python3 -m unittest discover -s skills/prd-analysis/tests
-python3 -m unittest discover -s skills/testcase-generate/tests
-python3 -m unittest discover -s skills/_testspec-shared/tests
+# 1. 运行全部单元测试与质量测试 (120 项测试全部通过)
+python3 -m unittest discover -s skills/prd-analysis/tests       # 9 项测试
+python3 -m unittest discover -s skills/testcase-generate/tests    # 42 项测试
+python3 -m unittest discover -s skills/_testspec-shared/tests    # 69 项测试
 
 # 2. 验证 Skills 依赖与输出契约合规性
 python3 skills/_testspec-shared/scripts/validate_skill_contracts.py
@@ -267,7 +353,7 @@ python3 skills/_testspec-shared/scripts/validate_evals.py
 
 ## 🤝 协作原则 (Principles)
 
-在参与项目演进或编写测试用例时，严格遵循 [AGENTS.md](AGENTS.md) 约定：
+在参与项目演进或编写测试用例时，严格遵循 [AGENTS.md](file:///Users/qm/Documents/TestSpec_SOP/AGENTS.md) 约定：
 1. **先想清楚再动手**：不主观臆测需求，遇疑主动问询澄清。
 2. **能简单就别复杂**：坚持最简有效方案，剔除冗余流程。
 3. **只改该改的内容**：聚焦任务范围，严格保护被测系统业务逻辑。

@@ -98,7 +98,7 @@
         },
         {
           "path": "testspec/changes/synthetic-export/review-report.md",
-          "content": "# Review\n\n- [S2] [open] RV-S2-001 CASE-1：oracle 只写导出成功，缺少文件名和记录数。owner=generate\n\n<!-- testspec-context\n{\"source_skill\":\"testcase-review\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic export\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[],\"review_gate\":{\"status\":\"blocked\",\"s1_unresolved_count\":0,\"s1_issue_ids\":[]}}\n-->\n"
+          "content": "# Review\n\n- [S2] [open] RV-S2-001 CASE-1：oracle 只写导出成功，缺少文件名和记录数。owner=generate\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"synthetic export\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"review_gate\": {\n    \"status\": \"blocked\",\n    \"s1_unresolved_count\": 0,\n    \"s1_issue_ids\": [],\n    \"description_unresolved_count\": 1,\n    \"description_issue_ids\": [\n      \"RV-S2-001\"\n    ]\n  }\n}\n-->\n"
         }
       ],
       "assertions": [
@@ -295,7 +295,7 @@
         },
         {
           "path": "testspec/changes/synthetic-smoke-fullset/review-report.md",
-          "content": "# 合成评估评审报告\n\n本文件为公开合成评估夹具。\n评审范围：完整 artifacts/testcases.json；按现有 Review Gate 提供上下文。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"reviewed_artifacts\": {\n    \"testcases_sha256\": \"d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526\",\n    \"testpoints_sha256\": \"774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47\"\n  },\n  \"review_gate\": {\n    \"status\": \"pass\",\n    \"s1_unresolved_count\": 0,\n    \"s1_issue_ids\": []\n  }\n}\n-->\n"
+          "content": "# 合成评估评审报告\n\n本文件为公开合成评估夹具。\n评审范围：完整 artifacts/testcases.json；按现有 Review Gate 提供上下文。\n\n四项描述合成检查：前置条件、测试数据、操作步骤、预期结果均完整且只含本例必要信息，未解决描述问题为0。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"testcase-review\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成订单闭环\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ],\n  \"reviewed_artifacts\": {\n    \"testcases_sha256\": \"d780e2122c1d8f8bee865ce8c5481fd02977b8fb9aeabd88fc92ca4648a8a526\",\n    \"testpoints_sha256\": \"774b9684bdf66506c8f12badf271ed0609188cb3eb99379ff74b395c8a6cbe47\"\n  },\n  \"review_gate\": {\n    \"status\": \"pass\",\n    \"s1_unresolved_count\": 0,\n    \"s1_issue_ids\": [],\n    \"description_unresolved_count\": 0,\n    \"description_issue_ids\": []\n  }\n}\n-->\n"
         },
         {
           "path": "testspec/changes/synthetic-smoke-fullset/specs/testpoints.md",
@@ -320,6 +320,48 @@
         },
         {
           "text": "Reports the complete-set JSON and XMind paths, TP coverage result, and preserved Smoke classification",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "运行 testcase-generate，为 synthetic-theme-data 生成用例并导出完整集XMind。四项描述简短、准确、够用。",
+      "expected_output": "生成覆盖3个TP的JSON和匹配XMind；主题切换数据只列所需主题及顺序，素材展示保留具体图片和文案，不照抄整套配置，不按字符数截断。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-theme-data/requirements.md",
+          "content": "# 合成需求\n- REQ-001：精品店有春日、夏日、秋日三个主题，按此顺序在同一长页展示。点击主题TAB定位到对应模块；从春日模块向下滚动进入夏日模块时，选中TAB更新为夏日；均不打开新主题页。\n- REQ-002：春日模块展示配置的图片spring.png和文案「春日上新」。\n- 已有配置：夏日图片summer.png、文案「夏日上新」；秋日图片autumn.png、文案「秋日上新」；视频总数0。\n- 准备条件：配置已生效，精品店可访问，各主题模块足够高可滚动；每条用例独立从春日模块顶部开始，春日TAB选中。\n- 范围：仅验证点击定位、滚动更新TAB、春日素材展示三个目标；其他素材配置只用于准备页面。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成主题测试数据精简\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"pending generation\",\n  \"next_skill\": \"testcase-generate\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-theme-data/requirements-analysis.md",
+          "content": "# 合成分析\n主题切换只依赖主题名称和顺序；点击定位与滚动更新TAB分别验证。春日素材展示需精确比对spring.png和「春日上新」。已有的其他素材和视频数量不参与这三个目标的判定。采用流程分析。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成主题测试数据精简\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"pending generation\",\n  \"next_skill\": \"testcase-generate\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-theme-data/specs/testpoints.md",
+          "content": "# 测试点：合成主题\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 精品店 | SHOP |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 精品店 | 主题切换 | THEME |\n| 精品店 | 素材展示 | CONTENT |\n### 精品店模块\n#### 主题切换功能\n##### 功能验证点 (Functional)\n- TP_SHOP_THEME_001: 精品店_主题切换_点击定位秋日模块\n  - 验证要点: 点击秋日TAB后在当前长页定位秋日模块，不打开新主题页\n  - 设计方法: 流程分析\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n- TP_SHOP_THEME_002: 精品店_主题切换_滚动更新夏日TAB\n  - 验证要点: 从春日滚动进入夏日模块后夏日TAB选中，不打开新主题页\n  - 设计方法: 流程分析\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n#### 素材展示功能\n##### 功能验证点 (Functional)\n- TP_SHOP_CONTENT_001: 精品店_素材展示_春日图片文案与配置一致\n  - 验证要点: 春日模块展示spring.png与文案「春日上新」\n  - 设计方法: 流程分析\n  - 优先级: p2\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成主题测试数据精简\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"pending generation\",\n  \"next_skill\": \"testcase-generate\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ]\n}\n-->\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "生成schema v2用例并覆盖三个主题测试点",
+          "check": "programmatic",
+          "script": "python3 -B -c 'import json; from pathlib import Path; d=json.loads(Path('\"'\"'testspec/changes/synthetic-theme-data/artifacts/testcases.json'\"'\"').read_text()); refs={r for c in d['\"'\"'testcases'\"'\"'] for r in c.get('\"'\"'tp_refs'\"'\"',[])}; assert d['\"'\"'schema_version'\"'\"']==2 and refs>={'\"'\"'TP_SHOP_THEME_001'\"'\"', '\"'\"'TP_SHOP_THEME_002'\"'\"', '\"'\"'TP_SHOP_CONTENT_001'\"'\"'}; print('\"'\"'PASS'\"'\"')'"
+        },
+        {
+          "text": "点击和滚动切换用例只列操作和判定所需的主题名称、顺序或目标；不逐主题罗列图片、文案及无关视频数量，不把这些配置搬到前置条件、步骤或预期。",
+          "check": "qualitative"
+        },
+        {
+          "text": "素材展示用例保留spring.png和「春日上新」等精确判定值；不能缩成「图片和文案已配置」或「有效素材」，不因精简丢失关键数据。",
+          "check": "qualitative"
+        },
+        {
+          "text": "不设置统一字数或字段数量配额；引用清楚且足以执行的短数据可用，确需精确比对的长值也应保留。",
+          "check": "qualitative"
+        },
+        {
+          "text": "四项描述只保留必要条件、数据、操作和业务结果，不为简单场景添加绕行步骤、重复准备或旁支检查；不按步骤与预期数量配对凑数。",
           "check": "qualitative"
         }
       ]

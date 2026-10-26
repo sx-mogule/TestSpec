@@ -148,7 +148,7 @@ Provenance-Unknown 必须产生 `GLOBAL:provenance-unknown` S1，`review_gate.st
 - **S2 重要级**：应当修复（影响覆盖质量、追溯、维护）
 - **S3 建议级**：可选优化（提升可读性和效率）
 
-S1 只用于真正阻断问题，禁止滥用。
+S1 仅用于影响可执行性或严重偏离测试意图的问题，禁止因文案精简而滥用。四项描述问题仍按原维度分级；确认的 S2/S3 描述问题也须修复后才能通过描述门禁。其他 S3 仍为可选优化。
 
 ---
 
@@ -160,7 +160,7 @@ S1 只用于真正阻断问题，禁止滥用。
 4. **判定深度（auto 或 --deep）并向用户说明**
 5. **加载维度细则**：`references/review-dimensions.md`
 6. **按 R1→R6 执行规则检查**
-7. **按 H1→H8 执行启发式检查**
+7. **按 H1→H8 执行启发式检查**：逐条检查完整集的前置条件、测试数据、操作步骤、预期结果，按维度细则执行四项描述门禁，不以抽样代替
 8. **生成报告**：按 `review-report-template.md` 填写全部结果
 9. **计算总体置信度**
 10. **输出评审结论与逐项修复动作**
@@ -182,7 +182,8 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 - 14 项检查矩阵
 - 需求去向核对：对照 canonical source（优先 `requirements.md`，否则 `proposal.md`）、`testpoints.md` 和用例，列出每条已确认需求对应的测试点及用例，待澄清/范围外项列明原因；此记录不改变现有检查项分级或 Review Gate 计算
 - S1/S2/S3 问题列表（每条带稳定 issue ID、`open/resolved/accepted` 状态、`case_id`/`TP_ID`/`GLOBAL:<rule>`、影响和建议）
-- 机器可读 `review_gate`：`status`、`s1_unresolved_count`、`s1_issue_ids`
+- 四项描述检查表：四个字段各自的检查结果、问题 ID；问题给出原文、原因和可直接替换的短句
+- 机器可读 `review_gate`：`status`、`s1_unresolved_count`、`s1_issue_ids`、`description_unresolved_count`、`description_issue_ids`；计算及旧报告处理遵循共享 `output-contracts.md`
 - `reviewed_artifacts`：实际评审的完整 JSON 与测试点 SHA-256，用于完整集评审追溯
 - 总体结论（通过/有问题）
 - 置信度（高/中/低）
@@ -217,7 +218,7 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 - 原样传播 canonical 版本、来源、问题、质量及 `design_methods`，`source_skill` 为 `testcase-review`。
 - 终点清空 `stale_downstream_artifacts`，省略 `next_skill` 和 `stale_reason`。
 - `reviewed_artifacts` 记录本次实际评审的完整JSON和测试点SHA-256。
-- `review_gate` 写 `status`、`s1_unresolved_count`、`s1_issue_ids`；只有未解决S1为0且列表为空才可为pass。
+- `review_gate` 写完整 S1 与四项描述门禁字段；只有两类未解决问题均为 0、两个 ID 列表均为空才可为 `pass`。缺少描述检查结果必须重审，不默认通过；`accepted` 不豁免描述问题。
 - `risks_identified` 只记录本次有依据的风险。完整模板只在首次生成或需要格式修复时读取。
 
 ---
@@ -227,7 +228,7 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 ```text
 ✅ 评审完成 | 模式: <Import-Quarantine/Provenance-Unknown/Strict/Legacy> | 深度: <标准/加深> | 置信度: <高/中/低>
 📄 报告: testspec/changes/<name>/review-report.md
-📊 总评: <S1> 个 S1 + <S2> 个 S2 + <S3> 个 S3
+📊 总评: <S1> 个 S1 + <S2> 个 S2 + <S3> 个 S3 | 未解决四项描述问题: <count> | Gate: <pass/blocked>
 ```
 
 ## 产物

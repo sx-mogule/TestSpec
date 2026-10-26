@@ -135,8 +135,35 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
             gate = context.get("review_gate")
             if not isinstance(gate, dict) or gate.get("status") not in {"pass", "blocked"}:
                 errors.append("review: missing or invalid review_gate.status")
-            elif gate["status"] == "pass" and (gate.get("s1_unresolved_count") != 0 or gate.get("s1_issue_ids") != []):
-                errors.append("review: pass requires zero unresolved S1 and empty s1_issue_ids")
+            else:
+                if gate["status"] == "pass" and (gate.get("s1_unresolved_count") != 0 or gate.get("s1_issue_ids") != []):
+                    errors.append("review: pass requires zero unresolved S1 and empty s1_issue_ids")
+
+                description_fields = {"description_unresolved_count", "description_issue_ids"}
+                missing_description = sorted(description_fields - gate.keys())
+                if missing_description:
+                    errors.append(
+                        "review: missing four-field description gate fields: "
+                        + ", ".join(missing_description)
+                        + "; rerun testcase-review"
+                    )
+                count = gate.get("description_unresolved_count")
+                issue_ids = gate.get("description_issue_ids")
+                valid_count = type(count) is int and count >= 0
+                valid_ids = (
+                    isinstance(issue_ids, list)
+                    and all(isinstance(issue_id, str) and issue_id.strip() for issue_id in issue_ids)
+                    and len(set(issue_ids)) == len(issue_ids)
+                )
+                if "description_unresolved_count" in gate and not valid_count:
+                    errors.append("review: description_unresolved_count must be a nonnegative integer")
+                if "description_issue_ids" in gate and not valid_ids:
+                    errors.append("review: description_issue_ids must be an array of unique nonblank strings")
+                if valid_count and valid_ids:
+                    if count != len(issue_ids):
+                        errors.append("review: description_unresolved_count differs from description_issue_ids length")
+                    if gate["status"] == "pass" and (count != 0 or issue_ids):
+                        errors.append("review: pass requires zero unresolved description issues and empty description_issue_ids")
             if "next_skill" in context:
                 errors.append("review: terminal stage must omit next_skill")
 

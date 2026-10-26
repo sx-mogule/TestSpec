@@ -37,7 +37,10 @@ class TestFourStageContext(unittest.TestCase):
         generated = context("testcase-generate", ["review-report.md"], next_skill="testcase-review")
         (root / "artifacts").mkdir()
         (root / "artifacts/testcases.json").write_text(json.dumps({"schema_version": 2, "_context": generated, "testcases": []}), encoding="utf-8")
-        reviewed = context("testcase-review", [], review_gate={"status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": []})
+        reviewed = context("testcase-review", [], review_gate={
+            "status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": [],
+            "description_unresolved_count": 0, "description_issue_ids": [],
+        })
         write_markdown(root / "review-report.md", reviewed)
         return reviewed
 
@@ -63,6 +66,79 @@ class TestFourStageContext(unittest.TestCase):
             reviewed["review_gate"]["s1_unresolved_count"] = 1
             write_markdown(root / "review-report.md", reviewed)
             self.assertIn("review: pass requires zero unresolved S1 and empty s1_issue_ids", chain.validate(root, "review", 1))
+
+    def validate_gate(self, **changes):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            reviewed["review_gate"].update(changes)
+            write_markdown(root / "review-report.md", reviewed)
+            return chain.validate(root, "review", 1)
+
+    def test_description_s3_issue_blocks_pass_without_becoming_s1(self):
+        errors = self.validate_gate(
+            description_unresolved_count=1, description_issue_ids=["RV-S3-001"],
+        )
+        self.assertIn(
+            "review: pass requires zero unresolved description issues and empty description_issue_ids", errors,
+        )
+        self.assertNotIn("review: pass requires zero unresolved S1 and empty s1_issue_ids", errors)
+
+    def test_blocked_description_report_is_a_consistent_chain(self):
+        errors = self.validate_gate(
+            status="blocked", description_unresolved_count=1, description_issue_ids=["RV-S3-001"],
+        )
+        self.assertEqual(errors, [])
+
+    def test_old_or_partial_description_gate_requires_rereview(self):
+        for fields in (
+            ("description_unresolved_count",),
+            ("description_issue_ids",),
+            ("description_unresolved_count", "description_issue_ids"),
+        ):
+            for status in ("pass", "blocked"):
+                with self.subTest(fields=fields, status=status), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    reviewed = self.make_change(root)
+                    reviewed["review_gate"]["status"] = status
+                    for field in fields:
+                        del reviewed["review_gate"][field]
+                    write_markdown(root / "review-report.md", reviewed)
+                    errors = chain.validate(root, "review", 1)
+                    self.assertTrue(any("missing four-field description gate fields" in error and "rerun testcase-review" in error for error in errors), errors)
+
+    def test_description_count_rejects_invalid_values(self):
+        for count in (True, False, -1, 0.0, 1.0, "0", None, []):
+            with self.subTest(count=count):
+                self.assertIn(
+                    "review: description_unresolved_count must be a nonnegative integer",
+                    self.validate_gate(status="blocked", description_unresolved_count=count),
+                )
+
+    def test_description_ids_reject_invalid_values(self):
+        for issue_ids in ("RV-S3-001", None, {}, [1], [""], [" \t"], [[]], ["RV-S3-001", "RV-S3-001"]):
+            with self.subTest(issue_ids=issue_ids):
+                self.assertIn(
+                    "review: description_issue_ids must be an array of unique nonblank strings",
+                    self.validate_gate(status="blocked", description_issue_ids=issue_ids),
+                )
+
+    def test_description_count_must_match_ids_even_when_blocked(self):
+        for count, issue_ids in ((1, []), (0, ["RV-S3-001"]), (2, ["RV-S3-001"])):
+            with self.subTest(count=count, issue_ids=issue_ids):
+                self.assertIn(
+                    "review: description_unresolved_count differs from description_issue_ids length",
+                    self.validate_gate(status="blocked", description_unresolved_count=count, description_issue_ids=issue_ids),
+                )
+
+    def test_pre_review_stage_does_not_require_description_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            (root / "review-report.md").unlink()
+            for through in ("analysis", "points", "generate"):
+                with self.subTest(through=through):
+                    self.assertEqual(chain.validate(root, through, 1), [])
 
     def test_review_preserves_design_methods_when_present(self):
         with tempfile.TemporaryDirectory() as directory:

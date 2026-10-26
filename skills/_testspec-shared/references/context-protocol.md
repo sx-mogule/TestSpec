@@ -94,7 +94,7 @@ Markdown 产物在文件末尾保存：
 | `testcase-generate` | `artifacts/testcases.json`、`artifacts/<name>_cases.xmind` | `testcase-review` |
 | `testcase-review` | `review-report.md` | 无 |
 
-Review 通过后保留 `testcase-generate` 输出的完整集 JSON 和 XMind，`review-report.md` 记录最终门禁；冒烟分类仍作为完整集内元数据，不派生独立文件。发现问题时按回溯规则返修并重新 Review。
+Review 通过后保留 `testcase-generate` 输出的完整集 JSON 和 XMind，`review-report.md` 记录最终门禁；冒烟分类仍作为完整集内元数据，不派生独立文件。`review_gate` 必须包含 S1 和四项描述问题的计数与 ID 列表，通过条件及旧报告处理见 `output-contracts.md` 的 `review-report.md` 契约。发现问题时按回溯规则返修并重新 Review。
 
 ## 消费规则
 

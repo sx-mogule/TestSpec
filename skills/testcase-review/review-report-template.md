@@ -7,6 +7,7 @@
 **变更目录**: <change_dir>
 **Review Gate**: <pass/blocked>
 **Unresolved S1**: <count>
+**未解决四项描述问题**: <count>
 **Provenance Gate**: <pass/blocked>
 
 ### 已评审完整集
@@ -51,6 +52,19 @@
 ---
 
 ## 规则检查
+
+### 四项描述门禁
+
+逐条检查完整用例集，不以抽样代替；四项均完成且未解决描述问题为 0 才可通过。必要长值和关键路径不因长度判错；S2/S3 描述问题仍须修复，不以 accepted 豁免。
+
+| 字段 | 已检查用例数/总数 | 结果（pass/blocked/未完成） | 问题 ID |
+|---|---|---|---|
+| 前置条件 | <checked/total> | <result> | <issue IDs / 无> |
+| 测试数据 | <checked/total> | <result> | <issue IDs / 无> |
+| 操作步骤 | <checked/total> | <result> | <issue IDs / 无> |
+| 预期结果 | <checked/total> | <result> | <issue IDs / 无> |
+
+问题在所属 R/H 维度中记录一次：用例 ID、字段、原文、原因、可直接替换的短句和状态；此表引用相同 issue ID，不重复计数。未完成时记录 `GLOBAL:description-review-incomplete` 范围的问题，Gate 保持 blocked。
 
 ### 需求去向核对（记录，不参与门禁计算）
 
@@ -194,11 +208,13 @@
 
 - [ ] [<open/resolved/accepted>] <RV-S2-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
 
-### S3 建议级（可选优化）
+### S3 建议级（四项描述问题须修复，其他可选优化）
 
 - [ ] [<open/resolved/accepted>] <RV-S3-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
 
 ---
+
+通过条件：未解决 S1 和描述问题均为 0，两个 ID 列表均为空；计数必须对应报告中的未解决问题，不因模板默认值为 0 就宣称通过。
 
 **评审完成时间**: <timestamp>
 
@@ -218,7 +234,9 @@
   "review_gate": {
     "status": "pass/blocked",
     "s1_unresolved_count": 0,
-    "s1_issue_ids": []
+    "s1_issue_ids": [],
+    "description_unresolved_count": 0,
+    "description_issue_ids": []
   },
   "risks_identified": []
 }

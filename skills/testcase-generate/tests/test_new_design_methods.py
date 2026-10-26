@@ -122,7 +122,9 @@ class TestNewDesignMethods(unittest.TestCase):
                     root / "review-report.md", "# 合成 Review 门禁上下文\n\n独立语义评审尚未执行。",
                     stage_context("testcase-review", [], design_methods=list(METHODS),
                                   review_gate={"status": "blocked", "s1_unresolved_count": 1,
-                                               "s1_issue_ids": ["SYN-REVIEW-PENDING"]}),
+                                               "s1_issue_ids": ["SYN-REVIEW-PENDING"],
+                                               "description_unresolved_count": 1,
+                                               "description_issue_ids": ["SYN-REVIEW-PENDING"]}),
                 )
                 subprocess.run([sys.executable, str(ROOT / "skills/_testspec-shared/scripts/validate_context_chain.py"),
                                 "--change-dir", str(root), "--through", "review", "--expected-version", "1"],
