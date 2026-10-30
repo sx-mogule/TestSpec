@@ -124,6 +124,6 @@
 
 ## 适用边界
 
-- 本协议适用于 `prd-analysis`、`test-points`、`testcase-generate`、`testcase-review` 的产物生成后环节
+- 本协议适用于 `prd-analysis`、`test-points`、`testcase-generate`、`testcase-reviewer` 的产物生成后环节
 - 反思是内化过程，不需要输出完整反思日志（除非用户要求）
 - 只输出修正摘要和迭代次数

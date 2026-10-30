@@ -14,7 +14,7 @@ STAGES = {
     "analysis": ("requirements-analysis.md", "prd-analysis"),
     "points": ("specs/testpoints.md", "test-points"),
     "generate": ("artifacts/testcases.json", "testcase-generate"),
-    "review": ("review-report.md", "testcase-review"),
+    "review": ("review-report.md", "testcase-reviewer"),
 }
 
 SELF_ARTIFACT_NAMES = {
@@ -110,7 +110,8 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
             errors.append(str(exc))
             continue
 
-        if context.get("source_skill") != expected_skill:
+        accepted_skills = {expected_skill, "testcase-review"} if stage == "review" else {expected_skill}
+        if context.get("source_skill") not in accepted_skills:
             errors.append(
                 f"{stage}: source_skill={context.get('source_skill')!r}, "
                 f"expected {expected_skill!r}"
@@ -145,7 +146,7 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
                     errors.append(
                         "review: missing four-field description gate fields: "
                         + ", ".join(missing_description)
-                        + "; rerun testcase-review"
+                        + "; rerun testcase-reviewer"
                     )
                 count = gate.get("description_unresolved_count")
                 issue_ids = gate.get("description_issue_ids")

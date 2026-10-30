@@ -13,7 +13,7 @@
 ## 流程概览
 
 ```
-prd-analysis → test-points → testcase-generate → testcase-review
+prd-analysis → test-points → testcase-generate → testcase-reviewer
   需求分析       测试点设计       测试用例生成       测试用例 Review
 ```
 
@@ -28,7 +28,7 @@ prd-analysis → test-points → testcase-generate → testcase-review
 | `prd-analysis` | 有 PRD、蓝湖事实或用户需求 | canonical `requirements.md` 与 `requirements-analysis.md` 可追溯，风险/边界/待确认项已分开 | 补充需求来源 |
 | `test-points` | analysis 与 canonical revision 一致 | 每个 TP 有 ID、验证目标、优先级、Oracle 状态和需求引用 | 回到 `prd-analysis` |
 | `testcase-generate` | testpoints 与 canonical revision 一致 | JSON 8 字段完整，TP 引用有效，JSON/XMind 通过格式校验 | 回到 `test-points` 或本阶段修复 |
-| `testcase-review` | 用例和测试点版本一致 | 14 项及四项描述检查完成，未解决 S1 和描述问题均为 0，`review_gate.status=pass`（见 `output-contracts.md`） | 回到 `testcase-generate` |
+| `testcase-reviewer` | 用例和测试点版本一致 | 14 项及四项描述检查完成，未解决 S1 和描述问题均为 0，`review_gate.status=pass`（见 `output-contracts.md`） | 回到 `testcase-generate` |
 
 ## 智能编排指引
 
@@ -67,7 +67,7 @@ testspec/changes/<name>/
 ├── proposal.md                # 测试提案（可选）
 ├── requirements.md            # 可验收需求源（由需求分析阶段建立）
 ├── requirements-analysis.md   # 需求分析（prd-analysis）
-├── review-report.md           # 评审报告（testcase-review）
+├── review-report.md           # 评审报告（testcase-reviewer）
 ├── specs/
 │   └── testpoints.md          # 测试点（test-points）
 └── artifacts/

@@ -3,9 +3,9 @@
 **评审时间**: <timestamp>
 **评审模式**: <mode> (Import-Quarantine/Provenance-Unknown/Strict/Legacy)
 **评审深度**: <depth> (标准/加深)
-**深度触发原因**: <depth_reasons>
+**深度依据**: <主要风险/验收影响；辅助信号>
 **变更目录**: <change_dir>
-**Review Gate**: <pass/blocked>
+**Review Gate**: <pass/blocked/未计算；输入健康检查失败时不补造context>
 **Unresolved S1**: <count>
 **未解决四项描述问题**: <count>
 **Provenance Gate**: <pass/blocked>
@@ -19,7 +19,7 @@
 ### 深度决策记录
 
 - **执行模式**: <auto/--deep>
-- **命中信号**: <例如：用例总数 > 50、上游 risks_identified 非空；若无则填“无，保持标准深度”>
+- **决策依据**: <主要风险/验收影响；辅助信号（如用例量、模块数或上游标记）/无>
 - **额外读取材料**: <例如：requirements-analysis.md / 无>
 
 ---
@@ -51,6 +51,24 @@
 
 ---
 
+## 两部分评审执行记录
+
+**通用评审状态**: <已完成/未完成；未完成说明原因>
+**SOP检查状态**: <已完成/未完成；未完成逐项说明缺失材料>
+**整轮状态**: <已完成/未完成；两部分都完成才可写已完成>
+**执行方式**: <同一模型依次执行两套规则/独立评审者（仅实际使用时）>
+**统一入口**: `testcase-reviewer`；通用评审mode=`review`，SOP模块=`review-workflow.md`
+**判定依据及限制**: <原始 PRD/验收标准/canonical 需求；版本、文件 SHA-256 与缺失材料>
+**原始评审结论**: <保持独立 reviewer 原意；无实质缺陷时如实记录>
+
+| 独立发现编号 | 原等级 | 原始发现、依据与范围 | 处置 | 原生 issue ID / 维度 / 级别 | 处置依据 |
+|---|---|---|---|---|---|
+| <本次局部编号，不冒充需求 ID> | <Critical/High/Medium/Low> | <原文证据及 case/需求位置> | <采纳/重复关联/不适用/待确认> | <RV-ID / R或H / S级；无则说明> | <复核证据或不适用理由> |
+
+没有发现时写“无”，不保留占位行。每个发现均须有处置，采纳/重复问题只在原生问题列表登记一次。原等级与 S1/S2/S3 不机械对应；原有 14 项检查及 Gate 公式保持不变。
+
+---
+
 ## 规则检查
 
 ### 四项描述门禁
@@ -68,9 +86,11 @@
 
 ### 需求去向核对（记录，不参与门禁计算）
 
-| 需求编号/来源段落 | 测试点/待澄清/范围外 | 用例 ID | 说明 |
-|------|----------------------|---------|------|
-| REQ-001 | <正式测试点编号 / Q-001 / 范围外> | <用例 ID / 无> | <对应关系或原因> |
+有原始 PRD/需求素材时，在来源位置与说明中串联“原文→REQ→TP→用例→可观察 Oracle”；未提供原始材料时，明确本表只核对 canonical `requirements.md`/`proposal.md`，不声称完成原文追溯。已确认且在范围内但缺少 TP、用例或可判定 Oracle 的需求，去向标为“覆盖缺口”；不得用待澄清或范围外掩盖。待澄清仅用于规则尚未确认，范围外须有确认依据；按现有检查项分级记录，本表不改变门禁计算。
+
+| 需求编号/来源段落 | 测试点/待澄清/范围外/覆盖缺口 | 用例 ID | 说明 |
+|------------------------|----------------------------------------|---------|------|
+| <原文位置（若可用）/REQ-001> | <正式测试点编号 / Q-001 / 范围外 / 覆盖缺口> | <用例 ID / 无> | <TP、用例及可观察 Oracle 的对应关系或缺口原因> |
 
 ### R1: 测试点覆盖度
 
@@ -80,6 +100,7 @@
 <问题列表>
 - [S1/S2/S3] [<open/resolved/accepted>] <RV-S1-001 等稳定 issue ID>：<问题描述>
   - **范围**: <case_id / TP_ID / GLOBAL:rule>
+  - **owner**: <责任阶段/技能>
   - **影响**: <影响说明>
   - **建议**: <整改建议>
 
@@ -153,7 +174,7 @@
 
 | TP_ID | 设计方法 | 用例数 | Action Match | Oracle Match | Scope Match | 结论 | 证据/说明 |
 |-------|----------|--------|--------------|--------------|-------------|------|-----------|
-| <tp_id> | <method> | <count> | <score> | <score> | <score> | <conclusion> | <evidence> |
+| <tp_id> | <method> | <count> | <score> | <score> | <score> | <conclusion> | <case ID + 数据/操作/Oracle 中体现方法的证据> |
 
 <问题列表>
 
@@ -203,14 +224,17 @@
 ### S1 阻断级（必须修复）
 
 - [ ] [<open/resolved/accepted>] <RV-S1-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
+  - **owner**: <原责任阶段/技能；返修时保留>
 
 ### S2 重要级（应当修复）
 
 - [ ] [<open/resolved/accepted>] <RV-S2-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
+  - **owner**: <原责任阶段/技能；返修时保留>
 
 ### S3 建议级（四项描述问题须修复，其他可选优化）
 
 - [ ] [<open/resolved/accepted>] <RV-S3-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
+  - **owner**: <原责任阶段/技能；返修时保留>
 
 ---
 
@@ -220,7 +244,7 @@
 
 <!-- testspec-context
 {
-  "source_skill": "testcase-review",
+  "source_skill": "testcase-reviewer",
   "source_revision": {"version": "<canonical 版本>", "summary": "<原样继承>", "updated_by_skill": "<原样继承>"},
   "blocking_open_questions": [],
   "dynamic_followups": [],

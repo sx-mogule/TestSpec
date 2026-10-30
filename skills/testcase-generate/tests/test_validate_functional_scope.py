@@ -66,6 +66,64 @@ class TestFunctionalScope(unittest.TestCase):
         self.assertEqual(result["status"], "FAIL")
         self.assertIn("NON_FUNCTIONAL_TESTPOINT", {issue["type"] for issue in result["errors"]})
 
+    def test_negated_scope_note_and_ordinary_text_do_not_block(self):
+        result = self.validate(
+            "##### 功能验证点 (Functional)\n"
+            "本次不生成非功能性验证点。\n"
+            "#### 范围说明：非功能性验证点不在本次范围\n"
+            "- TP_ORDER_SUBMIT_001: 提交后显示订单号",
+            ["TP_ORDER_SUBMIT_001"],
+        )
+        self.assertEqual(result["status"], "PASS", result)
+        self.assertNotIn("NON_FUNCTIONAL_TESTPOINT", {issue["type"] for issue in result["errors"]})
+
+    def test_non_functional_parent_also_blocks_nested_tracking_point(self):
+        result = self.validate(
+            "##### 非功能性验证点 (Non-Functional)\n"
+            "###### 埋点验证点 (Tracking)\n- TP_TRACK_EVENT_400: 结算页曝光事件上报",
+            ["TP_TRACK_EVENT_400"], case_type="埋点",
+        )
+        issue = next(issue for issue in result["errors"] if issue["type"] == "NON_FUNCTIONAL_TESTPOINT")
+        self.assertEqual(issue["tp_ids"], ["TP_TRACK_EVENT_400"])
+
+    def test_returning_to_top_level_functional_section_clears_non_functional_scope(self):
+        text = (
+            "##### 非功能性验证点 (Non-Functional)\n"
+            "- TP_ORDER_PERF_200: 性能检查\n"
+            "##### 功能验证点 (Functional)\n"
+            "- TP_ORDER_SUBMIT_001: 提交后显示订单号\n"
+            "##### 埋点验证点 (Tracking)\n"
+            "- TP_TRACK_EVENT_400: 结算页曝光事件上报"
+        )
+        categories, non_functional_ids = validator._extract_tp_section_metadata(text)
+        self.assertEqual(non_functional_ids, {"TP_ORDER_PERF_200"})
+        self.assertNotIn("TP_ORDER_SUBMIT_001", non_functional_ids)
+        self.assertEqual(categories["TP_TRACK_EVENT_400"], {"埋点"})
+
+    def test_non_functional_heading_and_tp_inside_fenced_example_are_ignored(self):
+        text = (
+            "##### 功能验证点 (Functional)\n"
+            "- TP_ORDER_SUBMIT_001: 提交后显示订单号\n"
+            "~~~markdown\n"
+            "##### 非功能性验证点 (Non-Functional)\n"
+            "- TP_ORDER_PERF_200: 性能检查\n"
+            "~~~\n"
+        )
+        result = self.validate(text, ["TP_ORDER_SUBMIT_001"])
+        self.assertEqual(result["status"], "PASS", result)
+        self.assertEqual(result["coverage"]["total_tp"], 1)
+
+    def test_fenced_tp_is_not_counted_as_a_formal_testpoint(self):
+        result = self.validate(
+            "##### 功能验证点 (Functional)\n"
+            "~~~markdown\n"
+            "- TP_ORDER_SUBMIT_001: 示例用例\n"
+            "~~~",
+            ["TP_ORDER_SUBMIT_001"],
+        )
+        self.assertEqual(result["status"], "ERROR")
+        self.assertIn("未定义 TP_ID", result["message"])
+
     def test_tracking_case_passes_with_tracking_point(self):
         result = self.validate(
             "##### 埋点验证点 (Tracking)\n- TP_TRACK_EVENT_400: 结算页曝光事件上报",

@@ -51,6 +51,18 @@ class TestFourStageContext(unittest.TestCase):
             self.assertEqual(chain.validate(root, "review", 1), [])
             self.assertEqual(tuple(chain.STAGES), ("analysis", "points", "generate", "review"))
 
+    def test_new_review_source_and_legacy_reports_are_both_supported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            self.assertEqual(chain.validate(root, "review", 1), [])
+            reviewed["source_skill"] = "testcase-reviewer"
+            write_markdown(root / "review-report.md", reviewed)
+            self.assertEqual(chain.validate(root, "review", 1), [])
+            reviewed["source_skill"] = "unrelated-skill"
+            write_markdown(root / "review-report.md", reviewed)
+            self.assertTrue(any("source_skill" in error for error in chain.validate(root, "review", 1)))
+
     def test_review_cannot_point_to_removed_stage(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

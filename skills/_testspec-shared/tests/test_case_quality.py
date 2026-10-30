@@ -77,6 +77,16 @@ class TestCaseQuality(unittest.TestCase):
         self.assertEqual(result["status"], "WARN")
         self.assertIn("NO_ACTION_VERB", {item["type"] for item in result["warnings"]})
 
+    def test_scroll_step_is_recognized_by_the_action_hint(self):
+        result = self.validate_cases([make_case(steps="1、向下滚动进入夏日模块")])
+        self.assertEqual(result["status"], "PASS", result)
+        self.assertNotIn("NO_ACTION_VERB", {item["type"] for item in result["warnings"]})
+
+    def test_generic_related_action_still_receives_the_action_hint(self):
+        result = self.validate_cases([make_case(steps="1、进行相关操作")])
+        self.assertEqual(result["status"], "WARN", result)
+        self.assertIn("NO_ACTION_VERB", {item["type"] for item in result["warnings"]})
+
     def test_vague_step_beside_clear_step_is_reported(self):
         result = self.validate_cases([make_case(steps="1、打开编辑页\n2、进行相关操作")])
         self.assertIn("VAGUE_STEP", {item["type"] for item in result["warnings"]})

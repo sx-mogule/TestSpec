@@ -2,7 +2,7 @@
 
 当用户提供蓝湖邀请链接、PRD 链接或 Axure 文档时，先把蓝湖内容当作需求输入，再进入 `prd-analysis`。蓝湖阅读不是独立流程，不会改变四步链路：
 
-`Lanhu PRD → prd-analysis → test-points → testcase-generate → testcase-review`
+`Lanhu PRD → prd-analysis → test-points → testcase-generate → testcase-reviewer`
 
 ## 默认读取路径
 

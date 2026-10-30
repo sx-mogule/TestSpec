@@ -1,0 +1,154 @@
+[
+  {
+    "query": "请评审这个 Gherkin 特性文件，并指出哪些场景违反了 BDD 最佳实践。",
+    "should_trigger": true
+  },
+  {
+    "query": "请改写这些 Given、When、Then 场景，使其更易被业务方理解，并减少 UI 操作细节。",
+    "should_trigger": true
+  },
+  {
+    "query": "请根据这些退款资格验收标准生成 BDD 场景。",
+    "should_trigger": true
+  },
+  {
+    "query": "请生成正式的 BDD 评审报告，列出按严重度排序的问题和辅导建议。",
+    "should_trigger": true
+  },
+  {
+    "query": "请把这个用户故事转换为 Gherkin，并指出缺失的规则分支。",
+    "should_trigger": true
+  },
+  {
+    "query": "请根据账户锁定业务规则评审并改进这个特性文件。",
+    "should_trigger": true
+  },
+  {
+    "query": "请检查这个 Scenario Outline 是否混合了规则分支、示例是否薄弱，以及是否存在 BDD 反模式。",
+    "should_trigger": true
+  },
+  {
+    "query": "请根据所提供的业务规则为这个 Gherkin 特性生成评分卡，并指出追溯缺口。",
+    "should_trigger": true
+  },
+  {
+    "query": "请根据这个示例映射和验收标准起草 Gherkin 场景，不要臆造缺失的规则分支。",
+    "should_trigger": true
+  },
+  {
+    "query": "请评审这些已起草的 API 测试用例，并指出仍未覆盖哪些验收标准。",
+    "should_trigger": true
+  },
+  {
+    "query": "请为初级测试人员编写的 UC-14 场景提供辅导并给出结构化质量评分。",
+    "should_trigger": true
+  },
+  {
+    "query": "请审计这个测试套件层级是否存在重复，并说明 MSS、EXT 和 ERR 分组是否合理。",
+    "should_trigger": true
+  },
+  {
+    "query": "请检查这些手工测试用例是否采用了恰当的边界值和业务规则测试设计方法。",
+    "should_trigger": true
+  },
+  {
+    "query": "我想在自动化这些回归测试之前先获得一份评审报告。",
+    "should_trigger": true
+  },
+  {
+    "query": "请检查这个需求到测试的追溯矩阵，找出覆盖缺口。",
+    "should_trigger": true
+  },
+  {
+    "query": "请评审这些测试场景是否缺少反向路径，或者预期结果是否薄弱。",
+    "should_trigger": true
+  },
+  {
+    "query": "这些 UAT 测试用例能证明业务规则吗？还是测试得太浅？",
+    "should_trigger": true
+  },
+  {
+    "query": "请评估这个批处理测试套件，并说明目前的套件拆分是否合理。",
+    "should_trigger": true
+  },
+  {
+    "query": "请对这组已起草的测试集在追溯、覆盖和规范符合性方面进行评分。",
+    "should_trigger": true
+  },
+  {
+    "query": "请解释单元测试和集成测试有什么区别。",
+    "should_trigger": false
+  },
+  {
+    "query": "请编写一个 Playwright 脚本来自动化这个登录表单。",
+    "should_trigger": false
+  },
+  {
+    "query": "请用一段话总结这个 Jira 工单。",
+    "should_trigger": false
+  },
+  {
+    "query": "请修复我的 SQL 查询语句。",
+    "should_trigger": false
+  },
+  {
+    "query": "请为我的 Cypress 测试套件编写步骤定义。",
+    "should_trigger": false
+  },
+  {
+    "query": "请根据这个特性文件编写 Cucumber 步骤定义。",
+    "should_trigger": false
+  },
+  {
+    "query": "请把这个 Gherkin 特性转换成 Playwright 测试。",
+    "should_trigger": false
+  },
+  {
+    "query": "请为订单提交设计一个 REST API 契约。",
+    "should_trigger": false
+  },
+  {
+    "query": "请只校对这份 Markdown 规格说明中的语法。",
+    "should_trigger": false
+  },
+  {
+    "query": "请为这个登录页面编写 Playwright 测试。",
+    "should_trigger": false
+  },
+  {
+    "query": "请为我们的版本发布生成一份全新的测试计划。",
+    "should_trigger": false
+  },
+  {
+    "query": "请用通俗英语总结这个缺陷工单。",
+    "should_trigger": false
+  },
+  {
+    "query": "请把这些 CSV 文件转换成 JSON。",
+    "should_trigger": false
+  },
+  {
+    "query": "请设置 GitHub Actions，每晚运行我们的 API 自动化套件。",
+    "should_trigger": false
+  },
+  {
+    "query": "请为密码重置功能起草新的验收标准。",
+    "should_trigger": false
+  },
+  {
+    "query": "请为这个 Java 服务创建 JUnit 测试。",
+    "should_trigger": false
+  },
+  {
+    "query": "请把这些不稳定的 Selenium 测试改写成 Cypress 测试。",
+    "should_trigger": false
+  },
+  {
+    "query": "请创建一个展示回归测试执行趋势的仪表板。",
+    "should_trigger": false
+  },
+  {
+    "query": "请从零开始把这些用户故事转换成新的测试用例。",
+    "should_trigger": false
+  }
+]

@@ -46,7 +46,7 @@ SPECIAL_TP_SECTION_TYPES = {
 ACTION_VERBS = [
     "点击", "输入", "选择", "等待", "查看", "校验",
     "打开", "提交", "确认", "删除", "修改", "搜索",
-    "上传", "下载", "切换", "拖拽", "长按", "滑动",
+    "上传", "下载", "切换", "拖拽", "长按", "滑动", "滚动",
 ]
 SIMILARITY_THRESHOLD = 0.75
 TP_ENTRY_PATTERN = re.compile(
@@ -106,8 +106,82 @@ def _comparison_fields(case: dict) -> dict[str, str]:
 
 
 def _extract_tp_ids_from_md(md_text: str) -> set[str]:
-    """只统计正式测试点条目，不把说明、引用或模板字段计入覆盖率。"""
-    return set(TP_ENTRY_PATTERN.findall(md_text))
+    """只统计 fenced code 外的正式测试点条目。"""
+    return {
+        match.group(1)
+        for line in _markdown_content_lines(md_text)
+        if (match := TP_ENTRY_PATTERN.match(line))
+    }
+
+
+def _markdown_content_lines(md_text: str):
+    """逐行返回 Markdown 正文，忽略 fenced code block。"""
+    fence_char = None
+    fence_length = 0
+    for line in md_text.splitlines():
+        if fence_char is None:
+            opening = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+            if opening:
+                fence = opening.group(1)
+                fence_char, fence_length = fence[0], len(fence)
+                continue
+            yield line
+            continue
+
+        closing = re.match(r"^ {0,3}(`{3,}|~{3,})[ \t]*$", line)
+        if closing and closing.group(1)[0] == fence_char and len(closing.group(1)) >= fence_length:
+            fence_char = None
+            fence_length = 0
+
+
+_NON_FUNCTIONAL_SECTION_TITLES = {
+    "非功能性验证点",
+    "non-functional",
+}
+
+
+def _heading_title(line: str) -> tuple[int, str] | None:
+    """读取真实 Markdown 标题，返回标题级别和规范化标题。"""
+    match = re.match(r"^ {0,3}(#{1,6})[ \t]+(.+?)[ \t]*#*[ \t]*$", line)
+    if not match:
+        return None
+    title = match.group(2).strip()
+    title = re.sub(r"\s*[（(]\s*Non-Functional\s*[）)]\s*$", "", title, flags=re.IGNORECASE)
+    return len(match.group(1)), re.sub(r"\s+", " ", title).casefold()
+
+
+def _extract_tp_section_metadata(tp_text: str) -> tuple[dict[str, set[str]], set[str]]:
+    """Return special TP categories and formal TPs under a Non-Functional section."""
+    tp_categories: dict[str, set[str]] = {}
+    non_functional_tp_ids: set[str] = set()
+    heading_stack: list[tuple[int, str]] = []
+
+    for line in _markdown_content_lines(tp_text):
+        heading = _heading_title(line)
+        if heading:
+            level, title = heading
+            while heading_stack and heading_stack[-1][0] >= level:
+                heading_stack.pop()
+            heading_stack.append((level, title))
+            continue
+
+        tp_match = TP_ENTRY_PATTERN.match(line)
+        if not tp_match:
+            continue
+
+        tp_id = tp_match.group(1)
+        section_titles = {title for _, title in heading_stack}
+        categories = {
+            category
+            for title, category in SPECIAL_TP_SECTION_TYPES.items()
+            if re.sub(r"\s+", " ", title).casefold() in section_titles
+        }
+        if categories:
+            tp_categories.setdefault(tp_id, set()).update(categories)
+        if section_titles & _NON_FUNCTIONAL_SECTION_TITLES:
+            non_functional_tp_ids.add(tp_id)
+
+    return tp_categories, non_functional_tp_ids
 
 
 def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[dict]:
@@ -115,7 +189,10 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
     methods_by_tp: dict[str, set[str]] = {}
     listed_tps: set[str] = set()
     current_tp = None
-    for line in tp_text.splitlines():
+    for line in _markdown_content_lines(tp_text):
+        if _heading_title(line):
+            current_tp = None
+            continue
         tp_match = TP_ENTRY_PATTERN.match(line)
         if tp_match:
             current_tp = tp_match.group(1)
@@ -209,7 +286,7 @@ def check_required_fields(cases: list[dict]) -> list[dict]:
 
 
 def check_field_quality(cases: list[dict]) -> list[dict]:
-    """检查动作和明确含糊的表达，不按字数判断质量。"""
+    """检查动作词和明确含糊的表达；有限动作词只提供提示，不替代 R5 可执行性评审。"""
     issues = []
     vague_step = re.compile(r"(?:(?:进行|执行|完成)(?:相关|上述|必要)?操作|操作|点击|输入|选择)")
     vague_expected = re.compile(
@@ -229,7 +306,7 @@ def check_field_quality(cases: list[dict]) -> list[dict]:
                 "severity": "warning",
                 "case_id": case_id,
                 "title": title,
-                "fix_hint": "写清要做什么，如「点击保存」或「输入测试数据中的手机号」。",
+                "fix_hint": "写清要做什么，如「点击保存」「向下滚动」或「输入测试数据中的手机号」。",
             })
 
         for index, line in enumerate(_content_lines(steps), 1):
@@ -291,28 +368,7 @@ def check_enum_values(cases: list[dict]) -> list[dict]:
 
 def check_special_scope_type_matches(cases: list[dict], tp_text: str) -> list[dict]:
     """Require tracking/compatibility cases to reference only their explicit TP section."""
-    tp_categories: dict[str, set[str]] = {}
-    current_category = None
-    current_heading_level = None
-
-    for line in tp_text.splitlines():
-        heading_match = re.match(r"^\s*(#{1,6})\s+(.+?)\s*$", line)
-        if heading_match:
-            level = len(heading_match.group(1))
-            title = heading_match.group(2)
-            if current_heading_level is not None and level <= current_heading_level:
-                current_category = None
-                current_heading_level = None
-            category = SPECIAL_TP_SECTION_TYPES.get(title)
-            if category:
-                current_category = category
-                current_heading_level = level
-            continue
-
-        if current_category:
-            tp_match = TP_ENTRY_PATTERN.match(line)
-            if tp_match:
-                tp_categories.setdefault(tp_match.group(1), set()).add(current_category)
+    tp_categories, _ = _extract_tp_section_metadata(tp_text)
 
     issues = []
     for case in cases:
@@ -641,6 +697,11 @@ def validate(testcases_path: str, testpoints_path: str | None = None, *, details
                                "case_id": case.get("id", "UNKNOWN"),
                                "fix_hint": "tp_refs 必须非空且只引用当前测试点"})
         errors.extend(check_special_scope_type_matches(cases, tp_text))
+        _, non_functional_tp_ids = _extract_tp_section_metadata(tp_text)
+        if non_functional_tp_ids:
+            errors.append({"type": "NON_FUNCTIONAL_TESTPOINT", "severity": "error",
+                           "tp_ids": sorted(non_functional_tp_ids),
+                           "fix_hint": "正式测试点位于非功能分类下；移除该分支，保留功能、埋点或兼容性矩阵专属分类"})
     else:
         for case in cases:
             if case.get("type") in {"埋点", "兼容性矩阵"}:
@@ -656,10 +717,6 @@ def validate(testcases_path: str, testpoints_path: str | None = None, *, details
             errors.append({"type": "SMOKE_NOT_P0", "severity": "error",
                            "case_id": case.get("id", "UNKNOWN"),
                            "fix_hint": "冒烟用例必须为 p0"})
-
-    if testpoints_path and tp_path.exists() and re.search(r"(?:Non-Functional|非功能性验证点)", tp_text, re.IGNORECASE):
-        errors.append({"type": "NON_FUNCTIONAL_TESTPOINT", "severity": "error",
-                       "fix_hint": "本流程仅接收允许范围内的测试点；移除泛非功能分支，保留功能、埋点或兼容性矩阵专属分类"})
 
     if testpoints_path:
         errors.extend(check_design_methods(data, cases, tp_text))

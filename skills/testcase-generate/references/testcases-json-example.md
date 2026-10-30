@@ -15,7 +15,7 @@
     "material_quality": "high",
     "stale_downstream_artifacts": ["review-report.md"],
     "stale_reason": "测试用例已按新口径重生成，评审待更新",
-    "next_skill": "testcase-review",
+    "next_skill": "testcase-reviewer",
     "canonical_source_policy": "prd-first",
     "evidence_sources": [{"type": "prd", "source_ref": "requirements.md#REQ-001", "authority": "canonical"}],
     "questions": [],

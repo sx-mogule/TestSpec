@@ -173,7 +173,7 @@
 
 ## 适用边界
 
-- 本协议适用于 `prd-analysis`、`test-points`、`testcase-generate`、`testcase-review` 的策略决策环节
+- 本协议适用于 `prd-analysis`、`test-points`、`testcase-generate`、`testcase-reviewer` 的策略决策环节
 - 用户明确指定策略时，跳过 Phase 2 推理，直接进入 Phase 3
 - 推理过程应内化，不输出完整推理日志给用户（除非用户要求）
 - 推理结果通过 context-protocol.md 传播给下游 skill

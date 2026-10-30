@@ -63,9 +63,9 @@ TestSpec 用例生成进度：
    - 提取 `blocking_open_questions` → 相关用例标注风险
    - 提取 `testlib_reuse`（若有）→ 识别哪些 TP 已在 testlib 中有用例
    - 提取 `regression_tiers`（若有）→ 用例继承对应 TP 的回归层级
-   - 提取各 TP 的“设计方法”和 `design_methods` → 按所选方法展开场景；方法名不在十二种方法内时先退回 `test-points` 澄清，不自行替换
+   - 提取各 TP 的“设计方法”和 `design_methods` → 按所选方法展开场景；方法名不在十二种方法内时先退回 `test-points` 澄清，不自行替换。生成的输入、操作和 Oracle 须体现方法要求，方法标签本身不算落实；Review 在 H3 现有“证据/说明”列核对
    - 提取 `canonical_source_policy`、`evidence_sources`、`questions` → 原样传播；代码不可访问不影响生成
-4. 成功生成后原样传播 canonical envelope，从 stale 列表移除自身产物，并将 `next_skill` 指向 `testcase-review`
+4. 成功生成后原样传播 canonical envelope，从 stale 列表移除自身产物，并将 `next_skill` 指向 `testcase-reviewer`
 
 #### testlib 参考用例检索
 
@@ -176,13 +176,13 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
 
 ## Review 定向返修
 
-用户要求根据 `review-report.md` 修复时进入 repair 模式：
+用户明确要求根据 `review-report.md` 修复时直接进入 repair 模式，无需重复询问批准：
 
 1. 校验 review 与 canonical revision 一致。
-2. 只消费 `status = open` 且明确分配给 generate 的 finding；points/analysis finding 必须回到对应上游。
+2. 只消费 `status = open` 且明确分配给 generate 的 finding；points/analysis finding 必须回到对应上游。若用户指定修复一个 accepted 描述问题，先由 Review 以原 issue ID 将其重开为 open，并保留严重度、定位、owner 和问题计数/ID；Generate 不自行重开。未纳入用户修复范围的 accepted 问题保持原状并继续阻断。
 3. 只修改 finding 指定的 case IDs 和字段，默认保留 ID；未命中范围的用例保持字节级语义不变。四项描述返修只删套话、重复和无关内容，保留必要路径、边界与 Oracle；不截断关键值，不把冗余搬到其他字段。
 4. 在 `_context.review_repairs` 记录 `issue_id`、`changed_case_ids` 和动作摘要。
-5. generate 不得自行把 finding 标记 resolved；修复后必须重跑 testcase-review。
+5. generate 不得自行把 finding 标记 resolved；用例变化后旧 Review 哈希不再对应当前文件，修复后必须重跑 testcase-reviewer，由 Review 复核同一 issue ID、决定是否 resolved 并刷新完整 JSON 与测试点哈希。
 
 ## 输出格式（八项业务字段，默认 XMind）
 
@@ -202,7 +202,7 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
    ```bash
    python "<testcase-generate-skill-dir>/scripts/generate_xmind.py" --input <变更目录>/artifacts/testcases.json --output <变更目录>/artifacts/<name>_cases.xmind --title "测试用例"
    ```
-6. 保留完整源JSON供Review使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-review`。
+6. 保留完整源JSON供Review使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-reviewer`。
 
 ---
 

@@ -1,6 +1,6 @@
 # TestSpec 上下文传播协议
 
-> 适用于 `prd-analysis → test-points → testcase-generate → testcase-review`。
+> 适用于 `prd-analysis → test-points → testcase-generate → testcase-reviewer`。
 
 ## 传播介质
 
@@ -43,7 +43,7 @@ Markdown 产物在文件末尾保存：
     "dynamic_followups": [],
     "material_quality": "high",
     "stale_downstream_artifacts": ["review-report.md"],
-    "next_skill": "testcase-review"
+    "next_skill": "testcase-reviewer"
   },
   "testcases": []
 }
@@ -72,7 +72,7 @@ Markdown 产物在文件末尾保存：
 ## 版本规则
 
 - `prd-analysis` 创建或更新 `source_revision`。
-- `test-points`、`testcase-generate`、`testcase-review` 必须原样传播版本，不得自行递增。
+- `test-points`、`testcase-generate`、`testcase-reviewer` 必须原样传播版本，不得自行递增。
 - canonical source 没有版本时，按 Legacy 模式继续并告警，不得伪造版本。
 - 直接上游版本低于 canonical source 时停止，并提示重新运行直接上游 Skill。
 - 直接上游版本高于 canonical source 时停止，报告元数据异常。
@@ -91,8 +91,8 @@ Markdown 产物在文件末尾保存：
 |---|---|---|
 | `prd-analysis` | `requirements.md`、`requirements-analysis.md` | `test-points` |
 | `test-points` | `specs/testpoints.md` | `testcase-generate` |
-| `testcase-generate` | `artifacts/testcases.json`、`artifacts/<name>_cases.xmind` | `testcase-review` |
-| `testcase-review` | `review-report.md` | 无 |
+| `testcase-generate` | `artifacts/testcases.json`、`artifacts/<name>_cases.xmind` | `testcase-reviewer` |
+| `testcase-reviewer` | `review-report.md` | 无 |
 
 Review 通过后保留 `testcase-generate` 输出的完整集 JSON 和 XMind，`review-report.md` 记录最终门禁；冒烟分类仍作为完整集内元数据，不派生独立文件。`review_gate` 必须包含 S1 和四项描述问题的计数与 ID 列表，通过条件及旧报告处理见 `output-contracts.md` 的 `review-report.md` 契约。发现问题时按回溯规则返修并重新 Review。
 
@@ -112,3 +112,7 @@ Review 通过后保留 `testcase-generate` 输出的完整集 JSON 和 XMind，`
 - 需求或验收条件不清楚 → `prd-analysis`
 - 测试点缺失或粒度不合适 → `test-points`
 - 用例字段、步骤或预期有问题 → `testcase-generate`
+
+## 历史评审标识兼容
+
+唯一评审入口和新产物的source_skill均为 `testcase-reviewer`。历史 `source_skill: testcase-review` 仅在读取旧评审报告时兼容；旧next_skill提示应指向现有统一入口继续处理，不恢复独立Skill。

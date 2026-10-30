@@ -1,0 +1,7 @@
+interface:
+  display_name: "测试用例评审器"
+  short_description: "统一执行通用用例评审、SOP 14项检查及门禁汇总。"
+  default_prompt: "使用 $testcase-reviewer，依据需求评审完整测试稿，同一轮执行通用评审和SOP原14项检查，逐项处置发现并输出统一报告与Gate；缺少必需输入时列出未完成项。"
+
+policy:
+  allow_implicit_invocation: true

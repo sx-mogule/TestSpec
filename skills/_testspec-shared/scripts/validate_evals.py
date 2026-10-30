@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate deterministic, synthetic eval definitions for every public skill."""
+"""Validate TestSpec synthetic eval definitions; standalone skills keep their own validator."""
 from __future__ import annotations
 
 import json

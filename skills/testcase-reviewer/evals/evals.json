@@ -1,0 +1,653 @@
+{
+  "skill_name": "testcase-reviewer",
+  "fixture_policy": {
+    "origin": "synthetic",
+    "contains_proprietary_data": false
+  },
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-profile-sync。它是小型 Strict 用例集，没有高风险信号；auto 应保持标准深度。",
+      "expected_output": "完成 Strict 标准深度评审，生成带完整 revision envelope 的 review-report.md。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements.md",
+          "content": "# Requirements\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"risks_identified\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_PROF_SYNC_001: 资料同步\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-sync/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"origin\":{\"kind\":\"testspec-native\",\"source_change\":\"synthetic-profile-sync\"},\"trust\":{\"status\":\"provisional\",\"basis\":\"prd-first\"}},\"testcases\":[{\"id\":\"SYN_PROFILE_001\",\"module\":\"资料\",\"submodule\":\"同步\",\"test_name\":\"资料_同步_更新完成后显示新头像\",\"preconditions\":\"1、用户已登录\",\"test_data\":\"头像：有效图片\",\"steps\":\"1、上传新头像\\n2、等待同步完成\",\"expected_result\":\"1、页面显示新头像\\n2、重新进入页面后仍显示新头像\",\"priority\":\"p0\",\"type\":\"正向\",\"regression_tier\":\"Smoke\",\"tp_refs\":[\"TP_PROF_SYNC_001\"],\"origin\":{\"kind\":\"testspec-native\",\"source_change\":\"synthetic-profile-sync\"},\"trust\":{\"status\":\"provisional\",\"basis\":\"prd-first\"}}]}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Produces a review report in Strict mode",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-profile-sync/review-report.md && test -f \"$FILE\" && grep -qi 'Strict' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Uses standard depth because Strict alone is not a deep trigger",
+          "check": "qualitative"
+        },
+        {
+          "text": "14项矩阵字段均填写且有量化指标；结构通过不代表语义通过",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py review --report testspec/changes/synthetic-profile-sync/review-report.md"
+        },
+        {
+          "text": "Propagates revision 1 and resolves the review stale marker",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-profile-sync --through review --expected-version 1"
+        },
+        {
+          "text": "Writes a machine-readable passing review gate",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-profile-sync/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); g=d['review_gate']; assert g['status']=='pass' and g['s1_unresolved_count']==0 and g['s1_issue_ids']==[]; print('PASS')\" || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "通过报告同时满足S1与四项描述门禁",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-profile-sync/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'pass'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']==0 and g['\"'\"'description_issue_ids'\"'\"']==[]; print('\"'\"'PASS'\"'\"')'"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-provenance-unknown。这是无 source_revision、tp_refs、origin 和 trust 的历史格式，不能按普通 Legacy 通过。",
+      "expected_output": "进入 Provenance-Unknown，生成 GLOBAL:provenance-unknown S1，并阻断评审通过。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/proposal.md",
+          "content": "# Synthetic Legacy Import\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"material_quality\":\"medium\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"material_quality\":\"medium\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_IMP_FILE_001: 文件导入\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"material_quality\":\"medium\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-provenance-unknown/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"material_quality\":\"medium\"},\"testcases\":[{\"id\":\"SYN_LEGACY_001\",\"module\":\"导入\",\"submodule\":\"文件\",\"test_name\":\"导入_文件_文本文件成功\",\"preconditions\":\"\",\"test_data\":\"文件类型：文本\",\"steps\":\"1、选择文本文件\\n2、确认导入\",\"expected_result\":\"1、导入成功且显示文件名\",\"priority\":\"p1\",\"type\":\"正向\",\"tp_refs\":[]}]}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Produces a Provenance-Unknown review",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-provenance-unknown/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Creates the provenance unknown S1",
+          "check": "programmatic",
+          "script": "grep -q 'GLOBAL:provenance-unknown' testspec/changes/synthetic-provenance-unknown/review-report.md && echo PASS || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Does not fabricate a source revision",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-provenance-unknown --through review"
+        },
+        {
+          "text": "Writes a blocked machine-readable review gate",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-provenance-unknown/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" || { echo FAIL; exit 1; }"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-import-quarantine。用例来自隔离导入，仍是 legacy-import + unverified。",
+      "expected_output": "进入 Import-Quarantine，生成 GLOBAL:legacy-traceability S1，并把 review gate 设为 blocked。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-import-quarantine/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：用户可以开启邮件提醒。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-import-quarantine/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_NOTICE_SUB_001：开启邮件提醒\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-import-quarantine/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"canonical_source_policy\":\"prd-first\",\"origin\":{\"kind\":\"legacy-import\"},\"trust\":{\"status\":\"unverified\"}},\"testcases\":[{\"id\":\"OLD-1\",\"module\":\"通知\",\"submodule\":\"订阅\",\"test_name\":\"通知_订阅_开启邮件提醒\",\"preconditions\":\"\",\"test_data\":\"\",\"steps\":\"1、开启邮件提醒\",\"expected_result\":\"1、状态显示为已开启\",\"priority\":\"p1\",\"type\":\"正向\",\"tp_refs\":[],\"origin\":{\"kind\":\"legacy-import\",\"source_label\":\"legacy-source\",\"source_row\":2},\"trust\":{\"status\":\"unverified\"}}]}"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Uses Import-Quarantine mode",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-import-quarantine/review-report.md && grep -q 'Import-Quarantine' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Creates the global legacy traceability S1",
+          "check": "programmatic",
+          "script": "grep -q 'GLOBAL:legacy-traceability' testspec/changes/synthetic-import-quarantine/review-report.md && echo PASS || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Blocks workflow completion until current PRD traceability is rebuilt",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-import-quarantine/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked' and d['review_gate']['s1_unresolved_count']>=1; print('PASS')\" || { echo FAIL; exit 1; }"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-invalid-provenance。artifact 和 case 虽然有 origin/trust 对象，但对象为空或组合非法，不能按 Strict 通过。",
+      "expected_output": "进入 Provenance-Unknown，生成 GLOBAL:provenance-unknown S1，并阻断评审通过。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-invalid-provenance/requirements.md",
+          "content": "# Requirements\n\n- REQ-001：用户可以关闭站内提醒。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification preference\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-invalid-provenance/specs/testpoints.md",
+          "content": "# 测试点\n\n- TP_NOTICE_PREF_001：关闭站内提醒\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification preference\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-invalid-provenance/artifacts/testcases.json",
+          "content": "{\"schema_version\":2,\"_context\":{\"source_skill\":\"testcase-generate\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic notification preference\",\"updated_by_skill\":\"prd-analysis\"},\"origin\":{},\"trust\":{}},\"testcases\":[{\"id\":\"SYN_NOTICE_001\",\"module\":\"通知\",\"submodule\":\"偏好\",\"test_name\":\"通知_偏好_关闭站内提醒\",\"preconditions\":\"\",\"test_data\":\"\",\"steps\":\"1、关闭站内提醒\",\"expected_result\":\"1、状态显示为关闭\",\"priority\":\"p0\",\"type\":\"正向\",\"tp_refs\":[\"TP_NOTICE_PREF_001\"],\"origin\":{\"kind\":\"legacy-import\"},\"trust\":{\"status\":\"verified\"}}]}"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "Does not treat empty provenance objects as Strict",
+          "check": "programmatic",
+          "script": "FILE=testspec/changes/synthetic-invalid-provenance/review-report.md && test -f \"$FILE\" && grep -q 'Provenance-Unknown' \"$FILE\" && grep -q 'GLOBAL:provenance-unknown' \"$FILE\" && echo PASS || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Writes a blocked review gate",
+          "check": "programmatic",
+          "script": "python3 -c \"import json,re; t=open('testspec/changes/synthetic-invalid-provenance/review-report.md').read(); d=json.loads(re.findall(r'<!--\\\\s*testspec-context\\\\s*(\\\\{.*?\\\\})\\\\s*-->',t,re.S)[-1]); assert d['review_gate']['status']=='blocked'; print('PASS')\" || { echo FAIL; exit 1; }"
+        },
+        {
+          "text": "Explains that empty objects and illegal origin/trust combinations are not valid provenance",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-profile-naming 的用例。",
+      "expected_output": "R2 识别一条名称冗长和一条名称含糊的 S2 问题，逐项给出 case_id、原名称、原因和简短建议名称；建议保留展示/再次进入后保留这两个不同意图，评审不直接修改用例。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-profile-naming/requirements.md",
+          "content": "# Requirements\n\n- REQ-001 上传新头像并完成同步后，页面显示新头像。\n- REQ-002 同步完成后重新进入页面，仍显示新头像。\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/requirements-analysis.md",
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"risks_identified\":[]}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/specs/testpoints.md",
+          "content": "# 测试点\n\n## 命名字典\n\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 资料 | PROF |\n\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 资料 | 同步 | SYNC |\n\n### 资料模块\n#### 同步功能\n- TP_PROF_SYNC_001: 资料_同步_完成后展示新头像\n  - 验证要点: 同步完成后页面显示新头像\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-001\n- TP_PROF_SYNC_002: 资料_同步_再次进入后保留新头像\n  - 验证要点: 同步完成后重新进入页面仍显示新头像\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\"source_skill\":\"test-points\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\"}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-profile-naming/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"synthetic profile sync\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-reviewer\",\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-profile-naming\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_PROFILE_001\",\n      \"module\": \"资料\",\n      \"submodule\": \"同步\",\n      \"test_name\": \"资料_同步_验证用户在上传新头像并等待同步操作完成之后页面能够正确显示已经上传的新头像的功能\",\n      \"preconditions\": \"1、用户已登录\",\n      \"test_data\": \"头像：有效图片\",\n      \"steps\": \"1、上传新头像\\n2、等待同步完成\",\n      \"expected_result\": \"1、页面显示新头像\",\n      \"priority\": \"p0\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Smoke\",\n      \"tp_refs\": [\n        \"TP_PROF_SYNC_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-profile-naming\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_PROFILE_002\",\n      \"module\": \"资料\",\n      \"submodule\": \"同步\",\n      \"test_name\": \"资料_同步_功能正常\",\n      \"preconditions\": \"1、用户已登录且新头像已同步完成\",\n      \"test_data\": \"头像：有效图片\",\n      \"steps\": \"1、退出当前页面\\n2、重新进入页面\",\n      \"expected_result\": \"1、页面仍显示新头像\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_PROF_SYNC_002\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-profile-naming\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "评审报告定位两条名称问题并保留 R2 记录",
+          "check": "programmatic",
+          "script": "python3 -c \"from pathlib import Path; t=Path('testspec/changes/synthetic-profile-naming/review-report.md').read_text(); assert all(s in t for s in ['R2','SYN_PROFILE_001','SYN_PROFILE_002','S2']); print('PASS')\""
+        },
+        {
+          "text": "将流程堆叠的名称和功能正常的含糊名称分别记为 R2 S2；每项给出原名称、具体原因和建议名称",
+          "check": "qualitative"
+        },
+        {
+          "text": "建议名称区分同步后展示和重新进入后保留两种意图，依据输入中的步骤与预期，不新增业务结果或只用编号区分",
+          "check": "qualitative"
+        },
+        {
+          "text": "仅在报告中提出改名建议，不直接改写输入 testcases.json；不改变现有 Review Gate 计算",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-concise-quality。表述保持简短、直白、去套话，不修改输入用例。",
+      "expected_output": "逐条核对主要目标：识别 SYN_CONCISE_002 缺少订单取消状态预期，按 H3 意图偏移记 S1，Review Gate blocked；SYN_CONCISE_001 不因步骤与预期数量不同被判错，最短和最长标题用例保留。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-concise-quality/requirements.md",
+          "content": "# 合成需求\n- REQ-001 已登录且有订单取消权限的账号，可打开待支付订单并取消。确认取消后返回订单列表，目标订单状态变为「已取消」，重新打开详情仍为「已取消」。\n- REQ-002 已登录且有公告编辑权限的账号，可在编辑页输入1至10个大写英文字母作为标题。点击保存后重新打开编辑页，标题与输入值一致。\n- 测试隔离：每条用例独立准备、清理数据；订单DEMO-001和DEMO-002均为待支付，公告DEMO-003原标题为OLD。\n- 范围：仅覆盖上述规则；本次标题用例检查已确认的最小、最大合法长度。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成简洁描述与关键结果核对\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-concise-quality/requirements-analysis.md",
+          "content": "# 分析\n材料明确角色、入口、初始状态和保存后的观察方式。取消订单需要核对业务状态，返回列表本身不能证明取消完成；标题最短与最长输入属于不同边界位置，应分别保留。方法：等价类、边界值。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成简洁描述与关键结果核对\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-concise-quality/specs/testpoints.md",
+          "content": "# 测试点：合成简洁描述\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 订单 | ORDER |\n| 公告 | NOTE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 订单 | 取消 | CANCEL |\n| 公告 | 标题 | TITLE |\n### 订单模块\n#### 取消功能\n##### 功能验证点 (Functional)\n- TP_ORDER_CANCEL_001: 订单_取消_确认后保留已取消状态\n  - 验证要点: 确认取消后返回列表，目标订单变为已取消，重新打开详情后状态保持\n  - 设计方法: 等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n### 公告模块\n#### 标题功能\n##### 边界验证点 (Boundary)\n- TP_NOTE_TITLE_100: 公告_标题_合法长度边界可保存\n  - 验证要点: 最小与最大合法长度标题保存后保持输入值\n  - 设计方法: 边界值\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成简洁描述与关键结果核对\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"design_methods\": [\n    \"等价类\",\n    \"边界值\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-concise-quality/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成简洁描述与关键结果核对\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"risks_identified\": [],\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-reviewer\",\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"requirements.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-concise-quality\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    },\n    \"design_methods\": [\n      \"等价类\",\n      \"边界值\"\n    ]\n  },\n  \"testcases\": [\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-quality\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_001\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后保留已取消状态\",\n      \"preconditions\": \"账号已登录，有订单取消权限；目标订单为待支付。\",\n      \"test_data\": \"订单号：DEMO-001。\",\n      \"steps\": \"1、打开订单列表\\n2、选择测试数据中的订单\\n3、点击取消\\n4、确认取消\\n5、重新打开该订单的详情\",\n      \"expected_result\": \"1、返回订单列表，订单状态变为「已取消」；重新打开详情仍为「已取消」。\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ]\n    },\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-quality\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_002\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后返回订单列表\",\n      \"preconditions\": \"账号已登录，有订单取消权限；目标订单为待支付。\",\n      \"test_data\": \"订单号：DEMO-002。\",\n      \"steps\": \"1、打开订单列表\\n2、选择测试数据中的订单\\n3、点击取消\\n4、确认取消\\n5、重新打开该订单的详情\",\n      \"expected_result\": \"1、返回订单列表。\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ]\n    },\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-quality\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_003\",\n      \"module\": \"公告\",\n      \"submodule\": \"标题\",\n      \"test_name\": \"公告_标题_最短标题允许保存\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；已打开公告DEMO-003编辑页，标题为OLD。\",\n      \"test_data\": \"公告编号：DEMO-003；标题：A。\",\n      \"steps\": \"1、清空标题输入框\\n2、输入测试数据中的标题\\n3、点击保存\\n4、重新打开公告编辑页\",\n      \"expected_result\": \"1、标题与测试数据中的输入值一致。\",\n      \"type\": \"边界\",\n      \"tp_refs\": [\n        \"TP_NOTE_TITLE_100\"\n      ]\n    },\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-quality\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_004\",\n      \"module\": \"公告\",\n      \"submodule\": \"标题\",\n      \"test_name\": \"公告_标题_最长标题允许保存\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；已打开公告DEMO-003编辑页，标题为OLD。\",\n      \"test_data\": \"公告编号：DEMO-003；标题：ABCDEFGHIJ。\",\n      \"steps\": \"1、清空标题输入框\\n2、输入测试数据中的标题\\n3、点击保存\\n4、重新打开公告编辑页\",\n      \"expected_result\": \"1、标题与测试数据中的输入值一致。\",\n      \"type\": \"边界\",\n      \"tp_refs\": [\n        \"TP_NOTE_TITLE_100\"\n      ]\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "确定性校验可通过，关键结果遗漏仍须由Review对照TP识别",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/validate_testcases.py --input testspec/changes/synthetic-concise-quality/artifacts/testcases.json --testpoints testspec/changes/synthetic-concise-quality/specs/testpoints.md"
+        },
+        {
+          "text": "在H3以S1定位SYN_CONCISE_002，证据指出其预期遗漏「已取消」，且Gate blocked",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-quality/review-report.md --dimension H3 --id SYN_CONCISE_002 --severity S1 --contains 已取消 && python3 -B -c \"from pathlib import Path; import json,re; t=Path('testspec/changes/synthetic-concise-quality/review-report.md').read_text(); c=json.loads(re.search(r'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->',t,re.S).group(1)); g=c['review_gate']; assert g['status']=='blocked' and g['s1_unresolved_count']>=1; print('PASS')\""
+        },
+        {
+          "text": "评审不改写输入用例，不删除边界场景",
+          "check": "programmatic",
+          "script": "python3 -c \"from pathlib import Path; import hashlib; assert hashlib.sha256(Path('testspec/changes/synthetic-concise-quality/artifacts/testcases.json').read_bytes()).hexdigest()=='43160573a4be20e894331d1b628086510f73015746120775bacf1f547898b356'; print('PASS')\""
+        },
+        {
+          "text": "SYN_CONCISE_001覆盖取消状态且可观察，不因5个步骤对应1个关键预期而要求补无关预期或扩句",
+          "check": "qualitative"
+        },
+        {
+          "text": "SYN_CONCISE_002只验证返回列表，遗漏TP要求的取消状态；即使同一TP还有合格用例，也要逐条定位该用例的H3 S1问题",
+          "check": "qualitative"
+        },
+        {
+          "text": "H5把TP_NOTE_TITLE_100与SYN_CONCISE_003/004、最短A和最长ABCDEFGHIJ关联，确认两端边界都在完整集中",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py evidence --report testspec/changes/synthetic-concise-quality/review-report.md --dimension H5 --id TP_NOTE_TITLE_100 --id SYN_CONCISE_003 --id SYN_CONCISE_004 --contains 最短 --contains 标题：A --contains 最长 --contains ABCDEFGHIJ"
+        },
+        {
+          "text": "消费按组候选，比较全部成员的实际差异，按需查询逐对明细；同组不表示任意两条都相似，缓存命中不替代本次H3目标核对",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-theme-data 的测试数据是否简短、准确、够用。不要改写输入用例。",
+      "expected_output": "SYN_DATA_001的无关素材配置仍按H6记S3，并计入四项描述未解决问题，Review Gate blocked；SYN_DATA_002短数据和SYN_DATA_003精确素材值可用，不按字符数判错。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-theme-data/requirements.md",
+          "content": "# 合成需求\n- REQ-001：精品店有春日、夏日、秋日三个主题，按此顺序在同一长页展示。点击主题TAB定位到对应模块；从春日模块向下滚动进入夏日模块时，选中TAB更新为夏日；均不打开新主题页。\n- REQ-002：春日模块展示配置的图片spring.png和文案「春日上新」。\n- 已有配置：夏日图片summer.png、文案「夏日上新」；秋日图片autumn.png、文案「秋日上新」；视频总数0。\n- 准备条件：配置已生效，精品店可访问，各主题模块足够高可滚动；每条用例独立从春日模块顶部开始，春日TAB选中。\n- 范围：仅验证点击定位、滚动更新TAB、春日素材展示三个目标；其他素材配置只用于准备页面。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成主题测试数据精简\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-theme-data/requirements-analysis.md",
+          "content": "# 合成分析\n主题切换只依赖主题名称和顺序；点击定位与滚动更新TAB分别验证。春日素材展示需精确比对spring.png和「春日上新」。已有的其他素材和视频数量不参与这三个目标的判定。采用流程分析。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成主题测试数据精简\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-theme-data/specs/testpoints.md",
+          "content": "# 测试点：合成主题\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 精品店 | SHOP |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 精品店 | 主题切换 | THEME |\n| 精品店 | 素材展示 | CONTENT |\n### 精品店模块\n#### 主题切换功能\n##### 功能验证点 (Functional)\n- TP_SHOP_THEME_001: 精品店_主题切换_点击定位秋日模块\n  - 验证要点: 点击秋日TAB后在当前长页定位秋日模块，不打开新主题页\n  - 设计方法: 流程分析\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n- TP_SHOP_THEME_002: 精品店_主题切换_滚动更新夏日TAB\n  - 验证要点: 从春日滚动进入夏日模块后夏日TAB选中，不打开新主题页\n  - 设计方法: 流程分析\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n#### 素材展示功能\n##### 功能验证点 (Functional)\n- TP_SHOP_CONTENT_001: 精品店_素材展示_春日图片文案与配置一致\n  - 验证要点: 春日模块展示spring.png与文案「春日上新」\n  - 设计方法: 流程分析\n  - 优先级: p2\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成主题测试数据精简\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-theme-data/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成主题测试数据精简\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"risks_identified\": [],\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-reviewer\",\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"requirements.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-theme-data\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    },\n    \"design_methods\": [\n      \"流程分析\"\n    ]\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_DATA_001\",\n      \"module\": \"精品店\",\n      \"submodule\": \"主题切换\",\n      \"test_name\": \"精品店_主题切换_点击定位秋日模块\",\n      \"preconditions\": \"主题配置已生效；当前位于春日模块顶部，春日TAB选中；各主题可滚动。\",\n      \"test_data\": \"主题顺序：春日、夏日、秋日；春日图片：spring.png，文案：春日上新；夏日图片：summer.png，文案：夏日上新；秋日图片：autumn.png，文案：秋日上新；视频总数：0。\",\n      \"steps\": \"1、点击秋日TAB\",\n      \"expected_result\": \"1、当前长页定位到秋日模块，未打开新主题页。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_SHOP_THEME_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-theme-data\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_DATA_002\",\n      \"module\": \"精品店\",\n      \"submodule\": \"主题切换\",\n      \"test_name\": \"精品店_主题切换_滚动更新夏日TAB\",\n      \"preconditions\": \"主题配置已生效；当前位于春日模块顶部，春日TAB选中；各主题可滚动。\",\n      \"test_data\": \"主题顺序：春日、夏日、秋日。\",\n      \"steps\": \"1、向下滚动进入夏日模块\",\n      \"expected_result\": \"1、夏日TAB选中，仍在当前长页。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_SHOP_THEME_002\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-theme-data\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_DATA_003\",\n      \"module\": \"精品店\",\n      \"submodule\": \"素材展示\",\n      \"test_name\": \"精品店_素材展示_春日图片文案与配置一致\",\n      \"preconditions\": \"主题配置已生效；当前位于春日模块顶部，春日TAB选中；各主题可滚动。\",\n      \"test_data\": \"主题：春日；图片：spring.png；文案：春日上新。\",\n      \"steps\": \"1、查看春日模块的图片和文案\",\n      \"expected_result\": \"1、春日模块展示spring.png，文案为「春日上新」。\",\n      \"priority\": \"p2\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_SHOP_CONTENT_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-theme-data\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "评审不改写输入用例",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; assert hashlib.sha256(Path('\"'\"'testspec/changes/synthetic-theme-data/artifacts/testcases.json'\"'\"').read_bytes()).hexdigest()=='\"'\"'143405e0269f402c1601def5cdd9847ad2aedc4cc058df2e817ac2d6bf61bda1'\"'\"'; print('\"'\"'PASS'\"'\"')'"
+        },
+        {
+          "text": "在H6定位SYN_DATA_001的无关图片、文案和视频数量，保留S3分级并纳入description_issue_ids，使Gate blocked；提供可直接替换的短数据，不把单纯冗余升为R5 S1。",
+          "check": "qualitative"
+        },
+        {
+          "text": "SYN_DATA_002数据已足够执行，不要求为每个主题补素材明细；SYN_DATA_003保留参与Oracle的spring.png和「春日上新」，不为了缩短删除。",
+          "check": "qualitative"
+        },
+        {
+          "text": "按数据与操作、判定的关系评审，不凭字符数、字段数量或步骤与预期数量差判错；保留S1门禁并同时执行四项描述门禁。",
+          "check": "qualitative"
+        },
+        {
+          "text": "S3描述问题也阻断Review通过",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-theme-data/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'blocked'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']>=1 and len(g['\"'\"'description_issue_ids'\"'\"'])==g['\"'\"'description_unresolved_count'\"'\"']; assert '\"'\"'SYN_DATA_001'\"'\"' in t; print('\"'\"'PASS'\"'\"')'"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-four-fields。四项描述能简单就别复杂，规则加入Review门禁；不要修改用例。",
+      "expected_output": "逐项定位SYN_FIELD_001的前置条件、002的测试数据、003的步骤、004的预期中的冗余套话，按原维度分级并全部纳入描述门禁，Gate blocked且S1不被滥用；005短而完整、006必要的长正文不因长度被判错。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-four-fields/requirements.md",
+          "content": "# 合成需求\n- REQ-001：已登录且有公告编辑权限的账号，可修改可编辑公告的标题；保存后重新打开编辑页，标题与输入值一致。\n- REQ-002：上述账号可修改公告正文；保存后重新打开编辑页，正文与输入全文逐字一致。\n- 已有数据：每条用例独立使用可编辑公告，编号见用例；原标题OLD，正文为空；发布人编辑甲、背景白色。发布人和背景不参与本次保存判定。\n- 标题输入NEW；正文输入以用例提供的全文为准。本次只覆盖保存及回读，不要求多次重开或其他页面检查。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-four-fields/requirements-analysis.md",
+          "content": "# 合成分析\n标题与正文保存各验证一次操作和回读即可；全文逐字比对需要完整保留正文，较长本身不构成问题。只覆盖两个已确认TP，方法为流程分析。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-four-fields/specs/testpoints.md",
+          "content": "# 测试点：四项描述\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 公告 | NOTE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 公告 | 保存 | SAVE |\n### 公告模块\n#### 保存功能\n##### 功能验证点 (Functional)\n- TP_NOTE_SAVE_001: 公告_保存_标题保存后保持输入值\n  - 验证要点: 保存后重新打开编辑页，标题与输入值一致\n  - 设计方法: 流程分析\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n- TP_NOTE_SAVE_002: 公告_保存_正文保存后保持全文\n  - 验证要点: 保存后重新打开编辑页，正文与输入全文逐字一致\n  - 设计方法: 流程分析\n  - 优先级: p2\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-four-fields/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成四项描述门禁\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"risks_identified\": [],\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-reviewer\",\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"requirements.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"design_methods\": [\n      \"流程分析\"\n    ],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-four-fields\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_FIELD_001\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_标题保存后可回读\",\n      \"preconditions\": \"请确保账号已经成功登录系统，并且具备公告编辑权限，以便顺利进行后续测试。账号已登录且具有公告编辑权限，目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_001；标题：NEW。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入标题NEW\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、标题为「NEW」。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_FIELD_002\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_标题保存后保留新值\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_002；标题：NEW；发布人：编辑甲；背景：白色；原正文：空。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入标题NEW\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、标题为「NEW」。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_FIELD_003\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_重开后标题保持新值\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_003；标题：NEW。\",\n      \"steps\": \"1、请先打开测试数据中的公告编辑页，以便顺利进行后续测试\\n2、输入标题NEW\\n3、点击保存\\n4、重新打开该公告编辑页\\n5、再重复打开该编辑页三次\",\n      \"expected_result\": \"1、标题为「NEW」。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_FIELD_004\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_标题回读与输入一致\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_004；标题：NEW。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入标题NEW\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、系统应能够正确地显示标题「NEW」，以便验证本次保存功能；页面中的标题应为「NEW」，从而证明标题已经按照输入内容展示。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_FIELD_005\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_标题保存后保持输入值\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_005；标题：NEW。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入标题NEW\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、标题为「NEW」。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_FIELD_006\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_正文保存后保持全文\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_006；正文：活动报名将于周五18:00截止，请在截止前完成信息填写。报名信息提交后，请核对姓名与联系方式；如需修改，请在截止前重新保存，并确认页面展示的是最后一次保存的内容。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入测试数据中的正文\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、正文与测试数据中的全文逐字一致。\",\n      \"priority\": \"p2\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_002\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "四字段问题全部定位且无S1也不能通过",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-four-fields/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert all(x in t for x in ['\"'\"'SYN_FIELD_001'\"'\"','\"'\"'SYN_FIELD_002'\"'\"','\"'\"'SYN_FIELD_003'\"'\"','\"'\"'SYN_FIELD_004'\"'\"']); assert g['\"'\"'status'\"'\"']=='\"'\"'blocked'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']>=4 and len(g['\"'\"'description_issue_ids'\"'\"'])==g['\"'\"'description_unresolved_count'\"'\"']; print('\"'\"'PASS'\"'\"')'"
+        },
+        {
+          "text": "Review保持输入用例原样",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; assert hashlib.sha256(Path('\"'\"'testspec/changes/synthetic-four-fields/artifacts/testcases.json'\"'\"').read_bytes()).hexdigest()=='\"'\"'54bb7c04f021ac3603a64d010797c433a834ae12a85556f943e6dae5632bc8b8'\"'\"'; print('\"'\"'PASS'\"'\"')'"
+        },
+        {
+          "text": "报告四行逐字段结果，每个描述问题给出case_id、字段、原文、原因和可直接替换的建议；同一issue只计一次，accepted不能绕过门禁。",
+          "check": "qualitative"
+        },
+        {
+          "text": "识别001前置条件的重复套话、002与标题保存无关的数据、003无关重复重开和目的修饰、004已明确Oracle之外的冗长修饰；保留四个字段的必要信息，不把这些问题滥升S1。",
+          "check": "qualitative"
+        },
+        {
+          "text": "005步骤多于预期仍可用；006全文逐字比对需要完整长正文，不能为凑短而删除或要求改为泛称；不把同义词偏好当成违规。",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-four-fields-pass；只按已确认规则评审，不修改用例。",
+      "expected_output": "两条用例的四项描述完整且只含必要信息，必要的长正文和4步对应1个预期均允许，描述门禁问题为0；其他检查通过后Review Gate pass。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-four-fields-pass/requirements.md",
+          "content": "# 合成需求\n- REQ-001：已登录且有公告编辑权限的账号，可修改可编辑公告的标题；保存后重新打开编辑页，标题与输入值一致。\n- REQ-002：上述账号可修改公告正文；保存后重新打开编辑页，正文与输入全文逐字一致。\n- 已有数据：每条用例独立使用可编辑公告，编号见用例；原标题OLD，正文为空；发布人编辑甲、背景白色。发布人和背景不参与本次保存判定。\n- 标题输入NEW；正文输入以用例提供的全文为准。本次只覆盖保存及回读，不要求多次重开或其他页面检查。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-four-fields-pass/requirements-analysis.md",
+          "content": "# 合成分析\n标题与正文保存各验证一次操作和回读即可；全文逐字比对需要完整保留正文，较长本身不构成问题。只覆盖两个已确认TP，方法为流程分析。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-four-fields-pass/specs/testpoints.md",
+          "content": "# 测试点：四项描述\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 公告 | NOTE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 公告 | 保存 | SAVE |\n### 公告模块\n#### 保存功能\n##### 功能验证点 (Functional)\n- TP_NOTE_SAVE_001: 公告_保存_标题保存后保持输入值\n  - 验证要点: 保存后重新打开编辑页，标题与输入值一致\n  - 设计方法: 流程分析\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n- TP_NOTE_SAVE_002: 公告_保存_正文保存后保持全文\n  - 验证要点: 保存后重新打开编辑页，正文与输入全文逐字一致\n  - 设计方法: 流程分析\n  - 优先级: p2\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"design_methods\": [\n    \"流程分析\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-four-fields-pass/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成四项描述门禁\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"risks_identified\": [],\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-reviewer\",\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"requirements.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"design_methods\": [\n      \"流程分析\"\n    ],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-four-fields-pass\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_FIELD_005\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_标题保存后保持输入值\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_005；标题：NEW。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入标题NEW\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、标题为「NEW」。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields-pass\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_FIELD_006\",\n      \"module\": \"公告\",\n      \"submodule\": \"保存\",\n      \"test_name\": \"公告_保存_正文保存后保持全文\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；目标公告可编辑。\",\n      \"test_data\": \"公告编号：SYN_FIELD_006；正文：活动报名将于周五18:00截止，请在截止前完成信息填写。报名信息提交后，请核对姓名与联系方式；如需修改，请在截止前重新保存，并确认页面展示的是最后一次保存的内容。\",\n      \"steps\": \"1、打开测试数据中的公告编辑页\\n2、输入测试数据中的正文\\n3、点击保存\\n4、重新打开该公告编辑页\",\n      \"expected_result\": \"1、正文与测试数据中的全文逐字一致。\",\n      \"priority\": \"p2\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_NOTE_SAVE_002\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-four-fields-pass\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "合格四项描述可正常通过",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-four-fields-pass/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'pass'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']==0 and g['\"'\"'description_issue_ids'\"'\"']==[]; print('\"'\"'PASS'\"'\"')'"
+        },
+        {
+          "text": "Review不截断长正文或改写输入",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; assert hashlib.sha256(Path('\"'\"'testspec/changes/synthetic-four-fields-pass/artifacts/testcases.json'\"'\"').read_bytes()).hexdigest()=='\"'\"'9494a80d7b251fc88b9cc62f36b81876a2a527fef156df41710b7f154039ecf3'\"'\"'; print('\"'\"'PASS'\"'\"')'"
+        },
+        {
+          "text": "四个字段逐条检查完毕；005短而完整，006正文全文参与Oracle，不按字符数或步骤与预期数量差制造描述问题。",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "运行 testcase-reviewer，评审 synthetic-concise-boundary-gap。以原始需求、测试点与完整用例集为依据，给出独立结论；不修改输入用例。",
+      "expected_output": "确认确定性校验仍报告TP覆盖率100%，但在H5指出TP_NOTE_TITLE_100的最长合法长度边界缺失；定位现存SYN_CONCISE_003与缺失规则，不生成替代用例，不修改输入。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-concise-boundary-gap/requirements.md",
+          "content": "# 合成需求\n- REQ-001 已登录且有订单取消权限的账号，可打开待支付订单并取消。确认取消后返回订单列表，目标订单状态变为「已取消」，重新打开详情仍为「已取消」。\n- REQ-002 已登录且有公告编辑权限的账号，可在编辑页输入1至10个大写英文字母作为标题。点击保存后重新打开编辑页，标题与输入值一致。\n- 测试隔离：每条用例独立准备、清理数据；订单DEMO-001和DEMO-002均为待支付，公告DEMO-003原标题为OLD。\n- 范围：仅覆盖上述规则；本次标题用例检查已确认的最小、最大合法长度。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成简洁描述与关键结果核对\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-concise-boundary-gap/requirements-analysis.md",
+          "content": "# 分析\n材料明确角色、入口、初始状态和保存后的观察方式。取消订单需要核对业务状态，返回列表本身不能证明取消完成；标题最短与最长输入属于不同边界位置，应分别保留。方法：等价类、边界值。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成简洁描述与关键结果核对\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-concise-boundary-gap/specs/testpoints.md",
+          "content": "# 测试点：合成简洁描述\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 订单 | ORDER |\n| 公告 | NOTE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 订单 | 取消 | CANCEL |\n| 公告 | 标题 | TITLE |\n### 订单模块\n#### 取消功能\n##### 功能验证点 (Functional)\n- TP_ORDER_CANCEL_001: 订单_取消_确认后保留已取消状态\n  - 验证要点: 确认取消后返回列表，目标订单变为已取消，重新打开详情后状态保持\n  - 设计方法: 等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001\n### 公告模块\n#### 标题功能\n##### 边界验证点 (Boundary)\n- TP_NOTE_TITLE_100: 公告_标题_合法长度边界可保存\n  - 验证要点: 最小与最大合法长度标题保存后保持输入值\n  - 设计方法: 边界值\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成简洁描述与关键结果核对\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"design_methods\": [\n    \"等价类\",\n    \"边界值\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成简洁描述与关键结果核对\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"risks_identified\": [],\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"stale_reason\": \"review pending\",\n    \"next_skill\": \"testcase-reviewer\",\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"requirements.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-concise-boundary-gap\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    },\n    \"design_methods\": [\n      \"等价类\",\n      \"边界值\"\n    ]\n  },\n  \"testcases\": [\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-boundary-gap\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_001\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后保留已取消状态\",\n      \"preconditions\": \"账号已登录，有订单取消权限；目标订单为待支付。\",\n      \"test_data\": \"订单号：DEMO-001。\",\n      \"steps\": \"1、打开订单列表\\n2、选择测试数据中的订单\\n3、点击取消\\n4、确认取消\\n5、重新打开该订单的详情\",\n      \"expected_result\": \"1、返回订单列表，订单状态变为「已取消」；重新打开详情仍为「已取消」。\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ]\n    },\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-boundary-gap\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_002\",\n      \"module\": \"订单\",\n      \"submodule\": \"取消\",\n      \"test_name\": \"订单_取消_取消后返回订单列表\",\n      \"preconditions\": \"账号已登录，有订单取消权限；目标订单为待支付。\",\n      \"test_data\": \"订单号：DEMO-002。\",\n      \"steps\": \"1、打开订单列表\\n2、选择测试数据中的订单\\n3、点击取消\\n4、确认取消\\n5、重新打开该订单的详情\",\n      \"expected_result\": \"1、返回订单列表。\",\n      \"type\": \"正向\",\n      \"tp_refs\": [\n        \"TP_ORDER_CANCEL_001\"\n      ]\n    },\n    {\n      \"priority\": \"p1\",\n      \"regression_tier\": \"Full\",\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-concise-boundary-gap\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      },\n      \"id\": \"SYN_CONCISE_003\",\n      \"module\": \"公告\",\n      \"submodule\": \"标题\",\n      \"test_name\": \"公告_标题_最短标题允许保存\",\n      \"preconditions\": \"账号已登录，有公告编辑权限；已打开公告DEMO-003编辑页，标题为OLD。\",\n      \"test_data\": \"公告编号：DEMO-003；标题：A。\",\n      \"steps\": \"1、清空标题输入框\\n2、输入测试数据中的标题\\n3、点击保存\\n4、重新打开公告编辑页\",\n      \"expected_result\": \"1、标题与测试数据中的输入值一致。\",\n      \"type\": \"边界\",\n      \"tp_refs\": [\n        \"TP_NOTE_TITLE_100\"\n      ]\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "确定性校验显示TP仍为100%覆盖；覆盖率不能替代必需边界核对",
+          "check": "programmatic",
+          "script": "python3 -B -c \"import sys; sys.path.insert(0, 'skills/_testspec-shared/scripts'); import validate_testcases as v; r=v.validate('testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json', 'testspec/changes/synthetic-concise-boundary-gap/specs/testpoints.md'); assert r['status']=='PASS' and r['coverage']['coverage_rate']==1.0 and r['coverage']['pass']; print('PASS')\""
+        },
+        {
+          "text": "H5将缺失绑定TP_NOTE_TITLE_100和SYN_CONCISE_003，指出「最长」合法边界缺失",
+          "check": "programmatic",
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-boundary-gap/review-report.md --dimension H5 --id TP_NOTE_TITLE_100 --contains 最长"
+        },
+        {
+          "text": "输入保留最短用例A，最长ABCDEFGHIJ用例确实缺失；不补造用例、不改写输入",
+          "check": "programmatic",
+          "script": "python3 -B -c \"import json; d=json.load(open('testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json')); c={x['id']:x for x in d['testcases']}; assert 'SYN_CONCISE_003' in c and c['SYN_CONCISE_003']['test_data'].endswith('标题：A。') and 'SYN_CONCISE_004' not in c and all('TP_NOTE_TITLE_100' in x['tp_refs'] for x in c.values() if x['module']=='公告'); print('PASS')\""
+        },
+        {
+          "text": "Review按H5记录最短/最长边界缺失的具体影响和建议；不把TP引用或其他边界用例当成完整覆盖",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "使用 $testcase-reviewer 评审当前 change，执行通用评审与SOP检查。只输出评审报告，不修改用例。 目录：testspec/changes/synthetic-reviewer-oracle。",
+      "expected_output": "独立 reviewer 根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-reviewer-oracle/raw-prd.md",
+          "content": "# 规则名称编辑（合成 PRD，版本1）\n\n本样例没有实际产品。只覆盖以下已确认功能，不涉及鉴权流程、接口、性能、网络故障或其他业务。\n\n- R1：操作者已登录且具有规则配置权限；规则分启用、停用两种状态。\n- R2：启用规则可编辑名称。名称只允许2～5个大写英文字母，包含两个端点。\n- R3：合法名称保存后返回列表，显示新名称，规则仍启用；重新打开编辑页仍显示保存后的名称。\n- R4：空名称、长度不在范围内或包含小写字母时保存被拒绝；仍停留编辑页，显示“名称须为2～5个大写英文字母”。列表中的原名称与启用状态不变。\n- R5：未保存修改时点击取消，返回列表，原名称与启用状态均保持。\n- R6：停用规则的编辑按钮为禁用状态，不能通过该入口进入编辑页。\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-oracle/requirements.md",
+          "content": "# 需求汇总\n\n来源：raw-prd.md，版本1；事实由原始R1～R6逐条转录，未引入实现现状。\n\n- REQ-001（R1）：本轮仅已登录且有规则配置权限的操作者，初始规则状态按本例前置条件准备。\n- REQ-002（R2）：启用规则的名称仅允许2～5个大写英文字母，端点包含。\n- REQ-003（R3）：合法保存后列表、重新打开编辑页均显示新名称，状态仍启用。\n- REQ-004（R4）：空、越界长度或小写输入被拒绝，编辑页保留并显示指定提示，列表原名与状态保持。\n- REQ-005（R5）：取消未保存修改后返回列表，原名与启用状态保持。\n- REQ-006（R6）：停用规则的编辑入口禁用，不能进入编辑页。\n\n阻塞澄清项：无。执行期数据需独立准备、清理，未实际执行产品。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"prd-analysis\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-oracle/requirements-analysis.md",
+          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-oracle/specs/testpoints.md",
+          "content": "# 测试点：规则配置\n\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 规则配置 | RULE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 规则配置 | 名称编辑 | NAME |\n| 规则配置 | 取消编辑 | CANCEL |\n| 规则配置 | 停用入口 | DISABLED |\n\n### 规则配置模块\n#### 名称编辑功能\n##### 功能验证点 (Functional)\n- TP_RULE_NAME_001: 规则配置_名称编辑_合法保存后名称保持\n  - 验证要点: 合法名称保存后，列表与重新打开的编辑页均显示新名称，规则状态保持\n  - 设计方法: 等价类\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001、REQ-002、REQ-003\n##### 边界验证点 (Boundary)\n- TP_RULE_NAME_100: 规则配置_名称编辑_合法端点接受且越界与空值拒绝\n  - 验证要点: 上下界分别保存；相邻越界与空值拒绝后原名和状态不变\n  - 设计方法: 边界值、等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002、REQ-003、REQ-004\n##### 异常验证点 (Exception)\n- TP_RULE_NAME_200: 规则配置_名称编辑_小写字母拒绝且原值保持\n  - 验证要点: 长度合法的小写名称被拒绝，排除长度与权限干扰\n  - 设计方法: 等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-004\n#### 取消编辑功能\n##### 功能验证点 (Functional)\n- TP_RULE_CANCEL_001: 规则配置_取消编辑_取消后保留原名与启用状态\n  - 验证要点: 已产生未保存修改后取消，列表保留原名与启用状态\n  - 设计方法: 流程分析、状态迁移\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-005\n#### 停用入口功能\n##### 异常验证点 (Exception)\n- TP_RULE_DISABLED_200: 规则配置_停用入口_编辑按钮禁用\n  - 验证要点: 停用规则编辑按钮禁用且不能通过该入口进入编辑页\n  - 设计方法: 状态迁移\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-006\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"testcase-generate\",\n  \"stale_reason\": \"下游尚待完成\",\n  \"design_methods\": [\n    \"等价类\",\n    \"边界值\",\n    \"流程分析\",\n    \"状态迁移\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-oracle/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成规则名称编辑验收\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"raw-prd.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"risks_identified\": [\n      \"名称边界与拒绝后的原值保持影响验收判断\"\n    ],\n    \"next_skill\": \"testcase-reviewer\",\n    \"stale_reason\": \"下游尚待完成\",\n    \"design_methods\": [\n      \"等价类\",\n      \"边界值\",\n      \"流程分析\",\n      \"状态迁移\"\n    ],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-reviewer-oracle\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_REVIEW_001\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_合法名称保存后保持\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：XYZ。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"成功。\",\n      \"priority\": \"p0\",\n      \"type\": \"冒烟\",\n      \"regression_tier\": \"Smoke\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_002\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_最小合法长度允许保存\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：AB。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为AB，状态仍为启用。\\n2、重新打开编辑页，名称为AB。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_003\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_最大合法长度允许保存\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ABCDE。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为ABCDE，状态仍为启用。\\n2、重新打开编辑页，名称为ABCDE。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_004\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_下界外名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：A。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_005\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_上界外名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ABCDEF。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_006\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_空名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：空字符串。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_007\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_小写名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ab。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_200\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_008\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"取消编辑\",\n      \"test_name\": \"规则配置_取消编辑_取消后保留原名和启用状态\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"未保存的新名称：ABCDE。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、将名称改为ABCDE\\n3、点击取消\",\n      \"expected_result\": \"1、返回列表，规则名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_CANCEL_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_009\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"停用入口\",\n      \"test_name\": \"规则配置_停用入口_停用规则编辑按钮禁用\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-02已停用。\",\n      \"test_data\": \"\",\n      \"steps\": \"1、打开规则列表\\n2、查看规则R-02的编辑按钮\",\n      \"expected_result\": \"1、编辑按钮处于禁用状态，不能通过该入口进入编辑页。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_DISABLED_200\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-oracle\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "JSON 与 TP 的 SHA-256 保持输入原值，评审不改写用例",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; expected={'\"'\"'testspec/changes/synthetic-reviewer-oracle/artifacts/testcases.json'\"'\"': '\"'\"'6a51acf771a401f0f7a764022f70fd6e155baf03c11cd86305f51d515cf9d96e'\"'\"', '\"'\"'testspec/changes/synthetic-reviewer-oracle/specs/testpoints.md'\"'\"': '\"'\"'4da8ba7090ad9ac413603921b5c7fcc1ca4a01afc6083a74efb6563616e7b3a9'\"'\"'}; assert all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==v for p,v in expected.items()); print(\"PASS\")'"
+        },
+        {
+          "text": "原有版本与终点 context 契约仍有效",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-reviewer-oracle --through review --expected-version 1"
+        },
+        {
+          "text": "按既有公式输出预期 Gate 与描述计数，不按外部等级直接换算",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-reviewer-oracle/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r\"<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->\",t,re.S).group(1)); g=c[\"review_gate\"]; assert g[\"status\"]=='\"'\"'blocked'\"'\"'; assert g[\"description_unresolved_count\"]>=1 and g[\"description_issue_ids\"]; print(\"PASS\")'"
+        },
+        {
+          "text": "逐项执行原有 14 项检查，模式/深度/来源隔离/四项描述与完整集签名均有真实证据",
+          "check": "qualitative"
+        },
+        {
+          "text": "独立 reviewer 根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。",
+          "check": "qualitative"
+        },
+        {
+          "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "使用 $testcase-reviewer 评审 testspec/changes/synthetic-reviewer-complete，执行通用评审和SOP的全部14项检查，只输出报告，不修改用例。",
+      "expected_output": "两部分评审均完成，原14项检查和Gate完整；报告记录通用发现及逐项处置，不允许关闭任一部分。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-reviewer-complete/raw-prd.md",
+          "content": "# 规则名称编辑（合成 PRD，版本1）\n\n本样例没有实际产品。只覆盖以下已确认功能，不涉及鉴权流程、接口、性能、网络故障或其他业务。\n\n- R1：操作者已登录且具有规则配置权限；规则分启用、停用两种状态。\n- R2：启用规则可编辑名称。名称只允许2～5个大写英文字母，包含两个端点。\n- R3：合法名称保存后返回列表，显示新名称，规则仍启用；重新打开编辑页仍显示保存后的名称。\n- R4：空名称、长度不在范围内或包含小写字母时保存被拒绝；仍停留编辑页，显示“名称须为2～5个大写英文字母”。列表中的原名称与启用状态不变。\n- R5：未保存修改时点击取消，返回列表，原名称与启用状态均保持。\n- R6：停用规则的编辑按钮为禁用状态，不能通过该入口进入编辑页。\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-complete/requirements.md",
+          "content": "# 需求汇总\n\n来源：raw-prd.md，版本1；事实由原始R1～R6逐条转录，未引入实现现状。\n\n- REQ-001（R1）：本轮仅已登录且有规则配置权限的操作者，初始规则状态按本例前置条件准备。\n- REQ-002（R2）：启用规则的名称仅允许2～5个大写英文字母，端点包含。\n- REQ-003（R3）：合法保存后列表、重新打开编辑页均显示新名称，状态仍启用。\n- REQ-004（R4）：空、越界长度或小写输入被拒绝，编辑页保留并显示指定提示，列表原名与状态保持。\n- REQ-005（R5）：取消未保存修改后返回列表，原名与启用状态保持。\n- REQ-006（R6）：停用规则的编辑入口禁用，不能进入编辑页。\n\n阻塞澄清项：无。执行期数据需独立准备、清理，未实际执行产品。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"prd-analysis\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-complete/requirements-analysis.md",
+          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-complete/specs/testpoints.md",
+          "content": "# 测试点：规则配置\n\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 规则配置 | RULE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 规则配置 | 名称编辑 | NAME |\n| 规则配置 | 取消编辑 | CANCEL |\n| 规则配置 | 停用入口 | DISABLED |\n\n### 规则配置模块\n#### 名称编辑功能\n##### 功能验证点 (Functional)\n- TP_RULE_NAME_001: 规则配置_名称编辑_合法保存后名称保持\n  - 验证要点: 合法名称保存后，列表与重新打开的编辑页均显示新名称，规则状态保持\n  - 设计方法: 等价类\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001、REQ-002、REQ-003\n##### 边界验证点 (Boundary)\n- TP_RULE_NAME_100: 规则配置_名称编辑_合法端点接受且越界与空值拒绝\n  - 验证要点: 上下界分别保存；相邻越界与空值拒绝后原名和状态不变\n  - 设计方法: 边界值、等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002、REQ-003、REQ-004\n##### 异常验证点 (Exception)\n- TP_RULE_NAME_200: 规则配置_名称编辑_小写字母拒绝且原值保持\n  - 验证要点: 长度合法的小写名称被拒绝，排除长度与权限干扰\n  - 设计方法: 等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-004\n#### 取消编辑功能\n##### 功能验证点 (Functional)\n- TP_RULE_CANCEL_001: 规则配置_取消编辑_取消后保留原名与启用状态\n  - 验证要点: 已产生未保存修改后取消，列表保留原名与启用状态\n  - 设计方法: 流程分析、状态迁移\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-005\n#### 停用入口功能\n##### 异常验证点 (Exception)\n- TP_RULE_DISABLED_200: 规则配置_停用入口_编辑按钮禁用\n  - 验证要点: 停用规则编辑按钮禁用且不能通过该入口进入编辑页\n  - 设计方法: 状态迁移\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-006\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"testcase-generate\",\n  \"stale_reason\": \"下游尚待完成\",\n  \"design_methods\": [\n    \"等价类\",\n    \"边界值\",\n    \"流程分析\",\n    \"状态迁移\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-complete/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成规则名称编辑验收\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"raw-prd.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"risks_identified\": [\n      \"名称边界与拒绝后的原值保持影响验收判断\"\n    ],\n    \"next_skill\": \"testcase-reviewer\",\n    \"stale_reason\": \"下游尚待完成\",\n    \"design_methods\": [\n      \"等价类\",\n      \"边界值\",\n      \"流程分析\",\n      \"状态迁移\"\n    ],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-reviewer-complete\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_REVIEW_001\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_合法名称保存后保持\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：XYZ。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为XYZ，状态仍为启用。\\n2、重新打开编辑页，名称为XYZ。\",\n      \"priority\": \"p0\",\n      \"type\": \"冒烟\",\n      \"regression_tier\": \"Smoke\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_002\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_最小合法长度允许保存\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：AB。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为AB，状态仍为启用。\\n2、重新打开编辑页，名称为AB。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_003\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_最大合法长度允许保存\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ABCDE。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为ABCDE，状态仍为启用。\\n2、重新打开编辑页，名称为ABCDE。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_004\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_下界外名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：A。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_005\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_上界外名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ABCDEF。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_006\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_空名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：空字符串。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_007\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_小写名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ab。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_200\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_008\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"取消编辑\",\n      \"test_name\": \"规则配置_取消编辑_取消后保留原名和启用状态\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"未保存的新名称：ABCDE。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、将名称改为ABCDE\\n3、点击取消\",\n      \"expected_result\": \"1、返回列表，规则名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_CANCEL_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_009\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"停用入口\",\n      \"test_name\": \"规则配置_停用入口_停用规则编辑按钮禁用\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-02已停用。\",\n      \"test_data\": \"\",\n      \"steps\": \"1、打开规则列表\\n2、查看规则R-02的编辑按钮\",\n      \"expected_result\": \"1、编辑按钮处于禁用状态，不能通过该入口进入编辑页。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_DISABLED_200\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-complete\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "JSON 与 TP 的 SHA-256 保持输入原值，评审不改写用例",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; expected={'\"'\"'testspec/changes/synthetic-reviewer-complete/artifacts/testcases.json'\"'\"': '\"'\"'2b63bb11d83e861dc366ee905675b45bee9f092a5e16188e4a7b15d73be6b7fd'\"'\"', '\"'\"'testspec/changes/synthetic-reviewer-complete/specs/testpoints.md'\"'\"': '\"'\"'4da8ba7090ad9ac413603921b5c7fcc1ca4a01afc6083a74efb6563616e7b3a9'\"'\"'}; assert all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==v for p,v in expected.items()); print(\"PASS\")'"
+        },
+        {
+          "text": "原有版本与终点 context 契约仍有效",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-reviewer-complete --through review --expected-version 1"
+        },
+        {
+          "text": "按既有公式输出预期 Gate 与描述计数，不按外部等级直接换算",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-reviewer-complete/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r\"<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->\",t,re.S).group(1)); g=c[\"review_gate\"]; assert g[\"status\"]=='\"'\"'pass'\"'\"'; assert g[\"s1_unresolved_count\"]==0 and g[\"description_unresolved_count\"]==0; print(\"PASS\")'"
+        },
+        {
+          "text": "逐项执行原有 14 项检查，模式/深度/来源隔离/四项描述与完整集签名均有真实证据",
+          "check": "qualitative"
+        },
+        {
+          "text": "两部分评审均完成，原14项检查和Gate完整；报告记录通用发现及逐项处置，不允许关闭任一部分。",
+          "check": "qualitative"
+        },
+        {
+          "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "使用 $testcase-reviewer 评审当前 change，执行两部分评审。另有 independent-comments.md 中的外部发现，请一并逐项复核，不直接修改用例。 目录：testspec/changes/synthetic-reviewer-conventions。",
+      "expected_output": "保留外部原等级与原发现，按当前项目证据将强制改用 MSS/EXT/ERR 标题或五级优先级的建议判为不适用；原生命名和 p0/p1/p2 不变，不因外部 Critical 字样直接阻断。",
+      "files": [
+        {
+          "path": "testspec/changes/synthetic-reviewer-conventions/raw-prd.md",
+          "content": "# 规则名称编辑（合成 PRD，版本1）\n\n本样例没有实际产品。只覆盖以下已确认功能，不涉及鉴权流程、接口、性能、网络故障或其他业务。\n\n- R1：操作者已登录且具有规则配置权限；规则分启用、停用两种状态。\n- R2：启用规则可编辑名称。名称只允许2～5个大写英文字母，包含两个端点。\n- R3：合法名称保存后返回列表，显示新名称，规则仍启用；重新打开编辑页仍显示保存后的名称。\n- R4：空名称、长度不在范围内或包含小写字母时保存被拒绝；仍停留编辑页，显示“名称须为2～5个大写英文字母”。列表中的原名称与启用状态不变。\n- R5：未保存修改时点击取消，返回列表，原名称与启用状态均保持。\n- R6：停用规则的编辑按钮为禁用状态，不能通过该入口进入编辑页。\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-conventions/requirements.md",
+          "content": "# 需求汇总\n\n来源：raw-prd.md，版本1；事实由原始R1～R6逐条转录，未引入实现现状。\n\n- REQ-001（R1）：本轮仅已登录且有规则配置权限的操作者，初始规则状态按本例前置条件准备。\n- REQ-002（R2）：启用规则的名称仅允许2～5个大写英文字母，端点包含。\n- REQ-003（R3）：合法保存后列表、重新打开编辑页均显示新名称，状态仍启用。\n- REQ-004（R4）：空、越界长度或小写输入被拒绝，编辑页保留并显示指定提示，列表原名与状态保持。\n- REQ-005（R5）：取消未保存修改后返回列表，原名与启用状态保持。\n- REQ-006（R6）：停用规则的编辑入口禁用，不能进入编辑页。\n\n阻塞澄清项：无。执行期数据需独立准备、清理，未实际执行产品。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"requirements-analysis.md\",\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"prd-analysis\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-conventions/requirements-analysis.md",
+          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-conventions/specs/testpoints.md",
+          "content": "# 测试点：规则配置\n\n## 命名字典\n### 模块字典\n| 模块名称 | MODULE |\n|---|---|\n| 规则配置 | RULE |\n### 功能点字典\n| 模块名称 | 功能点名称 | FEATURE |\n|---|---|---|\n| 规则配置 | 名称编辑 | NAME |\n| 规则配置 | 取消编辑 | CANCEL |\n| 规则配置 | 停用入口 | DISABLED |\n\n### 规则配置模块\n#### 名称编辑功能\n##### 功能验证点 (Functional)\n- TP_RULE_NAME_001: 规则配置_名称编辑_合法保存后名称保持\n  - 验证要点: 合法名称保存后，列表与重新打开的编辑页均显示新名称，规则状态保持\n  - 设计方法: 等价类\n  - 优先级: p0\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Smoke\n  - 关联需求: REQ-001、REQ-002、REQ-003\n##### 边界验证点 (Boundary)\n- TP_RULE_NAME_100: 规则配置_名称编辑_合法端点接受且越界与空值拒绝\n  - 验证要点: 上下界分别保存；相邻越界与空值拒绝后原名和状态不变\n  - 设计方法: 边界值、等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-002、REQ-003、REQ-004\n##### 异常验证点 (Exception)\n- TP_RULE_NAME_200: 规则配置_名称编辑_小写字母拒绝且原值保持\n  - 验证要点: 长度合法的小写名称被拒绝，排除长度与权限干扰\n  - 设计方法: 等价类\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-004\n#### 取消编辑功能\n##### 功能验证点 (Functional)\n- TP_RULE_CANCEL_001: 规则配置_取消编辑_取消后保留原名与启用状态\n  - 验证要点: 已产生未保存修改后取消，列表保留原名与启用状态\n  - 设计方法: 流程分析、状态迁移\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-005\n#### 停用入口功能\n##### 异常验证点 (Exception)\n- TP_RULE_DISABLED_200: 规则配置_停用入口_编辑按钮禁用\n  - 验证要点: 停用规则编辑按钮禁用且不能通过该入口进入编辑页\n  - 设计方法: 状态迁移\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct\n  - 回归层级: Full\n  - 关联需求: REQ-001、REQ-006\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"test-points\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"testcase-generate\",\n  \"stale_reason\": \"下游尚待完成\",\n  \"design_methods\": [\n    \"等价类\",\n    \"边界值\",\n    \"流程分析\",\n    \"状态迁移\"\n  ]\n}\n-->\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-conventions/artifacts/testcases.json",
+          "content": "{\n  \"schema_version\": 2,\n  \"_context\": {\n    \"source_skill\": \"testcase-generate\",\n    \"source_revision\": {\n      \"version\": 1,\n      \"summary\": \"合成规则名称编辑验收\",\n      \"updated_by_skill\": \"prd-analysis\"\n    },\n    \"blocking_open_questions\": [],\n    \"dynamic_followups\": [],\n    \"material_quality\": \"high\",\n    \"stale_downstream_artifacts\": [\n      \"review-report.md\"\n    ],\n    \"canonical_source_policy\": \"prd-first\",\n    \"evidence_sources\": [\n      {\n        \"type\": \"prd\",\n        \"source_ref\": \"raw-prd.md\",\n        \"authority\": \"canonical\"\n      }\n    ],\n    \"questions\": [],\n    \"risks_identified\": [\n      \"名称边界与拒绝后的原值保持影响验收判断\"\n    ],\n    \"next_skill\": \"testcase-reviewer\",\n    \"stale_reason\": \"下游尚待完成\",\n    \"design_methods\": [\n      \"等价类\",\n      \"边界值\",\n      \"流程分析\",\n      \"状态迁移\"\n    ],\n    \"origin\": {\n      \"kind\": \"testspec-native\",\n      \"source_change\": \"synthetic-reviewer-conventions\"\n    },\n    \"trust\": {\n      \"status\": \"provisional\",\n      \"basis\": \"prd-first\"\n    }\n  },\n  \"testcases\": [\n    {\n      \"id\": \"SYN_REVIEW_001\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_合法名称保存后保持\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：XYZ。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为XYZ，状态仍为启用。\\n2、重新打开编辑页，名称为XYZ。\",\n      \"priority\": \"p0\",\n      \"type\": \"冒烟\",\n      \"regression_tier\": \"Smoke\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_002\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_最小合法长度允许保存\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：AB。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为AB，状态仍为启用。\\n2、重新打开编辑页，名称为AB。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_003\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_最大合法长度允许保存\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ABCDE。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、输入测试数据中的新名称\\n3、点击保存\\n4、重新打开该规则编辑页\",\n      \"expected_result\": \"1、返回列表，规则名称为ABCDE，状态仍为启用。\\n2、重新打开编辑页，名称为ABCDE。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_004\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_下界外名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：A。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_005\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_上界外名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ABCDEF。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"边界\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_006\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_空名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：空字符串。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_100\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_007\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"名称编辑\",\n      \"test_name\": \"规则配置_名称编辑_小写名称保存被拒绝\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"新名称：ab。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、清空名称并输入测试数据中的值\\n3、点击保存\\n4、点击取消返回列表\",\n      \"expected_result\": \"1、保存后仍在编辑页，显示「名称须为2～5个大写英文字母」。\\n2、返回列表后，名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_NAME_200\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_008\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"取消编辑\",\n      \"test_name\": \"规则配置_取消编辑_取消后保留原名和启用状态\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-01已启用，名称为OLD。\",\n      \"test_data\": \"未保存的新名称：ABCDE。\",\n      \"steps\": \"1、打开规则R-01编辑页\\n2、将名称改为ABCDE\\n3、点击取消\",\n      \"expected_result\": \"1、返回列表，规则名称仍为OLD，状态仍为启用。\",\n      \"priority\": \"p1\",\n      \"type\": \"正向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_CANCEL_001\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    },\n    {\n      \"id\": \"SYN_REVIEW_009\",\n      \"module\": \"规则配置\",\n      \"submodule\": \"停用入口\",\n      \"test_name\": \"规则配置_停用入口_停用规则编辑按钮禁用\",\n      \"preconditions\": \"账号已登录，有规则配置权限；规则R-02已停用。\",\n      \"test_data\": \"\",\n      \"steps\": \"1、打开规则列表\\n2、查看规则R-02的编辑按钮\",\n      \"expected_result\": \"1、编辑按钮处于禁用状态，不能通过该入口进入编辑页。\",\n      \"priority\": \"p1\",\n      \"type\": \"负向\",\n      \"regression_tier\": \"Full\",\n      \"tp_refs\": [\n        \"TP_RULE_DISABLED_200\"\n      ],\n      \"origin\": {\n        \"kind\": \"testspec-native\",\n        \"source_change\": \"synthetic-reviewer-conventions\"\n      },\n      \"trust\": {\n        \"status\": \"provisional\",\n        \"basis\": \"prd-first\"\n      }\n    }\n  ]\n}\n"
+        },
+        {
+          "path": "testspec/changes/synthetic-reviewer-conventions/independent-comments.md",
+          "content": "# 外部评审候选意见\n\nCritical：所有标题必须含 MSS/EXT/ERR，优先级必须改成 1～5，否则测试不能执行。\n依据：评审者的通用标题与优先级习惯；未引用本项目需求。\n范围：SYN_REVIEW_001～SYN_REVIEW_009。\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "JSON 与 TP 的 SHA-256 保持输入原值，评审不改写用例",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; expected={'\"'\"'testspec/changes/synthetic-reviewer-conventions/artifacts/testcases.json'\"'\"': '\"'\"'879cc73571bf9d0accae51f9e0e6a6a4bc0c990303a2750ff2f9f169277301e5'\"'\"', '\"'\"'testspec/changes/synthetic-reviewer-conventions/specs/testpoints.md'\"'\"': '\"'\"'4da8ba7090ad9ac413603921b5c7fcc1ca4a01afc6083a74efb6563616e7b3a9'\"'\"'}; assert all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==v for p,v in expected.items()); print(\"PASS\")'"
+        },
+        {
+          "text": "原有版本与终点 context 契约仍有效",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/validate_context_chain.py --change-dir testspec/changes/synthetic-reviewer-conventions --through review --expected-version 1"
+        },
+        {
+          "text": "按既有公式输出预期 Gate 与描述计数，不按外部等级直接换算",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-reviewer-conventions/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r\"<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->\",t,re.S).group(1)); g=c[\"review_gate\"]; assert g[\"status\"]=='\"'\"'pass'\"'\"'; assert g[\"s1_unresolved_count\"]==0 and g[\"description_unresolved_count\"]==0; print(\"PASS\")'"
+        },
+        {
+          "text": "逐项执行原有 14 项检查，模式/深度/来源隔离/四项描述与完整集签名均有真实证据",
+          "check": "qualitative"
+        },
+        {
+          "text": "保留外部原等级与原发现，按当前项目证据将强制改用 MSS/EXT/ERR 标题或五级优先级的建议判为不适用；原生命名和 p0/p1/p2 不变，不因外部 Critical 字样直接阻断。",
+          "check": "qualitative"
+        },
+        {
+          "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "check": "qualitative"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "prompt": "使用 $testcase-reviewer 评审 draft.md，通用评审与SOP检查在同一次调用中执行，结果保存为review-result.md；只给发现，不修改草稿。",
+      "expected_output": "通用评审明确指出成功不可判定并降低置信度；SOP逐项记录可判定的质量检查与缺少需求、TP、来源/版本导致的未完成项，不伪造TP、context、Gate或通过。",
+      "files": [
+        {
+          "path": "draft.md",
+          "content": "# 普通测试稿\n\n用例 A：登录。步骤：输入账号口令并提交。预期：成功。\n\n未提供需求、TP、版本或来源元数据。\n"
+        }
+      ],
+      "assertions": [
+        {
+          "text": "原草稿字节保持，写出统一报告且未伪造正式用例产物",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; import hashlib; p=Path(\"draft.md\"); assert hashlib.sha256(p.read_bytes()).hexdigest()=='\"'\"'6462c20630f006825385856638c99e2407e66a13cb20e6b8e3a9d0574cdaa115'\"'\"'; assert Path(\"review-result.md\").is_file(); assert not Path(\"artifacts/testcases.json\").exists(); print(\"PASS\")'"
+        },
+        {
+          "text": "报告同次包含通用评审与SOP检查的结果，不提供仅运行其中一部分的替代入口",
+          "check": "qualitative"
+        },
+        {
+          "text": "按原规则指出不可观察预期；SOP各未完成项有缺项依据，不伪造需求或门禁",
+          "check": "qualitative"
+        }
+      ]
+    }
+  ]
+}

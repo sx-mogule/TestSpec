@@ -2,6 +2,7 @@
 """校验当前四步 TestSpec SOP 的目录、依赖和关键输出契约。"""
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -14,8 +15,8 @@ SHARED_DIR = SKILLS_DIR / "_testspec-shared"
 PIPELINE = (
     ("prd-analysis", "test-points"),
     ("test-points", "testcase-generate"),
-    ("testcase-generate", "testcase-review"),
-    ("testcase-review", None),
+    ("testcase-generate", "testcase-reviewer"),
+    ("testcase-reviewer", None),
 )
 
 SHARED_FILES = (
@@ -26,6 +27,15 @@ SHARED_FILES = (
     "output-contracts.md",
     "naming-contract.md",
     "source-provenance.md",
+    "bdd-output-contracts.md",
+    "bdd-report-rubric.md",
+)
+
+REPORT_TEMPLATES = (
+    "requirements-analysis-template.md",
+    "review-report-template.md",
+    "testcase-review-report-template.md",
+    "bdd-review-report-template.md",
 )
 
 BUSINESS_FIELDS = (
@@ -87,9 +97,7 @@ def listed_design_methods(markdown: str) -> tuple[str, ...]:
 
 
 def referenced_paths(skill_dir: Path, markdown: str) -> set[Path]:
-    refs = set(re.findall(r"`((?:references/|\.\./_testspec-shared/)[^`]+)`", markdown))
-    if "`review-report-template.md`" in markdown:
-        refs.add("review-report-template.md")
+    refs = set(re.findall(r"`((?:references/|testcase-review/|\.\./_testspec-shared/)[^`]+)`", markdown))
     return {(skill_dir / ref).resolve() for ref in refs}
 
 
@@ -164,9 +172,18 @@ def validate_generate_contract(errors: list[str]) -> None:
     add_error(errors, "## security" not in type_rules and "## performance" not in type_rules,
               "testcase-generate 仍含非功能策略")
     points_template = read_text(SKILLS_DIR / "test-points" / "references" / "testpoints-template.md")
-    review_text = read_text(SKILLS_DIR / "testcase-review" / "SKILL.md")
-    review_dimensions = read_text(SKILLS_DIR / "testcase-review" / "references" / "review-dimensions.md")
-    review_template = read_text(SKILLS_DIR / "testcase-review" / "review-report-template.md")
+    review_root = SKILLS_DIR / "testcase-reviewer" / "testcase-review"
+    workflow = review_root / "review-workflow.md"
+    template = SHARED_DIR / "templates/review-report-template.md"
+    for required in (workflow, review_root / "references/review-dimensions.md", template):
+        add_error(errors, required.is_file(), f"统一评审缺少SOP模块：{required}")
+    if not all(p.is_file() for p in (workflow, review_root / "references/review-dimensions.md", template)):
+        return
+    add_error(errors, not (SKILLS_DIR / "testcase-review").exists(), "旧独立 testcase-review 入口仍存在")
+    add_error(errors, not list(review_root.rglob("SKILL.md")), "SOP内部模块不应另设Skill入口")
+    review_text = read_text(workflow)
+    review_dimensions = read_text(review_root / "references" / "review-dimensions.md")
+    review_template = read_text(template)
     add_error(errors, "Non-Functional" not in points_template, "测试点模板仍含非功能分支")
     for category, case_type in (("Tracking", "埋点"), ("Compatibility", "兼容性矩阵")):
         add_error(errors, category in points_rules and category in points_template,
@@ -200,7 +217,7 @@ def validate_lanhu_adapter(errors: list[str]) -> None:
 
 def validate_no_old_skill_names(errors: list[str]) -> None:
     for path in ROOT.rglob("*"):
-        if not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
+        if standalone_path(path) or not path.is_file() or path.suffix.lower() not in TEXT_SUFFIXES:
             continue
         text = read_text(path)
         for suffix in OLD_SKILL_SUFFIXES:
@@ -212,7 +229,47 @@ def validate_no_removed_stage_references(errors: list[str]) -> None:
     removed_name = "testcase" + "-merge"
     paths = [ROOT / "README.md", *SKILLS_DIR.rglob("*.md"), *SKILLS_DIR.rglob("*.json"), *SKILLS_DIR.rglob("*.yaml")]
     for path in paths:
+        if standalone_path(path):
+            continue
         add_error(errors, removed_name not in read_text(path), f"{path}: 仍引用已删除的合并阶段")
+
+
+def standalone_path(path: Path) -> bool:
+    root = SKILLS_DIR / "testcase-reviewer"
+    if not path.is_relative_to(root):
+        return False
+    relative = path.relative_to(root)
+    return bool(relative.parts) and relative.parts[0] not in {"testcase-review", "evals", "SKILL.md"}
+
+
+def validate_standalone_reviewer(errors: list[str]) -> None:
+    """Pin the unified reviewer package, including the nested SOP module."""
+    root = SKILLS_DIR / "testcase-reviewer"
+    manifest = SKILLS_DIR / "_testspec-shared" / "references" / "testcase-reviewer-source.json"
+    try:
+        if root.is_symlink():
+            raise ValueError("standalone snapshot must be a real directory, not a symbolic link")
+        files = json.loads(read_text(manifest))["files"]
+        if not isinstance(files, dict) or not files:
+            raise ValueError("files must be a non-empty object")
+        for name, digest in files.items():
+            relative = Path(name)
+            if relative.is_absolute() or ".." in relative.parts or str(relative) != name:
+                raise ValueError(f"unsafe snapshot path: {name}")
+            if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+                raise ValueError(f"invalid SHA-256: {name}")
+        actual = {}
+        for path in root.rglob("*"):
+            if path.is_symlink():
+                errors.append(f"独立 reviewer 快照不得包含符号链接：{path}")
+                continue
+            if not path.is_file() or any(part in {"__pycache__", ".DS_Store"} for part in path.relative_to(root).parts):
+                continue
+            actual[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
+        for name in sorted(set(files) | set(actual)):
+            add_error(errors, files.get(name) == actual.get(name), f"独立 reviewer 快照缺失、增加或被修改：{name}")
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        errors.append(f"独立 reviewer 来源清单无效：{exc}")
 
 
 def main() -> int:
@@ -229,6 +286,9 @@ def main() -> int:
     for shared_name in SHARED_FILES:
         add_error(errors, (SHARED_DIR / "references" / shared_name).is_file(), f"缺少共享契约：{shared_name}")
 
+    for template_name in REPORT_TEMPLATES:
+        add_error(errors, (SHARED_DIR / "templates" / template_name).is_file(), f"缺少共享报告模板：{template_name}")
+
     for name, next_skill in PIPELINE:
         validate_skill(name, next_skill, errors)
 
@@ -236,13 +296,14 @@ def main() -> int:
     validate_lanhu_adapter(errors)
     validate_no_old_skill_names(errors)
     validate_no_removed_stage_references(errors)
+    validate_standalone_reviewer(errors)
 
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
         return 1
 
-    print("PASS: validated 4 TestSpec SOP skills, dependencies, and output contracts")
+    print("PASS: validated 4 TestSpec SOP skills, unified review entry, dependencies, output contracts, and reviewer snapshot")
     return 0
 
 
