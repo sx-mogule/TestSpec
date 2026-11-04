@@ -282,6 +282,119 @@ def validate_review_report(text: str) -> list[str]:
     return errors
 
 
+
+def validate_general_feedback(text: str) -> list[str]:
+    """Check visible general feedback and disposition, not review truth or execution."""
+    errors: list[str] = []
+    heading = re.search(r"^##\s+通用评审反馈\s*$", text, re.M)
+    if not heading:
+        return ["general feedback: missing 通用评审反馈 section"]
+    following = re.search(r"^##\s+", text[heading.end():], re.M)
+    block = text[heading.end():heading.end() + following.start()] if following else text[heading.end():]
+
+    def pending(value: str) -> bool:
+        return not value.strip() or re.fullmatch(r"<[^>]*>|TODO|TBD|N/?A|待填写|待补充|占位|未填写|待确认|—|-|无", value.strip(), re.I) is not None
+
+
+    def table_cells(line: str) -> list[str]:
+        cells: list[str] = []
+        content: list[str] = []
+        slashes = 0
+        for char in line.strip():
+            if char == "|" and slashes % 2 == 0:
+                cells.append("".join(content).strip())
+                content = []
+            else:
+                content.append(char)
+            slashes = slashes + 1 if char == "\\" else 0
+        cells.append("".join(content).strip())
+        if cells and cells[0] == "":
+            cells.pop(0)
+        if cells and cells[-1] == "":
+            cells.pop()
+        return cells
+
+    def value(part: str, label: str) -> str:
+        matches = re.findall(rf"^[ \t]*\*\*{re.escape(label)}\*\*[ \t]*[:：][ \t]*([^\r\n]*)$", part, re.M)
+        if len(matches) != 1 or pending(matches[0]):
+            errors.append(f"general feedback: {label} must have one filled value")
+            return ""
+        return matches[0].strip()
+
+    state = re.split(r"[（(；;：:]", value(block, "通用评审状态"), maxsplit=1)[0].strip()
+    if state not in {"已完成", "未完成"}:
+        errors.append("general feedback: invalid 通用评审状态")
+    method = value(block, "执行方式")
+    if "同一模型" not in method:
+        errors.append("general feedback: execution method must identify 同一模型")
+    for label in ("评审依据与范围", "已检查内容", "通用评审结论"):
+        value(block, label)
+    count_text = value(block, "通用发现数")
+    count = int(count_text) if re.fullmatch(r"\d+", count_text) else None
+    if count is None:
+        errors.append("general feedback: 通用发现数 must be a nonnegative integer")
+    if state == "未完成":
+        value(block, "未完成原因")
+
+    starts = list(re.finditer(r"^###\s+(GR-\d+)\b([^\n]*)$", block, re.M))
+    findings: dict[str, str] = {}
+    for index, match in enumerate(starts):
+        issue_id = match.group(1)
+        severity = re.fullmatch(r"\s*[:：]\s*(Critical|High|Medium|Low)\s*", match.group(2))
+        if issue_id in findings:
+            errors.append(f"general feedback: duplicate {issue_id}")
+        findings[issue_id] = severity.group(1) if severity else ""
+        if not severity:
+            errors.append(f"general feedback: {issue_id} has invalid original severity")
+        next_heading = re.search(r"^###\s+", block[match.end():], re.M)
+        entry = block[match.end():match.end() + next_heading.start()] if next_heading else block[match.end():]
+        for label in ("定位", "依据", "问题", "影响", "建议"):
+            value(entry, label)
+    if count is not None and count != len(starts):
+        errors.append("general feedback: 通用发现数 differs from finding entries")
+    if state == "已完成" and count == 0 and "未发现实质性缺陷" not in block:
+        errors.append("general feedback: zero findings requires explicit 未发现实质性缺陷 conclusion")
+
+    mapping = re.search(r"^###\s+通用发现处置\s*$", text, re.M)
+    if not mapping:
+        errors.append("general feedback: missing 通用发现处置")
+        return errors
+    stop = re.search(r"^#{1,3}\s+", text[mapping.end():], re.M)
+    table = text[mapping.end():mapping.end() + stop.start()] if stop else text[mapping.end():]
+    mapped: dict[str, list[str]] = {}
+    for line in table.splitlines():
+        cells = table_cells(line)
+        if line.lstrip().startswith("|") and cells and "GR-" in cells[0] and not re.fullmatch(r"GR-\d+", cells[0]):
+            errors.append("general feedback: invalid or placeholder disposition ID")
+        if not line.lstrip().startswith("|") or not cells or not re.fullmatch(r"GR-\d+", cells[0]):
+            continue
+        issue_id = cells[0]
+        if issue_id in mapped:
+            errors.append(f"general feedback: duplicate disposition for {issue_id}")
+        mapped[issue_id] = cells
+        if len(cells) != 6:
+            errors.append(f"general feedback: {issue_id} disposition must contain six cells")
+            continue
+        if issue_id in findings and cells[1] != findings[issue_id]:
+            errors.append(f"general feedback: {issue_id} original severity changed in disposition")
+        if cells[3] not in {"采纳", "重复关联", "不适用", "待确认"}:
+            errors.append(f"general feedback: {issue_id} invalid disposition")
+        for cell_index in (2, 5):
+            if pending(cells[cell_index]):
+                errors.append(f"general feedback: {issue_id} disposition lacks original finding or evidence")
+        if pending(cells[4]) and cells[4] not in {"—", "-", "无"}:
+            errors.append(f"general feedback: {issue_id} disposition needs native linkage or explanation")
+    if set(mapped) != set(findings):
+        errors.append("general feedback: finding IDs and disposition IDs differ")
+    sop = re.split(r"[（(；;：:]", value(text, "SOP检查状态"), maxsplit=1)[0].strip()
+    overall = re.split(r"[（(；;：:]", value(text, "整轮状态"), maxsplit=1)[0].strip()
+    if sop not in {"已完成", "未完成"} or overall not in {"已完成", "未完成"}:
+        errors.append("general feedback: invalid SOP or overall completion state")
+    if overall == "已完成" and (state != "已完成" or sop != "已完成"):
+        errors.append("general feedback: incomplete part cannot claim overall completion")
+    return errors
+
+
 def _review_section(text: str, dimension: str) -> str | None:
     match = re.search(rf"^###\s+{re.escape(dimension)}\s*:", text, re.M)
     if not match:
@@ -473,6 +586,8 @@ def main() -> int:
     xmind_parser.add_argument("--xmind", required=True, type=Path)
     review_parser = subparsers.add_parser("review", help="check review matrix completeness, not semantic correctness")
     review_parser.add_argument("--report", required=True, type=Path)
+    feedback_parser = subparsers.add_parser("feedback", help="check visible general feedback and disposition; not semantic correctness")
+    feedback_parser.add_argument("--report", required=True, type=Path)
     finding_parser = subparsers.add_parser("finding", help="check required Review report IDs, severity, and terms")
     finding_parser.add_argument("--report", required=True, type=Path)
     finding_parser.add_argument("--dimension", required=True)
@@ -501,6 +616,12 @@ def main() -> int:
         except OSError as exc:
             return _print_result([str(exc)], "")
         return _print_result(validate_review_report(text), "all matrix fields are filled; semantic correctness is not assessed")
+    if args.command == "feedback":
+        try:
+            text = args.report.read_text(encoding="utf-8")
+        except OSError as exc:
+            return _print_result([str(exc)], "")
+        return _print_result(validate_general_feedback(text), "general feedback and disposition are complete; semantic correctness and actual execution are not assessed")
     if args.command == "finding":
         try:
             text = args.report.read_text(encoding="utf-8")

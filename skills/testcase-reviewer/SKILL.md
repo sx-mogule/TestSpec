@@ -27,11 +27,11 @@ metadata:
 
 本目录只有 `$testcase-reviewer` 一个入口。`testcase-review/review-workflow.md` 是保留原 `testcase-review` 能力的内部模块，不再独立调用；没有“仅通用”或“仅SOP”开关。
 
-1. **通用评审**：按下面的材料类型与模式，基于需求、验收标准和完整测试稿形成发现，保持 `Critical/High/Medium/Low` 等级。优先从原始材料独立判断，不先读取旧Gate或预设结论。
+1. **通用评审与 BDD 独立评审**：同一模型先按通用用例与 BDD 规则，基于原始需求与完整测试稿评审。在标准 SOP 流程中，输入同时涵盖完整用例集（`artifacts/testcases.json`）与伴生 BDD 特性文件（`artifacts/*_features.feature`），分别执行功能用例通用评审与 BDD 独立质量评审（重点核查反模式、Given/When/Then 规范、单一职责与可观察 Oracle）；在当前上下文形成完整的“通用评审反馈”，逐项保留 GR 编号、Critical/High/Medium/Low 原等级、定位、依据、问题、影响和建议。先形成该部分再读取 SOP 结论，不用原有 R/H 意见反推或代写通用反馈。
 2. **SOP检查**：必读 `testcase-review/review-workflow.md`，执行输入健康检查和原有R1-R6、H1-H8。模板为 `../_testspec-shared/templates/review-report-template.md`，细则为 `testcase-review/references/review-dimensions.md`；按风险决定auto或加深，不跳过任何检查维度。
-3. **统一汇总**：按 `testcase-review/references/independent-reviewer.md` 逐项复核两部分发现，记录原等级、依据、处置和原生issue ID。同一问题只计一次；不机械换算等级。只有两部分均完成才可宣称整轮完成。
+3. **分别展示并逐项处置**：按 `testcase-review/references/independent-reviewer.md`，在同一报告中分别展示“通用评审反馈”、SOP检查结果及“通用发现处置”。通用与 BDD 原始反馈先完整保留，再以 GR 编号关联原生 issue，记录采纳/重复关联/不适用/待确认及理由；去重只作用于原生问题计数，不删除通用原始反馈。只有两部分均完成且发现全部有处置才可宣称整轮完成。
 
-TestSpec输入齐全时，统一写 `review-report.md`，沿用原S1与四项描述Gate公式，并记录完整JSON/TP指纹；评审不改写正式JSON或XMind。缺少需求、TP、来源或版本等必需输入时，仍完成通用评审及可判定的R/H检查，列出14项中无法完成的项和具体缺失材料，SOP状态为“未完成”，不伪造context、TP或Gate通过结果。普通用例与BDD的原有评审能力因此保留，无需先补造SOP产物。
+TestSpec输入齐全时，统一写 `review-report.md`，沿用原S1与四项描述Gate公式，并记录完整JSON/TP/BDD指纹；评审不改写正式JSON或XMind。缺少需求、TP、来源或版本等必需输入时，仍完成通用评审及可判定的R/H检查，列出14项中无法完成的项和具体缺失材料，SOP状态为“未完成”，不伪造context、TP或Gate通过结果。普通用例与BDD的原有评审能力因此保留，无需先补造SOP产物。
 
 BDD的rewrite/generate/hybrid模式仍按原规则产出材料；随后对可评审的草稿执行上述两部分检查。输入不支持某项检查时明确记录限制。普通材料仅在用户要求保存时写文件；TestSpec完整输入按流程写统一报告。
 
@@ -164,3 +164,6 @@ High：REQ-07 仅由一条成功路径用例覆盖。需求还定义了无效账
 2. 每个覆盖缺口都关联到明确的需求、路径、规则或状态。
 3. 建议具体到无需猜测即可执行。
 4. 将必须修复的问题与辅导建议分开。
+
+5. 报告中必须直接展示完整“通用评审反馈”，不能只写执行状态、发现数或“详见SOP意见”；没有发现时如实写明范围、已检查内容和“未发现实质性缺陷”，未完成时说明原因，不能用“无”代替未执行。
+6. 保存新报告后，运行 `python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>` 检查通用反馈和逐项处置是否齐全；只在对话中输出时按同一结构自查，不为校验另建文件。格式检查不能证明语义正确，失败时补齐记录，不修改Gate公式或伪造完成。

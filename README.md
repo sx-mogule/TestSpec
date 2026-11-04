@@ -23,8 +23,8 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | **Step 1** | [`prd-analysis`](skills/prd-analysis/SKILL.md) | 结构化拆解需求事实，整理边界、风险与未确认问题，建立规范需求源 | PRD 文本 / 蓝湖链接 / 交互 HTML / 用户故事 | `requirements.md`<br/>`requirements-analysis.md` |
 | **Step 2** | [`test-points`](skills/test-points/SKILL.md) | 将需求提炼为精简测试点（“测什么”），运用 12 种设计方法标注优先级与 Oracle 范围 | `requirements-analysis.md` | `specs/testpoints.md` |
-| **Step 3** | [`testcase-generate`](skills/testcase-generate/SKILL.md) | 展开完整集功能用例，执行命名与描述约束，输出规范 JSON 与 XMind | `specs/testpoints.md` | `artifacts/testcases.json`<br/>`artifacts/<名称>_cases.xmind` |
-| **Step 4** | [`testcase-reviewer`](skills/testcase-reviewer/SKILL.md) | 同一轮执行通用评审与 SOP 14 项检查，复核发现并给出统一 Review Gate | `artifacts/testcases.json`<br/>`specs/testpoints.md` | `review-report.md` |
+| **Step 3** | [`testcase-generate`](skills/testcase-generate/SKILL.md) | 展开完整集功能用例，执行命名与描述约束，输出规范 JSON、XMind 与伴生 BDD 核心特性文件 | `specs/testpoints.md` | `artifacts/testcases.json`<br/>`artifacts/<名称>_cases.xmind`<br/>`artifacts/<名称>_features.feature` |
+| **Step 4** | [`testcase-reviewer`](skills/testcase-reviewer/SKILL.md) | 同一轮执行通用评审、BDD 独立场景评审与 SOP 14 项检查，复核发现并给出统一 Review Gate | `artifacts/testcases.json`<br/>`artifacts/<名称>_features.feature`<br/>`specs/testpoints.md` | `review-report.md` |
 
 ### 变更目录标准结构
 
@@ -38,7 +38,8 @@ testspec/changes/<change-name>/
 │   └── testpoints.md               # 结构化测试点
 ├── artifacts/
 │   ├── testcases.json             # 统一完整用例集（schema_version: 2）
-│   └── <name>_cases.xmind          # 完整用例集 XMind 8 格式脑图
+│   ├── <name>_cases.xmind          # 完整用例集 XMind 8 格式脑图
+│   └── <name>_features.feature     # 核心业务与异常场景 BDD 特性文件
 └── review-report.md                # 统一评审报告（包含 Review Gate 结论）
 ```
 
@@ -89,15 +90,16 @@ testspec/changes/<change-name>/
   - 采用标准 XMind 8 格式（`generate_xmind.py`）；
   - 脑图层级：`模块 → 子模块 → 场景名称`（前置条件、测试数据、操作步骤为并列子节点，预期结果为操作步骤的子节点）；
   - 优先级 Marker 映射：`p0` 不打标记，`p1` 对应 `priority-1`，`p2` 对应 `priority-2`。
-- **交付要求**：始终交付当前范围的**完整集**，不单独拆分交付冒烟子集；Excel 不属于默认产物或验收门禁。
+- **交付要求**：始终交付当前范围的**完整集**，不单独拆分交付冒烟子集；在输出 JSON 与 XMind 的同时，默认强制提取核心主路径与异常场景生成伴生 BDD 特性文件（`artifacts/<name>_features.feature`）；Excel 不属于默认产物或验收门禁。
 
 ### Step 4: 统一用例评审 (`testcase-reviewer`)
 
 - **定位**：流程终点与交付质量门禁。原 `testcase-review` 模块已收敛为其内部子模块，`testcase-reviewer` 为唯一调用入口。
-- **双轨统一执行（每次调用均执行）**：
-  1. **通用评审（General Review）**：基于原始需求与完整测试稿，从覆盖度、意图一致性、边界充分性及可执行性进行评审，采用 `Critical / High / Medium / Low` 评级；支持传统用例、测试套件评分、设计辅导及 BDD 评审/改写。
+- **三轨统一执行（每次调用均执行）**：
+  1. **通用用例与 BDD 独立评审**：基于原始需求与完整测试稿，对 `testcases.json` 执行通用功能评审，并对伴生 BDD 特性文件 `artifacts/<name>_features.feature` 执行 BDD 独立质量评审（检查反模式、单一职责、Given/When/Then 语法及外部可观察 Oracle），采用 `Critical / High / Medium / Low` 评级；
   2. **SOP 14 项检查**：加载 `review-workflow.md`，执行输入健康检查与原有 14 维度检查（规则检查 R1-R6，启发式检查 H1-H8），严格核验四项描述门禁（前置条件、数据、步骤、预期）。
-  3. **统一汇总与 Gate 判定**：逐项复核通用发现并映射到 SOP 维度（采纳/重复/不适用/待确认），计算 Review Gate。
+  3. **统一汇总与 Gate 判定**：逐项复核通用与 BDD 发现并映射到 SOP 维度（采纳/重复/不适用/待确认），计算 Review Gate。
+- **通用反馈单独展示**：默认同一模型先按通用规则形成完整反馈，报告必须单列“通用评审反馈”，每项保留 GR 编号、原等级、定位、依据、问题、影响和建议；随后展示 SOP 检查结果与逐项处置，不能只剩原生评审意见。没有发现也说明范围和检查摘要。保存后使用共享脚本的 feedback 子命令验收反馈完整性；Gate 公式保持不变。
 - **弱输入与单体材料自适应**：
   - 缺少上游 `testcases.json` 或 `specs/testpoints.md`（如直接提供独立 XMind、Excel 或普通用例）时，仍照常执行通用评审并给出可判定的质量缺陷，SOP 状态标为“未完成”，Gate 记为“未计算”，严禁伪造通过结论。
 

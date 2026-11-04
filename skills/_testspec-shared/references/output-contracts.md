@@ -2,7 +2,7 @@
 
 > 适用于 `prd-analysis → test-points → testcase-generate → testcase-reviewer`。
 
-正式用例产物为 `artifacts/testcases.json` 与 `artifacts/<name>_cases.xmind`。两者参与本流程的输出校验与交付；Excel 不属于默认产物或验收门禁。
+正式用例产物为 `artifacts/testcases.json`、`artifacts/<name>_cases.xmind` 与核心 BDD 特性文件 `artifacts/<name>_features.feature`。三者参与本流程的输出交付与验收；Excel 不属于默认产物或验收门禁。
 
 ## 通用原则
 
@@ -101,6 +101,16 @@
 
 埋点用例须使用 `type=埋点` 并引用 Tracking 测试点；兼容性矩阵用例须使用 `type=兼容性矩阵` 并引用 Compatibility 测试点。两类均纳入原有 TP 覆盖率、字段、步骤、Oracle、来源与 Review 门禁。
 
+## artifacts/<name>_features.feature
+
+由 `testcase-generate` 提取核心主路径与关键异常场景生成，作为标准 SOP 的默认伴生产物：
+
+- 格式遵循标准 Gherkin 语法（包含 `Feature:`, `Scenario:`, 适用时包含 `Scenario Outline:` 与 `Rule:` 块）。
+- 语言使用面向业务领域的表达，避免技术实现细节泄露。
+- 严禁“伪装成 BDD 的 UI 点击脚本”反模式（如连续“点击按钮、输入文本”）。
+- `Given` 仅提供必要上下文，`When` 聚焦单一触发事件，`Then` 必须提供外部可观测的业务 Oracle。
+- 与完整集用例呼应：覆盖主成功路径（MSS）与关键异常路径（ERR），供业务、测试与研发人员直观对齐与自动化转化。
+
 ## 可选 Excel 格式约定（不参与默认验收）
 
 Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆盖率及 Review 门禁。只有用户单独明确要求，且当前工作区已有明确可用的导出流程时，才可作为附加格式处理；本约定不构成 Excel 导出实现。若处理，工作表 `测试用例` 的列头固定为：
@@ -155,10 +165,27 @@ Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆�
 
 需求去向表用于记录原文位置→REQ→TP→用例→可观察 Oracle 的对应关系，不改变现有分级或 Gate 公式。原始需求材料未提供时，只能声明核对 canonical 需求文件；已确认且在范围内但缺少 TP、用例或可判定 Oracle 的需求应记为覆盖缺口，不得以待澄清/范围外掩盖。
 
+### 通用评审反馈的强制展示与验收
+
+新执行的通用用例、套件和 BDD 评审，均先形成并完整展示“## 通用评审反馈”，再给出 SOP 检查结果和处置表。默认同一模型先后执行，不称独立评审者或多模型复核。原始反馈不依赖旧 Gate/R/H 意见，不能在 SOP 复核后被覆盖或缩成一句执行状态。
+
+反馈记录通用评审状态（已完成/未完成）、执行方式、评审依据与范围、已检查内容、通用发现数和通用评审结论。有发现时每项用“### GR-001: High”等结构，分别写定位、依据、问题、影响、建议；原等级保留 Critical/High/Medium/Low。已完成且为零发现时明确写“未发现实质性缺陷”，并提供真实检查范围与摘要；未完成时写明具体原因，不以“无发现”掩盖未执行。
+
+“### 通用发现处置”表与 GR 编号一一对应，保留原等级，列出原始发现、采纳/重复关联/不适用/待确认、原生 issue/维度/级别及处置依据。不适用和重复项仍保留原始反馈；去重只减少原生问题计数，不删除通用发现。不补造原生 issue，SOP 输入不足时如实说明不能关联的原因。通用评审或 SOP 未完成时整轮必须未完成；缺少反馈或处置时补齐记录，不能修改既有 Gate 公式来代替报告完成检查。
+
+保存新报告后，从 SOP 根目录执行：
+
+```bash
+python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>
+```
+
+只在对话中输出时按同一格式自查，不为校验新建文件。该校验只核对反馈字段、发现数、编号与处置对应关系，不证明评审语义正确或实际模型执行；原有 review、context 与 Gate 校验仍按原规则执行。历史报告保持可读，不补造通用反馈。
+
 ### 评审完成后的对话摘要
 
 ```text
 ✅ 评审完成 | 模式: <Import-Quarantine/Provenance-Unknown/Strict/Legacy> | 深度: <标准/加深> | 置信度: <高/中/低>
+🗣️ 通用评审: <已完成/未完成> | 发现: <count> 项 | 反馈正文: 已单独展示
 📄 报告: testspec/changes/<name>/review-report.md
 📊 总评: <S1> 个 S1 + <S2> 个 S2 + <S3> 个 S3 | 未解决四项描述问题: <count> | Gate: <pass/blocked>
 ```

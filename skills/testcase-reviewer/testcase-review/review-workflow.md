@@ -75,6 +75,7 @@ Strict/Legacy 只决定追溯检查的置信度，不单独决定深度。报告
 
 - `artifacts/testcases.json`（canonical path）
 - `specs/testpoints.md`
+- `artifacts/*_features.feature`（标准 SOP 强制伴生 BDD 核心特性文件）
 
 ### 可选文件
 
@@ -85,6 +86,7 @@ Strict/Legacy 只决定追溯检查的置信度，不单独决定深度。报告
 1. `artifacts/testcases.json` 存在且可解析；只有该文件不存在时才读取根目录 `testcases.json` 作为 Legacy fallback，并明确告警。两者同时存在时始终使用 artifacts 版本
 2. 顶层包含 `testcases` 数组且非空
 3. `specs/testpoints.md` 存在且包含 TP_ID
+4. 检查伴生 BDD 特性文件 `artifacts/*_features.feature`；存在时一并加载执行 BDD 独立质量评审，缺失时在通用反馈中明确记录 BDD 交付缺口
 4. 读取 canonical source（优先 `requirements.md`，否则 `proposal.md`），按 `../../_testspec-shared/references/context-protocol.md` 比较版本
 5. canonical 有版本时，`specs/testpoints.md` 与 `testcases.json._context.source_revision` 都必须与 canonical 完全一致：
    - testpoints 缺少版本或版本更低 → 终止并提示先运行 `test-points`，之后再运行 generate
@@ -151,12 +153,12 @@ S1 仅用于影响可执行性或严重偏离测试意图的问题，禁止因�
 2. **读取输入并做健康检查**
 3. **按固定优先级判定 Import-Quarantine/Provenance-Unknown/Strict/Legacy 模式**
 4. **判定深度（auto 或 --deep）并向用户说明**
-5. **衔接通用评审并加载维度细则**：读取同一次入口已形成的通用发现，不再次调用本Skill；按 `references/independent-reviewer.md` 记录逐项处置，随后加载 `references/review-dimensions.md`。两部分都执行，不提供单独关闭选项
+5. **衔接通用评审并加载维度细则**：读取同一次入口已形成的完整通用反馈及 GR 编号，保留原始问题、等级、证据、影响和建议，不再次调用本Skill；按 `references/independent-reviewer.md` 记录逐项处置，随后加载 `references/review-dimensions.md`。两部分都执行，不提供单独关闭选项
 6. **按 R1→R6 执行规则检查**
 7. **按 H1→H8 执行启发式检查**：逐条检查完整集的前置条件、测试数据、操作步骤、预期结果，按维度细则执行四项描述门禁，不以抽样代替
-8. **生成报告**：按 `../../_testspec-shared/templates/review-report-template.md` 填写全部结果；保留独立发现的原等级、证据和逐项处置，同一问题关联同一原生 issue ID，不机械转换等级或改变门禁公式
+8. **生成报告**：按 `../../_testspec-shared/templates/review-report-template.md` 填写全部结果；先完整展示“通用评审反馈”，再保留每个 GR 编号的原等级、证据和逐项处置，同一问题关联同一原生 issue ID，不机械转换等级或改变门禁公式
 9. **计算总体置信度**
-10. **输出评审结论与逐项修复动作**
+10. **验证反馈并输出结果**：保存后运行 `python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>`；输出通用反馈摘要、SOP结论和逐项修复动作。只有状态、没有原始反馈的报告不能称整轮完成
 
 评审对象始终是完整 `artifacts/testcases.json`。写报告时对实际评审的完整 JSON 和 `specs/testpoints.md` 计算 SHA-256，填入 `reviewed_artifacts.testcases_sha256` 和 `reviewed_artifacts.testpoints_sha256`，用于标识本次评审对应的产物版本；该追溯不改变 S1 分级或 Review Gate 计算。完整集或测试点改变后须重新评审。
 

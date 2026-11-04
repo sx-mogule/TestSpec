@@ -18,3 +18,4 @@
 ## 4.项目特定规范
 - 在分析需求、提炼测试点（test-points）和编写用例（testcase-generate）前，优先读取项目根目录或变更目录下的 `project-interaction-spec.md`。
 - 若该文件存在，所有输入边界、数量上限、交互机制与预期结果（Oracle），必须严格以此规范为准。
+- **标准 SOP + 伴生 BDD 模式**：在用例生成（`testcase-generate`）阶段，除输出标准 JSON 与 XMind 外，必须提取核心业务主路径及关键异常场景输出 Gherkin BDD 特性文件（`artifacts/<name>_features.feature`）；在统一评审（`testcase-reviewer`）阶段，必须同时对该伴生 BDD 场景执行独立质量评审并在报告中呈现。

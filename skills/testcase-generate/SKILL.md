@@ -16,12 +16,13 @@ TestSpec 用例生成进度：
 - [ ] 步骤 3：选择策略并设计用例
 - [ ] 步骤 4：写入 schema v2 testcases.json
 - [ ] 步骤 5：运行 validate_testcases.py ⛔ 阻塞
-- [ ] 步骤 6：导出 XMind 并报告产物
+- [ ] 步骤 6：导出 XMind 并生成 BDD 核心特性文件 ⚠️ 必需
+- [ ] 步骤 7：报告正式产物
 ```
 
 ## 职责
 
-读取当前变更的 `specs/*.md`（测试点），先根据用户目标选择测试类型策略，再将测试点展开为完整测试用例；统一写入 `artifacts/testcases.json` 并默认导出 XMind。模块/子模块保留在每条用例的字段中，无需分片或后续合并。若存在 `strategy.md` 可参考其允许范围内的测试类型、层级与通过标准；否则从共享规则源读取默认策略。所有导出均遵循本文件定义的八项业务字段契约。
+读取当前变更的 `specs/*.md`（测试点），先根据用户目标选择测试类型策略，再将测试点展开为完整测试用例；统一写入 `artifacts/testcases.json` 并默认导出 XMind。同时强制默认提取核心业务主路径及关键异常场景（MSS与关键扩展路径），输出规范的 Gherkin BDD 核心特性文件 `artifacts/<name>_features.feature`。模块/子模块保留在每条用例的字段中，无需分片或后续合并。若存在 `strategy.md` 可参考其允许范围内的测试类型、层级与通过标准；否则从共享规则源读取默认策略。所有导出均遵循本文件定义的八项业务字段契约。
 
 本阶段只消费已确认的 PRD、分析、允许范围内的测试点和经允许的参考证据。不得发送探索请求、访问真实 API、用当前实现响应生成 oracle，或把实现缺陷固化成预期结果。需求或接口事实不足时，回到需求分析阶段补充 canonical 输入。允许 Tracking 与 Compatibility 测试点按专属类型生成；其他非功能测试点停止生成并返回 test-points 清理范围，不以 `type=其他` 绕过。
 
@@ -202,7 +203,8 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
    ```bash
    python "<testcase-generate-skill-dir>/scripts/generate_xmind.py" --input <变更目录>/artifacts/testcases.json --output <变更目录>/artifacts/<name>_cases.xmind --title "测试用例"
    ```
-6. 保留完整源JSON供Review使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-reviewer`。
+6. **BDD 核心特性（强制伴生）**：基于核心业务路径与关键规则，提取测试用例设计标准 Gherkin BDD 特性文件 `artifacts/<name>_features.feature`。严格遵循 Given/When/Then 语法、面向业务领域语言与可观察 Oracle，不写 UI 点击脚本反模式。
+7. 保留完整源JSON与BDD特性文件供Review使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-reviewer`。
 
 ---
 
@@ -219,6 +221,6 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
 
 ## 产物
 
-- 正式产物：`testspec/changes/<name>/artifacts/testcases.json`（schema v2）与 `testspec/changes/<name>/artifacts/<name>_cases.xmind`（默认 XMind 格式）。Excel 不属于默认生成或验收范围。
+- 正式产物：`testspec/changes/<name>/artifacts/testcases.json`（schema v2）、`testspec/changes/<name>/artifacts/<name>_cases.xmind`（默认 XMind 格式）以及核心 BDD 特性文件 `testspec/changes/<name>/artifacts/<name>_features.feature`。Excel 不属于默认生成或验收范围。
 
 文件名可根据变更名或用户指定调整。

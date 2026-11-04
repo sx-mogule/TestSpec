@@ -454,7 +454,7 @@
     {
       "id": 11,
       "prompt": "使用 $testcase-reviewer 评审当前 change，执行通用评审与SOP检查。只输出评审报告，不修改用例。 目录：testspec/changes/synthetic-reviewer-oracle。",
-      "expected_output": "独立 reviewer 根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。",
+      "expected_output": "同一模型的通用评审 根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。",
       "files": [
         {
           "path": "testspec/changes/synthetic-reviewer-oracle/raw-prd.md",
@@ -498,11 +498,20 @@
           "check": "qualitative"
         },
         {
-          "text": "独立 reviewer 根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。",
+          "text": "通用评审根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。",
           "check": "qualitative"
         },
         {
           "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "check": "qualitative"
+        },
+        {
+          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-reviewer-oracle/review-report.md"
+        },
+        {
+          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
           "check": "qualitative"
         }
       ]
@@ -510,7 +519,7 @@
     {
       "id": 12,
       "prompt": "使用 $testcase-reviewer 评审 testspec/changes/synthetic-reviewer-complete，执行通用评审和SOP的全部14项检查，只输出报告，不修改用例。",
-      "expected_output": "两部分评审均完成，原14项检查和Gate完整；报告记录通用发现及逐项处置，不允许关闭任一部分。",
+      "expected_output": "两部分评审均完成，原14项检查和Gate完整；报告记录通用发现及逐项处置，不允许关闭任一部分。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。",
       "files": [
         {
           "path": "testspec/changes/synthetic-reviewer-complete/raw-prd.md",
@@ -560,13 +569,22 @@
         {
           "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
           "check": "qualitative"
+        },
+        {
+          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-reviewer-complete/review-report.md"
+        },
+        {
+          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
+          "check": "qualitative"
         }
       ]
     },
     {
       "id": 13,
       "prompt": "使用 $testcase-reviewer 评审当前 change，执行两部分评审。另有 independent-comments.md 中的外部发现，请一并逐项复核，不直接修改用例。 目录：testspec/changes/synthetic-reviewer-conventions。",
-      "expected_output": "保留外部原等级与原发现，按当前项目证据将强制改用 MSS/EXT/ERR 标题或五级优先级的建议判为不适用；原生命名和 p0/p1/p2 不变，不因外部 Critical 字样直接阻断。",
+      "expected_output": "保留外部原等级与原发现，按当前项目证据将强制改用 MSS/EXT/ERR 标题或五级优先级的建议判为不适用；原生命名和 p0/p1/p2 不变，不因外部 Critical 字样直接阻断。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。",
       "files": [
         {
           "path": "testspec/changes/synthetic-reviewer-conventions/raw-prd.md",
@@ -620,13 +638,22 @@
         {
           "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
           "check": "qualitative"
+        },
+        {
+          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-reviewer-conventions/review-report.md"
+        },
+        {
+          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
+          "check": "qualitative"
         }
       ]
     },
     {
       "id": 14,
       "prompt": "使用 $testcase-reviewer 评审 draft.md，通用评审与SOP检查在同一次调用中执行，结果保存为review-result.md；只给发现，不修改草稿。",
-      "expected_output": "通用评审明确指出成功不可判定并降低置信度；SOP逐项记录可判定的质量检查与缺少需求、TP、来源/版本导致的未完成项，不伪造TP、context、Gate或通过。",
+      "expected_output": "通用评审明确指出成功不可判定并降低置信度；SOP逐项记录可判定的质量检查与缺少需求、TP、来源/版本导致的未完成项，不伪造TP、context、Gate或通过。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。",
       "files": [
         {
           "path": "draft.md",
@@ -645,6 +672,15 @@
         },
         {
           "text": "按原规则指出不可观察预期；SOP各未完成项有缺项依据，不伪造需求或门禁",
+          "check": "qualitative"
+        },
+        {
+          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "check": "programmatic",
+          "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report review-result.md"
+        },
+        {
+          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
           "check": "qualitative"
         }
       ]

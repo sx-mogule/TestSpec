@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -398,6 +399,130 @@ class TestRepairCycle(unittest.TestCase):
             final.write_text(f'- [S3] [resolved] RV-S3-001 CASE-1 owner=generate\n<!-- testspec-context\n{{"review_gate":{{"status":"pass","s1_unresolved_count":0,"s1_issue_ids":[],"description_unresolved_count":0,"description_issue_ids":[]}},"reviewed_artifacts":{{"testcases_sha256":"{new_hash}","testpoints_sha256":"{points_hash}"}}}}\n-->')
             errors = verify.validate_repair_cycle(accepted, before, after, testpoints, reopened, post, final, "RV-S3-001", "CASE-1", "test_data", "yes")
             self.assertTrue(any("changed the reopened Review report or Gate" in error for error in errors), errors)
+
+
+
+class TestGeneralFeedback(unittest.TestCase):
+    def report(self, zero=False):
+        text = """## 通用评审反馈
+**通用评审状态**: 已完成
+**执行方式**: 同一模型按通用规则单独评审
+**评审依据与范围**: PRD REQ-1；完整2条用例
+**已检查内容**: 覆盖、拒绝路径和可观察预期；CASE-1预期只写成功
+**通用发现数**: 1
+**通用评审结论**: CASE-1缺少可观察预期
+### GR-001: High
+**定位**: CASE-1.expected_result
+**依据**: REQ-1要求拒绝后原名称保持
+**问题**: 原文只写成功
+**影响**: 无法判断原名称是否保持
+**建议**: 明确列表仍显示原名称
+## 两部分评审执行记录
+**SOP检查状态**: 已完成
+**整轮状态**: 已完成
+### 通用发现处置
+| 通用发现编号 | 原等级 | 原始发现、依据与范围 | 处置 | 原生定位 | 处置依据 |
+|---|---|---|---|---|---|
+| GR-001 | High | CASE-1缺少可观察预期 | 采纳 | RV-S2-001 / H2 / S2 | REQ-1与CASE-1对照 |
+"""
+        if zero:
+            start=text.index("### GR-001:")
+            end=text.index("## 两部分评审执行记录")
+            text=text[:start]+text[end:]
+            text=text.replace("**通用发现数**: 1","**通用发现数**: 0")
+            text=text.replace("**通用评审结论**: CASE-1缺少可观察预期","**通用评审结论**: 在已核对范围内未发现实质性缺陷")
+            text="\n".join(line for line in text.splitlines() if not line.startswith("| GR-001 |"))+"\n"
+        return text
+
+
+    def test_quoted_html_source_is_preserved(self):
+        text=self.report().replace("**依据**: REQ-1要求拒绝后原名称保持", "**依据**: REQ-1明确要求<button>按钮拒绝后原名称保持")
+        text=text.replace("**建议**: 明确列表仍显示原名称", "**建议**: 在<input>修改失败后检查原名称")
+        text=text.replace("REQ-1与CASE-1对照 |", "PRD中的<button>与CASE-1对照 |")
+        self.assertEqual(verify.validate_general_feedback(text), [])
+
+    def test_unfilled_raw_placeholder_is_rejected(self):
+        text=self.report().replace("**建议**: 明确列表仍显示原名称", "**建议**: <可执行的建议>")
+        self.assertTrue(verify.validate_general_feedback(text))
+
+
+    def test_empty_value_cannot_consume_following_label(self):
+        for label in ("定位", "依据", "问题", "影响", "建议"):
+            with self.subTest(label=label):
+                text=re.sub(rf"^\*\*{label}\*\*:.*$", f"**{label}**:", self.report(), flags=re.M)
+                self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_escaped_pipes_in_disposition_are_accepted(self):
+        text=self.report().replace("| CASE-1缺少可观察预期 |", r"| CASE-1仅接受A\|B的预期缺失 |")
+        text=text.replace("REQ-1与CASE-1对照 |", r"REQ-1中的A\|B与CASE-1对照 |")
+        self.assertEqual(verify.validate_general_feedback(text), [])
+
+    def test_unescaped_extra_column_is_rejected(self):
+        text=self.report().replace("| CASE-1缺少可观察预期 |", "| CASE-1含A|B |")
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_even_backslashes_leave_column_separator_active(self):
+        text=self.report().replace("CASE-1缺少可观察预期 | 采纳", r"CASE-1\\| 采纳")
+        self.assertEqual(verify.validate_general_feedback(text), [])
+
+    def test_finding_and_disposition_are_accepted(self):
+        self.assertEqual(verify.validate_general_feedback(self.report()), [])
+
+    def test_native_only_report_is_rejected(self):
+        self.assertTrue(verify.validate_general_feedback("### 结论总览矩阵\nR1-R6 H1-H8"))
+
+    def test_status_only_without_actual_feedback_is_rejected(self):
+        text=self.report()
+        text=text[:text.index("### GR-001:")]+text[text.index("## 两部分评审执行记录"):]
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_count_mismatch_is_rejected(self):
+        self.assertTrue(verify.validate_general_feedback(self.report().replace("**通用发现数**: 1","**通用发现数**: 2")))
+
+    def test_missing_raw_detail_is_rejected(self):
+        for label in ("定位", "依据", "问题", "影响", "建议"):
+            with self.subTest(label=label):
+                text=re.sub(rf"^\*\*{label}\*\*:.*\n", "", self.report(), flags=re.M)
+                self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_zero_findings_with_scope_and_conclusion_are_accepted(self):
+        self.assertEqual(verify.validate_general_feedback(self.report(zero=True)), [])
+
+    def test_zero_findings_without_explicit_conclusion_are_rejected(self):
+        self.assertTrue(verify.validate_general_feedback(self.report(zero=True).replace("未发现实质性缺陷","情况良好")))
+
+    def test_missing_disposition_is_rejected(self):
+        text="\n".join(l for l in self.report().splitlines() if not l.startswith("| GR-001 |"))
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_extra_disposition_is_rejected(self):
+        text=self.report()+"| GR-002 | Low | 其他建议 | 不适用 | 无原生关联 | 不属于当前范围 |\n"
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_original_severity_must_be_preserved(self):
+        text=self.report().replace("| GR-001 | High |","| GR-001 | Low |")
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_incomplete_part_cannot_claim_overall_complete(self):
+        text=self.report().replace("**通用评审状态**: 已完成","**通用评审状态**: 未完成\n**未完成原因**: 未读完用例")
+        self.assertTrue(verify.validate_general_feedback(text))
+        self.assertEqual(verify.validate_general_feedback(text.replace("**整轮状态**: 已完成","**整轮状态**: 未完成")), [])
+
+    def test_duplicate_original_finding_is_rejected(self):
+        text=self.report().replace("## 两部分评审执行记录","### GR-001: High\n**定位**: CASE-1\n**依据**: REQ-1\n**问题**: 预期不清\n**影响**: 无法判断\n**建议**: 明确结果\n## 两部分评审执行记录")
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_unfilled_disposition_row_is_rejected(self):
+        text=self.report(zero=True)+"| <GR-001> | <High> | 待填写 | 采纳 | <RV-ID> | 待补充 |\n"
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_placeholder_native_link_is_rejected(self):
+        text=self.report().replace("RV-S2-001 / H2 / S2","<RV-ID>")
+        self.assertTrue(verify.validate_general_feedback(text))
+
+    def test_completion_states_allow_factual_explanations(self):
+        text=self.report().replace("**通用评审状态**: 已完成", "**通用评审状态**: 已完成（依据PRD逐条核对）").replace("**SOP检查状态**: 已完成", "**SOP检查状态**: 已完成；14项均有记录").replace("**整轮状态**: 已完成", "**整轮状态**: 已完成（两部分均完成）")
+        self.assertEqual(verify.validate_general_feedback(text), [])
 
 
 if __name__ == "__main__":

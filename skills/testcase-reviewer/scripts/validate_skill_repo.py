@@ -42,6 +42,7 @@ REQUIRED_FILES = [
 ]
 
 REQUIRED_SHARED_FILES = [
+    "scripts/verify_eval_artifacts.py",
     "references/output-contracts.md",
     "references/bdd-output-contracts.md",
     "references/bdd-report-rubric.md",
