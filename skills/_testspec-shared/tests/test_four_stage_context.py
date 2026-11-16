@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -11,9 +12,23 @@ chain = module_from_spec(spec)
 spec.loader.exec_module(chain)
 
 
-def write_markdown(path, context):
+BDD_TEXT = "Feature: 订单提交\n  Scenario: 创建待支付订单\n    Given 商品可购买\n    When 用户提交订单\n    Then 新订单状态为待支付\n"
+BDD_REPORT = """# Fixture
+
+## BDD 场景评审
+
+**BDD评审状态**: 已完成
+**评审文件**: artifacts/synthetic_features.feature
+**已检查内容**: 核对创建订单场景的 Given/When/Then、单一触发事件、业务语言及待支付状态 Oracle。
+**评审结论**: 场景与合成需求一致，未发现实质性缺陷。
+"""
+
+
+def write_markdown(path, context, body=None):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("# Fixture\n\n<!-- testspec-context\n" + json.dumps(context, ensure_ascii=False) + "\n-->\n", encoding="utf-8")
+    if body is None:
+        body = BDD_REPORT if path.name == "review-report.md" else "# Fixture"
+    path.write_text(body + "\n\n<!-- testspec-context\n" + json.dumps(context, ensure_ascii=False) + "\n-->\n", encoding="utf-8")
 
 
 class TestFourStageContext(unittest.TestCase):
@@ -37,7 +52,11 @@ class TestFourStageContext(unittest.TestCase):
         generated = context("testcase-generate", ["review-report.md"], next_skill="testcase-review")
         (root / "artifacts").mkdir()
         (root / "artifacts/testcases.json").write_text(json.dumps({"schema_version": 2, "_context": generated, "testcases": []}), encoding="utf-8")
-        reviewed = context("testcase-review", [], review_gate={
+        (root / "artifacts/synthetic_features.feature").write_text(BDD_TEXT, encoding="utf-8")
+        reviewed = context("testcase-review", [], bdd_review={"status": "complete"},
+                           reviewed_artifacts={"bdd_features_sha256": {
+                               "artifacts/synthetic_features.feature": hashlib.sha256(BDD_TEXT.encode()).hexdigest(),
+                           }}, review_gate={
             "status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": [],
             "description_unresolved_count": 0, "description_issue_ids": [],
         })
@@ -152,6 +171,96 @@ class TestFourStageContext(unittest.TestCase):
                 with self.subTest(through=through):
                     self.assertEqual(chain.validate(root, through, 1), [])
 
+    def test_generation_requires_bdd_but_upstream_stages_do_not(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            (root / "artifacts/synthetic_features.feature").unlink()
+            for through in ("analysis", "points"):
+                self.assertEqual(chain.validate(root, through, 1), [])
+            for through in ("generate", "review"):
+                self.assertIn("generate: missing artifacts/*_features.feature", chain.validate(root, through, 1))
+
+    def test_generation_rejects_empty_or_non_utf8_bdd(self):
+        for content in (b"", b" \n\t", b"\xff"):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.make_change(root)
+                (root / "artifacts/synthetic_features.feature").write_bytes(content)
+                self.assertTrue(any("BDD feature" in error for error in chain.validate(root, "generate", 1)))
+
+    def test_unreviewed_bdd_cannot_pass_with_zero_gate_counts(self):
+        for record in (None, {}, {"status": "incomplete"}):
+            with self.subTest(record=record), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                reviewed = self.make_change(root)
+                reviewed["bdd_review"] = record
+                write_markdown(root / "review-report.md", reviewed)
+                self.assertTrue(any("BDD review is incomplete" in error for error in chain.validate(root, "review", 1)))
+
+    def test_bdd_review_requires_visible_scope_checks_and_conclusion(self):
+        bad_bodies = ["# No BDD review", BDD_REPORT + BDD_REPORT]
+        for label in ("评审文件", "已检查内容", "评审结论"):
+            bad_bodies.append("\n".join(line for line in BDD_REPORT.splitlines() if not line.startswith(f"**{label}**")))
+        bad_bodies += [BDD_REPORT.replace("已完成", "未完成"),
+                       BDD_REPORT.replace("artifacts/synthetic_features.feature", "artifacts/other_features.feature")]
+        for body in bad_bodies:
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                reviewed = self.make_change(root)
+                write_markdown(root / "review-report.md", reviewed, body)
+                self.assertTrue(any("BDD" in error for error in chain.validate(root, "review", 1)))
+
+    def test_legacy_report_without_bdd_fingerprint_requires_rereview(self):
+        for hashes in (None, {}, [], {"artifacts/synthetic_features.feature": "placeholder"}):
+            with self.subTest(hashes=hashes), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                reviewed = self.make_change(root)
+                reviewed["reviewed_artifacts"]["bdd_features_sha256"] = hashes
+                write_markdown(root / "review-report.md", reviewed)
+                self.assertTrue(any("bdd_features_sha256" in error for error in chain.validate(root, "review", 1)))
+
+    def test_bdd_edits_additions_deletions_and_renames_invalidate_review(self):
+        for action in ("edit", "add", "delete", "rename"):
+            with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.make_change(root)
+                feature = root / "artifacts/synthetic_features.feature"
+                if action == "edit":
+                    feature.write_text(BDD_TEXT.replace("待支付", "已支付"), encoding="utf-8")
+                elif action == "add":
+                    feature.with_name("extra_features.feature").write_text(BDD_TEXT, encoding="utf-8")
+                elif action == "delete":
+                    feature.unlink()
+                else:
+                    feature.rename(feature.with_name("renamed_features.feature"))
+                before = (root / "review-report.md").read_bytes()
+                self.assertTrue(any("BDD files or hashes differ" in error for error in chain.validate(root, "review", 1)))
+                self.assertEqual((root / "review-report.md").read_bytes(), before)
+
+    def test_rereview_can_record_all_current_bdd_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            (root / "artifacts/extra_features.feature").write_text(BDD_TEXT, encoding="utf-8")
+            hashes, errors = chain.bdd_artifacts(root)
+            self.assertEqual(errors, [])
+            reviewed["reviewed_artifacts"]["bdd_features_sha256"] = hashes
+            body = BDD_REPORT.replace("artifacts/synthetic_features.feature",
+                                      "artifacts/synthetic_features.feature、artifacts/extra_features.feature")
+            write_markdown(root / "review-report.md", reviewed, body)
+            self.assertEqual(chain.validate(root, "review", 1), [])
+
+    def test_generated_bdd_must_not_remain_stale(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            generated_path = root / "artifacts/testcases.json"
+            generated = json.loads(generated_path.read_text(encoding="utf-8"))
+            generated["_context"]["stale_downstream_artifacts"].append("artifacts/synthetic_features.feature")
+            generated_path.write_text(json.dumps(generated), encoding="utf-8")
+            self.assertIn("generate: propagated stale list still contains its BDD artifact", chain.validate(root, "generate", 1))
+
     def test_review_preserves_design_methods_when_present(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -175,6 +284,38 @@ class TestFourStageContext(unittest.TestCase):
             reviewed["design_methods"] = ["变形测试", "基于属性的测试"]
             write_markdown(root / "review-report.md", reviewed)
             self.assertEqual(chain.validate(root, "review", 1), [])
+
+    def test_review_method_aliases_match_in_both_directions_without_rewriting(self):
+        canonical = ["等价类", "边界值", "判定表", "流程分析", "状态迁移", "错误推断",
+                     "正交实验", "因果图", "配对组合", "基于属性的测试", "变形测试", "语法规则分析"]
+        aliases = ["等价类划分", "边界值分析", "决策表", "业务流程分析", "状态转换", "错误推测",
+                   "正交试验设计", "因果图法", "两两组合", "属性测试", "蜕变测试", "语法分析"]
+        for generated_names, reviewed_names in ((aliases, canonical), (canonical, aliases)):
+            with self.subTest(generated_names=generated_names), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                reviewed = self.make_change(root)
+                generated_path = root / "artifacts/testcases.json"
+                generated = json.loads(generated_path.read_text(encoding="utf-8"))
+                generated["_context"]["design_methods"] = generated_names
+                generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
+                reviewed["design_methods"] = reviewed_names
+                reviewed_path = root / "review-report.md"
+                write_markdown(reviewed_path, reviewed)
+                before = [path.read_bytes() for path in (generated_path, reviewed_path)]
+                self.assertEqual(chain.validate(root, "review", 1), [])
+                self.assertEqual([path.read_bytes() for path in (generated_path, reviewed_path)], before)
+
+    def test_alias_normalization_does_not_hide_a_different_method(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            generated_path = root / "artifacts/testcases.json"
+            generated = json.loads(generated_path.read_text(encoding="utf-8"))
+            generated["_context"]["design_methods"] = ["等价类划分"]
+            generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
+            reviewed["design_methods"] = ["边界值分析"]
+            write_markdown(root / "review-report.md", reviewed)
+            self.assertIn("review: design_methods differs from generated cases", chain.validate(root, "review", 1))
 
     def test_unclosed_marker_before_valid_context_blocks_chain(self):
         with tempfile.TemporaryDirectory() as directory:

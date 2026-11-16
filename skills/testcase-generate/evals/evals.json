@@ -7,8 +7,8 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成 schema v2 用例并导出 XMind。",
-      "expected_output": "从 revision 2 testpoints 生成可追溯 JSON 用例，testcases._context 传播完整 envelope，并生成 XMind。",
+      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成 schema v2 用例并导出 XMind。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "从 revision 2 testpoints 生成可追溯 JSON 用例，testcases._context 传播完整 envelope，并生成 XMind。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-profile-sync/requirements.md",
@@ -42,6 +42,11 @@
         {
           "text": "Reports generated paths and validation status",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-profile-sync'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
@@ -81,8 +86,8 @@
     },
     {
       "id": 3,
-      "prompt": "根据 synthetic-export 的 review-report 做定向返修。只修 RV-S2-001 的模糊 oracle，保留未被 finding 指向的用例。",
-      "expected_output": "消费 open 且分配给 generate 的 finding，定向更新一条用例，记录 review_repairs，不自行把 finding 标成 resolved。",
+      "prompt": "根据 synthetic-export 的 review-report 做定向返修。只修 RV-S2-001 的模糊 oracle，保留未被 finding 指向的用例。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "消费 open 且分配给 generate 的 finding，定向更新一条用例，记录 review_repairs，不自行把 finding 标成 resolved。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-export/requirements.md",
@@ -115,13 +120,18 @@
         {
           "text": "Does not mark the review finding resolved; re-review owns resolution",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-export'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
     {
       "id": 4,
-      "prompt": "运行 testcase-generate，使用 tracking 策略为 synthetic-checkout-tracking 生成埋点测试用例。不要猜测材料未定义的产品口径。",
-      "expected_output": "生成覆盖曝光、点击、成功、失败、条件必填字段、trace_id 链路关联、去重重试、来源归因和平台版本维度的可判定用例；未定义的时区和 UV 去重键标为待确认。",
+      "prompt": "运行 testcase-generate，使用 tracking 策略为 synthetic-checkout-tracking 生成埋点测试用例。不要猜测材料未定义的产品口径。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "生成覆盖曝光、点击、成功、失败、条件必填字段、trace_id 链路关联、去重重试、来源归因和平台版本维度的可判定用例；未定义的时区和 UV 去重键标为待确认。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-checkout-tracking/requirements.md",
@@ -153,6 +163,11 @@
         {
           "text": "Reports timezone and UV deduplication key as unresolved product decisions rather than inventing values",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-checkout-tracking'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
@@ -196,8 +211,8 @@
     },
     {
       "id": 6,
-      "prompt": "运行 testcase-generate，为 synthetic-compatibility-matrix 按已确认环境组合生成兼容性矩阵测试用例；不扩展未声明的平台、系统或浏览器版本。",
-      "expected_output": "输出引用 Compatibility 测试点且 type=兼容性矩阵的 schema v2 用例，分别验证两条已声明环境组合；每条有明确环境、操作和订单列表结果。",
+      "prompt": "运行 testcase-generate，为 synthetic-compatibility-matrix 按已确认环境组合生成兼容性矩阵测试用例；不扩展未声明的平台、系统或浏览器版本。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "输出引用 Compatibility 测试点且 type=兼容性矩阵的 schema v2 用例，分别验证两条已声明环境组合；每条有明确环境、操作和订单列表结果。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-compatibility-matrix/requirements.md",
@@ -225,13 +240,18 @@
         {
           "text": "Keeps the existing eight business fields, TP provenance and Oracle quality requirements",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-compatibility-matrix'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
     {
       "id": 7,
-      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成用例并默认导出 XMind。用例名称要简短、直白、见名知意。",
-      "expected_output": "名称场景部分用短句表达同步后显示新头像的意图，保留关键条件；JSON 保留模块/功能前缀，XMind 只显示同一场景短句，完成名称语义复核。",
+      "prompt": "运行 testcase-generate，为 synthetic-profile-sync 生成用例并默认导出 XMind。用例名称要简短、直白、见名知意。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "名称场景部分用短句表达同步后显示新头像的意图，保留关键条件；JSON 保留模块/功能前缀，XMind 只显示同一场景短句，完成名称语义复核。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-profile-sync/requirements.md",
@@ -273,13 +293,18 @@
         {
           "text": "按上游已选方法读取对应章节；同一会话已读且哈希未变的材料可复用，新内容须重读；按组摘要与内部缓存不增加artifacts中的正式交付文件",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-profile-sync'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
     {
       "id": 8,
-      "prompt": "运行 testcase-generate，为 synthetic-smoke-fullset 生成完整用例集。覆盖全部3个TP，保留核心闭环的 type=冒烟、regression_tier=Smoke、p0 分类，并导出包含全部用例的完整集XMind；不得生成独立Smoke文件。",
-      "expected_output": "输出 schema v2 的完整 artifacts/testcases.json 及匹配的完整集 XMind；完整 JSON 保留查询、提交、取消三个TP的用例，冒烟用例仍在完整集内并为p0；不生成独立 Smoke JSON 或 XMind。",
+      "prompt": "运行 testcase-generate，为 synthetic-smoke-fullset 生成完整用例集。覆盖全部3个TP，保留核心闭环的 type=冒烟、regression_tier=Smoke、p0 分类，并导出包含全部用例的完整集XMind；不得生成独立Smoke文件。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "输出 schema v2 的完整 artifacts/testcases.json 及匹配的完整集 XMind；完整 JSON 保留查询、提交、取消三个TP的用例，冒烟用例仍在完整集内并为p0；不生成独立 Smoke JSON 或 XMind。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-smoke-fullset/artifacts/testcases.json",
@@ -314,20 +339,25 @@
           "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py xmind --json testspec/changes/synthetic-smoke-fullset/artifacts/testcases.json --xmind testspec/changes/synthetic-smoke-fullset/artifacts/synthetic-smoke-fullset_cases.xmind"
         },
         {
-          "text": "Creates only the complete-set JSON and its matching XMind, with no extra Smoke file in any format",
+          "text": "完整交付目录恰好包含 JSON、全量 XMind 与伴生 BDD，不派生独立冒烟文件",
           "check": "programmatic",
-          "script": "python3 -B -c \"from pathlib import Path; a=Path('testspec/changes/synthetic-smoke-fullset/artifacts'); expected={'testcases.json','synthetic-smoke-fullset_cases.xmind'}; assert {p.name for p in a.iterdir()}==expected; print('PASS')\""
+          "script": "python3 -B -c \"from pathlib import Path; a=Path('testspec/changes/synthetic-smoke-fullset/artifacts'); expected={'testcases.json','synthetic-smoke-fullset_cases.xmind','synthetic-smoke-fullset_features.feature'}; assert {p.name for p in a.iterdir()}==expected; print('PASS')\""
         },
         {
           "text": "Reports the complete-set JSON and XMind paths, TP coverage result, and preserved Smoke classification",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-smoke-fullset'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
     {
       "id": 9,
-      "prompt": "运行 testcase-generate，为 synthetic-theme-data 生成用例并导出完整集XMind。四项描述简短、准确、够用。",
-      "expected_output": "生成覆盖3个TP的JSON和匹配XMind；主题切换数据只列所需主题及顺序，素材展示保留具体图片和文案，不照抄整套配置，不按字符数截断。",
+      "prompt": "运行 testcase-generate，为 synthetic-theme-data 生成用例并导出完整集XMind。四项描述简短、准确、够用。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "生成覆盖3个TP的JSON和匹配XMind；主题切换数据只列所需主题及顺序，素材展示保留具体图片和文案，不照抄整套配置，不按字符数截断。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-theme-data/requirements.md",
@@ -363,13 +393,18 @@
         {
           "text": "四项描述只保留必要条件、数据、操作和业务结果，不为简单场景添加绕行步骤、重复准备或旁支检查；不按步骤与预期数量配对凑数。",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-theme-data'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     },
     {
       "id": 10,
-      "prompt": "用户要求修复 synthetic-accepted-reopen 中已 accepted 的测试数据描述问题。按完整闭环执行：先把输入中的原始 accepted 报告副本保存为 eval-input/accepted-review-report.md，再运行 testcase-reviewer，因用户现在请求修复，把 RV-S3-001 在同一ID下重开为 open 并保持 Gate blocked；保存该阶段报告副本为 eval-input/reopened-review-report.md。然后运行 testcase-generate，只精简 CASE-1 的 test_data，保留该字段所需的「格式：文本」，不改其他字段或 CASE-2，也不修改 review-report.md/Gate；将此时的报告原样复制为 eval-input/post-generate-review-report.md。最后重新运行 testcase-reviewer，用同一 RV-S3-001 标记 resolved，保留原 issue 的 S3 严重度与 owner=generate，刷新 testcases 与 testpoints 的 reviewed_artifacts 哈希并更新 Gate。生成并核对完整集 XMind。",
-      "expected_output": "保留两份阶段报告证据；RV-S3-001 经 Review 重开、Generate 定向修改 CASE-1.test_data、Review 同ID解决；Generate 不改变 Review 报告/Gate，最终 Gate pass；同一 issue ID 的 S3 与 owner=generate 保留，reviewed_artifacts 中 testcases 与 testpoints 哈希均匹配当前文件。",
+      "prompt": "用户要求修复 synthetic-accepted-reopen 中已 accepted 的测试数据描述问题。按完整闭环执行：先把输入中的原始 accepted 报告副本保存为 eval-input/accepted-review-report.md，再运行 testcase-reviewer，因用户现在请求修复，把 RV-S3-001 在同一ID下重开为 open 并保持 Gate blocked；保存该阶段报告副本为 eval-input/reopened-review-report.md。然后运行 testcase-generate，只精简 CASE-1 的 test_data，保留该字段所需的「格式：文本」，不改其他字段或 CASE-2，也不修改 review-report.md/Gate；将此时的报告原样复制为 eval-input/post-generate-review-report.md。最后重新运行 testcase-reviewer，用同一 RV-S3-001 标记 resolved，保留原 issue 的 S3 严重度与 owner=generate，刷新 testcases 与 testpoints 的 reviewed_artifacts 哈希并更新 Gate。生成并核对完整集 XMind。 按标准 SOP 同步交付核心主路径与有需求依据的关键异常 BDD 特性文件；返修时同步受影响的 BDD。",
+      "expected_output": "保留两份阶段报告证据；RV-S3-001 经 Review 重开、Generate 定向修改 CASE-1.test_data、Review 同ID解决；Generate 不改变 Review 报告/Gate，最终 Gate pass；同一 issue ID 的 S3 与 owner=generate 保留，reviewed_artifacts 中 testcases 与 testpoints 哈希均匹配当前文件。 同时保留非空的伴生 BDD 特性文件供统一评审。",
       "files": [
         {
           "path": "testspec/changes/synthetic-accepted-reopen/requirements.md",
@@ -419,6 +454,11 @@
         {
           "text": "Review把accepted问题按同ID重开；Generate只改被分派字段并保留原Gate；修复后必须由Review确认解决",
           "check": "qualitative"
+        },
+        {
+          "text": "伴生 BDD 存在、可读取且非空；语法与业务语义另行评审",
+          "check": "programmatic",
+          "script": "python3 -B -c 'from pathlib import Path; p=Path('\"'\"'testspec/changes/synthetic-accepted-reopen'\"'\"')/\"artifacts\"; files=list(p.glob(\"*_features.feature\")); assert files and all(f.is_file() and f.read_text(encoding=\"utf-8-sig\").strip() for f in files); print(\"PASS\")'"
         }
       ]
     }

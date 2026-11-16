@@ -47,6 +47,15 @@
 **影响**: <影响范围和后果>
 **建议**: <原始的、可执行的修改或补充建议>
 
+## BDD 场景评审
+
+**BDD评审状态**: <已完成/未完成>
+**评审文件**: <全部实际评审的 artifacts/<name>_features.feature 相对路径>
+**已检查内容**: <核心主路径与关键异常覆盖、Given/When/Then、单一职责、业务语言、外部可观察 Oracle 的实际检查摘要>
+**评审结论**: <具体结论及对应 GR 编号；无发现时说明已检查范围，未完成时说明缺失材料及原因>
+
+BDD 发现完整保留在上方通用反馈中，并使用相同 GR 编号逐项处置。缺少或未完成 BDD 评审时整轮为未完成；不得只填完成状态或重算指纹代替评审。输入不足时沿用原规则不补造 Gate。
+
 ## 总评
 
 **结论**: <overall_conclusion>
@@ -77,7 +86,7 @@
 ## 两部分评审执行记录
 
 **SOP检查状态**: <已完成/未完成；未完成逐项说明缺失材料>
-**整轮状态**: <已完成/未完成；两部分都完成才可写已完成>
+**整轮状态**: <已完成/未完成；通用评审、BDD 场景评审与 SOP 检查均完成才可写已完成>
 **执行方式**: 同一模型先执行通用评审，再执行SOP检查
 **统一入口**: `testcase-reviewer`；通用评审mode=`review`，SOP模块=`review-workflow.md`
 **判定依据及限制**: <原始 PRD/验收标准/canonical 需求；版本、文件 SHA-256 与缺失材料>
@@ -275,7 +284,12 @@
   "material_quality": "<从上游继承>",
   "design_methods": ["<从 testcase-generate 继承的正式方法名>"],
   "stale_downstream_artifacts": [],
-  "reviewed_artifacts": {"testcases_sha256": "<实际完整 JSON 的 SHA-256>", "testpoints_sha256": "<实际测试点的 SHA-256>"},
+  "bdd_review": {"status": "<complete/incomplete>"},
+  "reviewed_artifacts": {
+    "testcases_sha256": "<实际完整 JSON 的 SHA-256>",
+    "testpoints_sha256": "<实际测试点的 SHA-256>",
+    "bdd_features_sha256": {"artifacts/<name>_features.feature": "<实际 BDD 文件的 SHA-256>"}
+  },
   "canonical_source_policy": "prd-first",
   "origin": {"kind": "<testspec-native/legacy-import/mixed>"},
   "trust": {"status": "<verified/provisional/unverified/mixed>"},

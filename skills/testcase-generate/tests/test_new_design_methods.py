@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import sys
@@ -65,8 +66,9 @@ class TestNewDesignMethods(unittest.TestCase):
                                 json.dumps(context, ensure_ascii=False) + "\n-->\n", encoding="utf-8")
 
             point_body = "\n".join(
-                f"- {tp}: {objective}\n  - 验证要点: {objective}\n  - 设计方法: {method}"
-                f"\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct"
+                f"- {tp}: {objective}\n  - 验证要点: {objective}"
+                + (f"\n  - 设计方法: {method}" if method is not None else "")
+                + f"\n  - 优先级: p1\n  - Oracle 状态: confirmed\n  - Oracle 范围: direct"
                 f"\n  - 回归层级: Full\n  - 关联需求: {requirement}"
                 for (tp, objective, requirement), method in zip(POINTS, point_methods)
             )
@@ -105,6 +107,10 @@ class TestNewDesignMethods(unittest.TestCase):
                     xml = package.read("content.xml").decode("utf-8")
                 self.assertTrue(all(scene in xml for _, _, scene, *_ in CASES))
             if full_chain:
+                feature = root / "artifacts/synthetic_features.feature"
+                feature.write_text("Feature: 合成搜索规则\n  Scenario: 拒绝缺少右括号的表达式\n"
+                                   "    Given 原搜索条件已生效\n    When 用户搜索表达式 (甲 AND 乙\n"
+                                   "    Then 提示结构不合法且保留原搜索条件\n", encoding="utf-8")
                 requirements = ("# 合成需求\n\n"
                     "- REQ-001：无优惠、无运费时，购物车总价等于各商品单价乘数量的小计之和。\n"
                     "- REQ-002：记录列表按编号升序排序，结果与记录录入顺序无关。\n"
@@ -119,8 +125,15 @@ class TestNewDesignMethods(unittest.TestCase):
                                   next_skill="test-points"),
                 )
                 write_markdown(
-                    root / "review-report.md", "# 合成 Review 门禁上下文\n\n独立语义评审尚未执行。",
+                    root / "review-report.md", "# 合成 Review 门禁上下文\n\n以下为结构测试记录，不代表实际语义评审。\n"
+                    "## BDD 场景评审\n**BDD评审状态**: 已完成\n"
+                    "**评审文件**: artifacts/synthetic_features.feature\n"
+                    "**已检查内容**: 合成记录包含结构不合法的表达式、单一搜索动作和拒绝后的状态保持。\n"
+                    "**评审结论**: 此记录仅用于上下文校验回归；实际语义评审仍待执行。",
                     stage_context("testcase-review", [], design_methods=list(METHODS),
+                                  bdd_review={"status": "complete"},
+                                  reviewed_artifacts={"bdd_features_sha256": {
+                                      "artifacts/synthetic_features.feature": hashlib.sha256(feature.read_bytes()).hexdigest()}},
                                   review_gate={"status": "blocked", "s1_unresolved_count": 1,
                                                "s1_issue_ids": ["SYN-REVIEW-PENDING"],
                                                "description_unresolved_count": 1,
@@ -160,6 +173,57 @@ class TestNewDesignMethods(unittest.TestCase):
     def test_one_testpoint_without_method_is_blocked(self):
         result = self.validate(list(METHODS), point_methods=("基于属性的测试", "", "语法规则分析"))
         self.assertIn("MISSING_TP_DESIGN_METHOD", {issue["type"] for issue in result["errors"]})
+
+    def test_design_method_aliases_are_normalized(self):
+        result = self.validate(
+            ["基于属性的测试", "变形测试", "语法规则分析"],
+            point_methods=("基于属性测试", "蜕变测试", "语法分析"),
+            point_context_methods=["基于属性的测试", "变形测试", "语法规则分析"],
+        )
+        self.assertFalse(result["errors"], result)
+
+    def test_aliases_reach_review_context(self):
+        result = self.validate(
+            ["基于属性测试", "蜕变测试", "语法分析"],
+            point_methods=("属性测试", "蜕变测试", "语法规则"),
+            full_chain=True,
+        )
+        self.assertFalse(result["errors"], result)
+
+    def test_all_testpoints_without_methods_are_blocked(self):
+        for missing in (None, ""):
+            with self.subTest(missing=missing):
+                result = self.validate(list(METHODS), point_methods=(missing,) * len(POINTS))
+                issue = next(issue for issue in result["errors"] if issue["type"] == "MISSING_TP_DESIGN_METHOD")
+                self.assertEqual(issue["tp_ids"], sorted(tp for tp, _, _ in POINTS))
+
+    def test_native_metadata_cannot_bypass_missing_testpoint_methods(self):
+        point_text = "- TP_ORDER_TOTAL_001: 总价等于小计之和"
+        native_origin = {"origin": {"kind": "testspec-native"}}
+        metadata = (
+            {"source_skill": "testcase-generate"},
+            {"source_revision": {"version": 1}},
+            {"design_methods": []},
+            native_origin,
+        )
+        for context in metadata:
+            with self.subTest(context=context):
+                errors = validator.check_design_methods({"_context": context}, [], point_text)
+                self.assertIn("MISSING_TP_DESIGN_METHOD", {issue["type"] for issue in errors})
+        errors = validator.check_design_methods({}, [native_origin], point_text)
+        self.assertIn("MISSING_TP_DESIGN_METHOD", {issue["type"] for issue in errors})
+
+    def test_contextual_testpoints_require_methods_without_native_case_metadata(self):
+        point_text = ('- TP_ORDER_TOTAL_001: 总价等于小计之和\n'
+                      '<!-- testspec-context\n{"source_skill": "test-points"}\n-->')
+        errors = validator.check_design_methods({}, [], point_text)
+        self.assertIn("MISSING_TP_DESIGN_METHOD", {issue["type"] for issue in errors})
+
+    def test_legacy_testpoints_without_method_metadata_remain_readable(self):
+        point_text = "- TP_ORDER_TOTAL_001: 总价等于小计之和"
+        for data in ({}, {"schema_version": 2}, {"_context": {"origin": {"kind": "external-import"}}}):
+            with self.subTest(data=data):
+                self.assertEqual(validator.check_design_methods(data, [], point_text), [])
 
 
 if __name__ == "__main__":

@@ -13,13 +13,26 @@ SUBPROCESS_TIMEOUT = int(os.getenv("TEST_SUBPROCESS_TIMEOUT", "60"))
 
 
 class TestFullDelivery(unittest.TestCase):
-    def test_full_set_export_keeps_smoke_case_without_secondary_artifacts(self):
-        """冒烟分类作为完整集元数据导出；全量 XMind 包含所有场景。"""
+    def test_full_set_export_keeps_smoke_case_and_companion_bdd(self):
+        """全量 XMind 保留全部场景，伴生 BDD 与 JSON 一并交付且不被导出器改写。"""
         with tempfile.TemporaryDirectory() as td:
             artifacts = Path(td) / "artifacts"
             artifacts.mkdir()
             input_path = artifacts / "testcases.json"
             output_path = artifacts / "synthetic-smoke-fullset_cases.xmind"
+            feature_path = artifacts / "synthetic-smoke-fullset_features.feature"
+            feature_bytes = (
+                "Feature: 订单闭环\n"
+                "  Scenario: 创建待支付订单\n"
+                "    Given 商品可购买\n"
+                "    When 用户提交订单\n"
+                "    Then 订单有编号且状态为待支付\n"
+                "  Scenario: 取消待支付订单\n"
+                "    Given 订单待支付\n"
+                "    When 用户确认取消订单\n"
+                "    Then 订单状态为已关闭\n"
+            ).encode("utf-8")
+            feature_path.write_bytes(feature_bytes)
             payload = {
                 "schema_version": 2,
                 "_context": {},
@@ -96,9 +109,10 @@ class TestFullDelivery(unittest.TestCase):
             ):
                 self.assertIn(f"<title>{scenario}</title>", content)
             self.assertEqual(input_path.read_bytes(), input_bytes)
+            self.assertEqual(feature_path.read_bytes(), feature_bytes)
             self.assertEqual(
                 {path.name for path in artifacts.iterdir()},
-                {"testcases.json", "synthetic-smoke-fullset_cases.xmind"},
+                {"testcases.json", "synthetic-smoke-fullset_cases.xmind", "synthetic-smoke-fullset_features.feature"},
             )
 
 

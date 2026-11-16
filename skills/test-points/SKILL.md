@@ -12,7 +12,7 @@ description: TestSpec 测试点（流程第 2 步）- 从需求分析中提炼�
 TestSpec 测试点进度：
 
 - [ ] 步骤 1：定位当前 change 目录 ⚠️ 必需
-- [ ] 步骤 2：加载 requirements-analysis.md 或 proposal.md ⚠️ 必需
+- [ ] 步骤 2：加载 canonical 需求与 requirements-analysis.md（仅明确获准时跳过分析）⚠️ 必需
 - [ ] 步骤 3：消费上游 context 和 TestLib 信号
 - [ ] 步骤 4：生成包含命名字典的 specs/testpoints.md
 - [ ] 步骤 5：校验命名契约并反思
@@ -37,7 +37,7 @@ TestSpec 测试点进度：
 - 粒度、禁止内容和反模式
 
 同时加载 `../_testspec-shared/references/naming-contract.md`。仅在涉及 TestLib 复用或信任分类时，加载 `../_testspec-shared/references/source-provenance.md`。
-读取 `references/test-design-methods.md` 的十二种方法目录，按需求特征展开适用章节；该文件与 `testcase-generate` 的方法集合保持一致。
+读取 `references/test-design-methods.md` 的选择规则与十二种方法目录，按已确认需求的业务差异展开适用章节；该文件与 `testcase-generate` 的方法集合保持一致。完成后按该文档的“完成核对”检查覆盖，不要求每个 TP 使用全部方法，也不按方法数量评价质量。
 
 不可妥协的规则：
 
@@ -45,7 +45,7 @@ TestSpec 测试点进度：
 - 每个测试点只表达一个稳定验证意图。
 - TestLib 绝不覆盖 PRD；未验证导入不能提供 priority 或 oracle。
 - 每个测试点都有 category、TP_ID、priority、requirement reference、`oracle_scope` 和 `oracle_status`。
-- 每个测试点记录所采用的方法名（可多个），供 `testcase-generate` 继承并展开。
+- 每个测试点记录所采用的方法名（可多个），验证要点体现其覆盖的业务差异或结果关系，供 `testcase-generate` 继承并展开。
 
 ---
 
@@ -104,7 +104,7 @@ TestSpec 测试点进度：
 
 - **"核心业务价值链是什么？"** → 决定 p0 测试点集中在哪些模块
 - **"哪些区域风险最高？"** → 上游标注的风险区域加深覆盖
-- **"验证粒度应该多细？"** → 材料信息密度高则可细化，低则保持粗粒度
+- **"验证粒度应该多细？"** → 按独立业务意图、条件分支和可判定结果确定；材料不足时澄清，不用多拆测试点补足信息
 - **"知识库中已有哪些覆盖？"** → testlib 已覆盖的功能点可降低优先级或标记复用
 
 ---
@@ -113,8 +113,8 @@ TestSpec 测试点进度：
 
 1. **确定当前变更目录**。
 2. **读取上下文**：
-   - 优先读 `requirements-analysis.md`（从中提炼）
-   - 若不存在，读 `proposal.md`（直接提炼）
+   - 读取 canonical 需求（优先 `requirements.md`，否则 `proposal.md`）及 `requirements-analysis.md`，按上游上下文规则核对版本与来源
+   - 缺少 analysis 时默认停止；只有用户已明确要求跳过，才从 canonical 需求降级提炼并标记低置信度
 3. **生成 specs/testpoints.md**：
 
 ### 写入策略
@@ -165,9 +165,9 @@ TestSpec 测试点进度：
 
 产物首次生成后，执行反思循环：
 
-1. **覆盖均衡性**：各模块的测试点数量是否均衡？是否有模块只有 1-2 个点而其他模块 10+？
-2. **粒度一致性**：不同模块的测试点粒度是否一致？（同样复杂度的功能，测试点数量差异不应超过 3 倍）
-3. **验证要点质量**：每个验证要点是否可独立验证？是否有"验证功能正常"这种模糊描述？
+1. **需求覆盖**：已确认且在范围内的需求及关键业务分支是否均有测试点？模块间数量差异只用于提示复核，不能据此补造或删除测试点。
+2. **粒度一致性**：每个测试点是否表达一个独立业务意图？是否因同一意图重复拆分，或把不同条件与结果强行合并？不设跨模块数量比例。
+3. **方法与验证要点质量**：所选方法是否适用，验证目标和可判定结果是否清楚？按方法文档完成核对，不以方法标签或“验证功能正常”代替具体含义。
 
 反思后修正产物，最多 2 轮迭代。告知用户迭代次数和修正摘要。
 

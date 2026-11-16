@@ -111,6 +111,8 @@
 - `Given` 仅提供必要上下文，`When` 聚焦单一触发事件，`Then` 必须提供外部可观测的业务 Oracle。
 - 与完整集用例呼应：覆盖主成功路径（MSS）与关键异常路径（ERR），供业务、测试与研发人员直观对齐与自动化转化。
 
+交付验收须同时保留 JSON、XMind 与非空的 BDD 特性文件，不用旧的“两文件目录”断言验收当前 SOP。生成后执行 `validate_context_chain.py --change-dir <变更目录> --through generate` 检查上下文和 BDD 存在性；Gherkin 质量、场景覆盖与 Oracle 由后续独立的 BDD 场景评审核对，文件存在不代表质量合格。
+
 ## 可选 Excel 格式约定（不参与默认验收）
 
 Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆盖率及 Review 门禁。只有用户单独明确要求，且当前工作区已有明确可用的导出流程时，才可作为附加格式处理；本约定不构成 Excel 导出实现。若处理，工作表 `测试用例` 的列头固定为：
@@ -153,13 +155,30 @@ Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆�
 - S1/S2/S3 问题列表；每项带稳定 issue ID、`open/resolved/accepted` 状态、`case_id`/`TP_ID`/`GLOBAL:<rule>`、owner、影响和建议
 - 前置条件、测试数据、操作步骤、预期结果的四行检查结果及对应问题 ID；问题给出原文、原因和可直接替换的短句
 - `review_gate.status`、`s1_unresolved_count`、`s1_issue_ids`、`description_unresolved_count`、`description_issue_ids`
-- `reviewed_artifacts`：实际评审完整 JSON 与测试点的 SHA-256，用于标识评审对应的产物
+- 单列 `## BDD 场景评审`，记录 BDD评审状态、评审文件、已检查内容和评审结论；发现使用通用评审中的 GR 编号关联并逐项处置，不重复计算问题
+- `bdd_review.status`：实际完成为 `complete`，未完成为 `incomplete`；文件缺失、为空或未评审时不得宣称整轮完成，输入不足时沿用原规则不补造 Gate
+- `reviewed_artifacts`：实际评审完整 JSON 与测试点的 SHA-256，另以 `bdd_features_sha256` 映射记录全部 BDD 文件的相对路径和 SHA-256
+
+BDD 完成记录与指纹的示例（真实报告使用实际文件和摘要值）：
+
+```json
+{
+  "bdd_review": {"status": "complete"},
+  "reviewed_artifacts": {
+    "testcases_sha256": "<实际完整 JSON 的 SHA-256>",
+    "testpoints_sha256": "<实际测试点的 SHA-256>",
+    "bdd_features_sha256": {"artifacts/<name>_features.feature": "<实际 BDD 文件的 SHA-256>"}
+  }
+}
+```
+
+BDD 内容或文件集合变化后须重新评审并刷新映射；不得只重算指纹冒充重评。旧报告缺少 BDD 完成记录或指纹时保持可读，但当前完整链路验收要求重新评审。保存后执行 `validate_context_chain.py --change-dir <变更目录> --through review`，检测 BDD 缺失、未完成记录或过期指纹；这是输入与评审完成性检查，不增加 S1/四项描述 Gate 的计数或改变公式。
 
 新执行的统一评审必须记录通用评审与SOP检查两部分的执行状态、来源依据、原等级、原始发现与逐项处置；任一部分未完成时说明原因，不提供未启用选项。协同规则由 `skills/testcase-reviewer/testcase-review/references/independent-reviewer.md` 定义，由统一入口执行，通用评审能力与原SOP检查规则均保留。发现经证据复核后关联原生 issue ID；同一问题只计一次，不机械换算严重度，也不增加或替换现有 Gate 字段/公式。历史报告保持兼容，不补造协同记录。
 
 四项描述门禁与 S1 门禁同时生效：逐条检查完整用例集的四个字段，只有未解决 S1 和四项描述问题均为 0、两个 ID 列表均为空，`review_gate.status` 才能为 `pass`。`description_unresolved_count` 为非负整数，必须等于去重后的 `description_issue_ids` 数量；ID 必须是非空字符串并指向报告中的问题。
 
-四项描述问题按现有 R5/H2/H3/H4/H6 分级，仍可为 S2/S3；严重度不代替门禁结论。确认的套话、重复背景、无关配置/操作/检查或含糊表达均进入描述问题列表，不能仅以“建议优化”放行；其他 S2/S3 不因此新增阻断。每项给出 `case_id`、字段、原文、原因和可直接替换的建议，只有复审确认 resolved 后才移出；`accepted` 仍计入未解决描述问题，不能豁免本门禁。用户明确按报告修复且范围包含该项时，由 Review 先以原 issue ID 重开为 `open`，保留严重度、定位、owner 和计数/ID；Generate 只消费 `open` 且 owner 为 generate 的 finding。未纳入范围的 accepted 项保持 accepted 并继续阻断。返修后 Review 对完整集复核同一 ID、按原公式重算并刷新两个 SHA-256；旧哈希不再代表已改变的用例集。
+四项描述问题按现有 R5/H2/H3/H4/H6 分级，仍可为 S2/S3；严重度不代替门禁结论。确认的套话、重复背景、无关配置/操作/检查或含糊表达均进入描述问题列表，不能仅以“建议优化”放行；其他 S2/S3 不因此新增阻断。每项给出 `case_id`、字段、原文、原因和可直接替换的建议，只有复审确认 resolved 后才移出；`accepted` 仍计入未解决描述问题，不能豁免本门禁。用户明确按报告修复且范围包含该项时，由 Review 先以原 issue ID 重开为 `open`，保留严重度、定位、owner 和计数/ID；Generate 只消费 `open` 且 owner 为 generate 的 finding。未纳入范围的 accepted 项保持 accepted 并继续阻断。返修后 Review 对完整集及伴生 BDD 复核、按原公式重算并刷新实际评审的全部 SHA-256；旧哈希不再代表已改变的产物。
 
 未完成四项检查时，记录 `GLOBAL:description-review-incomplete` 范围的问题并保持 `blocked`，不得填 0 假装通过。旧报告缺少描述门禁字段时必须重新 Review，不自动补通过。脚本校验能检查字段、计数和门禁的一致性，不能代替文案语义评审；合法的 `blocked` 报告通过上下文校验也不代表用例获准交付。
 

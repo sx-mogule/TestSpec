@@ -107,7 +107,7 @@ TestSpec 用例生成进度：
 
 ## 用例设计方法
 
-生成前读取 `references/case-design-rules.md`；从 `references/test-design-methods.md` 按上游已选方法读取对应章节，不把十二种方法全文重复加载。继承每个 TP 已选的方法，按十二种方法的规则展开可执行场景；若需补选方法，先返回 `test-points` 更新对应 TP 与测试点上下文。`_context.design_methods` 与所有被正式用例引用的 TP 方法集合一致；中等及以上复杂度的 TP 额外做创意测试探索，并在 `_context` 记录新增场景数量。
+生成前读取 `references/case-design-rules.md`；从 `references/test-design-methods.md` 按上游已选方法读取对应章节及“完成判断”，不把十二种方法全文重复加载。继承每个 TP 已选的方法，先明确覆盖对象，再展开可执行场景；若需补选方法或新增独立验证意图，先返回 `test-points` 更新对应 TP 与测试点上下文。`_context.design_methods` 与所有被正式用例引用的 TP 方法集合一致；中等及以上复杂度的 TP 按设计规则做场景假设扫描，只记录有依据、可追溯的新增场景数量。
 
 ---
 
@@ -205,7 +205,8 @@ python "<_testspec-shared-skill-dir>/scripts/validate_testcases.py" \
    python "<testcase-generate-skill-dir>/scripts/generate_xmind.py" --input <变更目录>/artifacts/testcases.json --output <变更目录>/artifacts/<name>_cases.xmind --title "测试用例"
    ```
 6. **BDD 核心特性（强制伴生）**：基于核心业务路径与关键规则，提取测试用例设计标准 Gherkin BDD 特性文件 `artifacts/<name>_features.feature`。严格遵循 Given/When/Then 语法、面向业务领域语言与可观察 Oracle，不写 UI 点击脚本反模式。
-7. 保留完整源JSON与BDD特性文件供Review使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-reviewer`。
+7. 完成三件正式产物后，执行 `python "<_testspec-shared-skill-dir>/scripts/validate_context_chain.py" --change-dir <变更目录> --through generate`，检查上下文及 BDD 存在、可读取且非空；生成完成的 BDD 不再保留在 stale 列表。返修影响业务路径或 Oracle 时同步更新 BDD，留待 Review 重新评审。
+8. 保留完整源 JSON、XMind 与 BDD 特性文件供 Review 使用，报告产物路径、数量、覆盖和检查状态，下一步为 `testcase-reviewer`。
 
 ---
 

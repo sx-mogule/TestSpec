@@ -86,14 +86,14 @@ Strict/Legacy 只决定追溯检查的置信度，不单独决定深度。报告
 1. `artifacts/testcases.json` 存在且可解析；只有该文件不存在时才读取根目录 `testcases.json` 作为 Legacy fallback，并明确告警。两者同时存在时始终使用 artifacts 版本
 2. 顶层包含 `testcases` 数组且非空
 3. `specs/testpoints.md` 存在且包含 TP_ID
-4. 检查伴生 BDD 特性文件 `artifacts/*_features.feature`；存在时一并加载执行 BDD 独立质量评审，缺失时在通用反馈中明确记录 BDD 交付缺口
-4. 读取 canonical source（优先 `requirements.md`，否则 `proposal.md`），按 `../../_testspec-shared/references/context-protocol.md` 比较版本
-5. canonical 有版本时，`specs/testpoints.md` 与 `testcases.json._context.source_revision` 都必须与 canonical 完全一致：
+4. 检查全部伴生 BDD 特性文件 `artifacts/*_features.feature` 存在、可读取且非空；逐个加载执行 BDD 场景质量评审。缺失、为空或无法读取时，输入健康检查未完成，在通用反馈中记录交付缺口并返回 `testcase-generate` 补齐，不形成 SOP 通过结论
+5. 读取 canonical source（优先 `requirements.md`，否则 `proposal.md`），按 `../../_testspec-shared/references/context-protocol.md` 比较版本
+6. canonical 有版本时，`specs/testpoints.md` 与 `testcases.json._context.source_revision` 都必须与 canonical 完全一致：
    - testpoints 缺少版本或版本更低 → 终止并提示先运行 `test-points`，之后再运行 generate
    - testcases 缺少版本或版本更低 → 终止并提示先运行 `testcase-generate`
    - 任一版本高于 canonical → 终止并报告元数据损坏
-6. testpoints/testcases 版本与 canonical 相等时，即使 inherited stale 列表仍含 `review-report.md`，也允许执行本次 review；review 成功后该 stale 项被解决
-7. canonical 无版本：按 Legacy 版本兼容模式继续并告警，不得仅因缺少 `source_revision` 终止
+7. testpoints/testcases 版本与 canonical 相等时，即使 inherited stale 列表仍含 `review-report.md`，也允许执行本次 review；review 成功后该 stale 项被解决
+8. canonical 无版本：按 Legacy 版本兼容模式继续并告警，不得仅因缺少 `source_revision` 终止；当前正式交付仍须提供 BDD 并完成评审
 
 若失败：停止SOP门禁判定，标记SOP检查未完成并列出具体缺项；保留入口已完成的通用评审，对可判定的R/H质量项继续给出结论，无法核实的项逐项标明原因。不得补造TP、来源、context或Gate。TestSpec正式交付仍须先补齐上游产物后重评。
 
@@ -158,9 +158,11 @@ S1 仅用于影响可执行性或严重偏离测试意图的问题，禁止因�
 7. **按 H1→H8 执行启发式检查**：逐条检查完整集的前置条件、测试数据、操作步骤、预期结果，按维度细则执行四项描述门禁，不以抽样代替
 8. **生成报告**：按 `../../_testspec-shared/templates/review-report-template.md` 填写全部结果；先完整展示“通用评审反馈”，再保留每个 GR 编号的原等级、证据和逐项处置，同一问题关联同一原生 issue ID，不机械转换等级或改变门禁公式
 9. **计算总体置信度**
-10. **验证反馈并输出结果**：保存后运行 `python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>`；输出通用反馈摘要、SOP结论和逐项修复动作。只有状态、没有原始反馈的报告不能称整轮完成
+10. **验证反馈并输出结果**：保存后运行 `python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>` 和 `python3 -B skills/_testspec-shared/scripts/validate_context_chain.py --change-dir <变更目录> --through review`；输出通用反馈、BDD 场景评审、SOP 结论和逐项修复动作。只有状态、没有原始反馈及 BDD 检查摘要的报告不能称整轮完成
 
-评审对象始终是完整 `artifacts/testcases.json`。写报告时对实际评审的完整 JSON 和 `specs/testpoints.md` 计算 SHA-256，填入 `reviewed_artifacts.testcases_sha256` 和 `reviewed_artifacts.testpoints_sha256`，用于标识本次评审对应的产物版本；该追溯不改变 S1 分级或 Review Gate 计算。完整集或测试点改变后须重新评审。
+评审对象包含完整 `artifacts/testcases.json` 与全部 `artifacts/*_features.feature`。报告单列 `## BDD 场景评审`，填写 BDD评审状态、评审文件、已检查内容、评审结论；发现沿用通用反馈的 GR 编号及处置。实际完成后写 `bdd_review.status=complete`，未完成写 `incomplete` 并说明原因，整轮不得标为已完成。
+
+写报告时对实际评审的完整 JSON、`specs/testpoints.md` 和全部 BDD 文件计算 SHA-256，分别填入 `reviewed_artifacts.testcases_sha256`、`testpoints_sha256` 及 `bdd_features_sha256`（相对变更目录的文件路径到 SHA-256 映射）。完整集、测试点、BDD 内容或 BDD 文件集合改变后须重新评审当前产物，再刷新指纹；不得只更新哈希代替评审。旧报告缺少 BDD 完成记录或指纹须重评，不自动补通过。该追溯不改变 S1 分级或 Review Gate 计算。
 
 H3/H7 必须检查组件与 Oracle 范围：`indirect` 用例不得断言下游副作用已完成，`out-of-scope` 不应成为正式用例。
 H3/H2 还须按测试点“设计方法”核对方法要求的场景和 Oracle：基于属性的测试核对各数据组的不变量，变形测试核对成对操作与前后结果关系，语法规则分析核对合法/非法结构及可判定结果；在 H3 现有“证据/说明”列引用具体用例及数据、操作或断言，不能只列方法名。缺少需求依据或无法独立判定时不得通过 Review。
@@ -203,7 +205,7 @@ H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵�
 
 - 原样传播 canonical 版本、来源、问题、质量及 `design_methods`，`source_skill` 为 `testcase-reviewer`。
 - 终点清空 `stale_downstream_artifacts`，省略 `next_skill` 和 `stale_reason`。
-- `reviewed_artifacts` 记录本次实际评审的完整JSON和测试点SHA-256。
+- `bdd_review` 与可见 BDD 场景评审摘要一致；`reviewed_artifacts` 记录完整 JSON、测试点和全部 BDD 文件的 SHA-256。
 - `review_gate` 写完整 S1 与四项描述门禁字段；只有两类未解决问题均为 0、两个 ID 列表均为空才可为 `pass`。缺少描述检查结果必须重审，不默认通过；`accepted` 不豁免描述问题。
 - `risks_identified` 只记录本次有依据的风险。完整模板只在首次生成或需要格式修复时读取。
 

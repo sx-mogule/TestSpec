@@ -33,6 +33,8 @@ metadata:
 
 TestSpec输入齐全时，统一写 `review-report.md`，沿用原S1与四项描述Gate公式，并记录完整JSON/TP/BDD指纹；评审不改写正式JSON或XMind。缺少需求、TP、来源或版本等必需输入时，仍完成通用评审及可判定的R/H检查，列出14项中无法完成的项和具体缺失材料，SOP状态为“未完成”，不伪造context、TP或Gate通过结果。普通用例与BDD的原有评审能力因此保留，无需先补造SOP产物。
 
+标准 SOP 的 BDD 缺失、为空或未评审时，整轮未完成并返回生成阶段补齐。报告单列“BDD 场景评审”的状态、文件、已检查内容和结论；实际完成后记录 `bdd_review.status=complete` 与 `reviewed_artifacts.bdd_features_sha256` 全文件映射。BDD 修改或文件集合变化后须重新评审，保存报告后运行共享 `validate_context_chain.py --change-dir <变更目录> --through review`；指纹与完成性检查不改变原 Gate 公式。
+
 BDD的rewrite/generate/hybrid模式仍按原规则产出材料；随后对可评审的草稿执行上述两部分检查。输入不支持某项检查时明确记录限制。普通材料仅在用户要求保存时写文件；TestSpec完整输入按流程写统一报告。
 
 旧报告的 `source_skill: testcase-review` 仅作为历史来源标识兼容读取，新报告使用 `source_skill: testcase-reviewer`。单个模型顺序执行两套规则不称为独立评审者或多模型复核。

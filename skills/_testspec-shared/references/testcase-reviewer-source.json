@@ -9,7 +9,7 @@
   },
   "files": {
     "LICENSE": "1126322e2cc8d165adc4c792eeb195717de2bcc7b39be1ce77959d78e87ef685",
-    "SKILL.md": "5f6f00936d51310b59bde986496bcd835ebadf1f487f692b87732c5f21b3cfe7",
+    "SKILL.md": "96a7d778eb5efedbb37b298a80485c9d56b0a5402e54e0823020422a68ee7d78",
     "agents/openai.yaml": "236723d5d67cb2db1558418a08271aa9bc2691394c6d254bb412d84d4c6b08f2",
     "assets/bdd-feature-template.feature": "9b80f284801d52162b818a92812bc7b7f18692477df34d0b83836e69dd954a16",
     "eval/behavior-checklist.md": "db3c6ea4e27e4112c94103fc1f5a03b44149fb5f6c2685743f4f7ad14e055b9d",
@@ -17,7 +17,7 @@
     "eval/forward-evals.json": "4c1e1e93c56fdfe2177b2095847147626e87412add754fdea5a52e573e82944a",
     "eval/forward-test-matrix.md": "4f536e5275a85819c2a09e944dfd5dc657f22e1580e657fa5cabf459c5fe8c80",
     "eval/trigger-evals.json": "ff7fcd0a5309f60c225d5bc5e0f0d805132aadb9c0e75963b880317278b2f6c5",
-    "evals/evals.json": "8f1eb9dced807ed648f4513907fce909a2f53b85ecd13839fab3f9c11d1d3cdc",
+    "evals/evals.json": "d3f079231ee5eecbd64efb3667be78ab00a99ae60a009a7050dbd44be2c9d998",
     "examples/bdd/formal-report-request.md": "e431a4c6a1fcae7bb3ff2834cf052e4d9ee8e08f249e25be1172c7171e1b6576",
     "examples/bdd/generation-source.md": "cbf8028963099c751c7b9edb2f967668eca37ee553842cd5166efbc3c3084bd2",
     "examples/bdd/hybrid-source.feature": "3d396502498f1adc7f9ddb371938f8cb179f9aaa0fe883d0099f9049e7636f32",
@@ -40,8 +40,8 @@
     "references/test-cases/test-suite-protocol.md": "734357ba0a64987e73182ecf0e7856de99a85be1d967632c5f4d539727425795",
     "scripts/validate_skill_repo.py": "5144d7290a9925ec3168b45f3ae02fb5d5f86843cee19ea9baf1149db7e05270",
     "testcase-review/references/independent-reviewer.md": "7f727ce464ef7482b99c8ace6a24bae4e04119b074faf57737869e2abc353dc3",
-    "testcase-review/references/review-dimensions.md": "eb8208e3b40d65eec670313ea7f906afcf2843001cedcfbc6b6240a09cafc21a",
-    "testcase-review/review-workflow.md": "7e7136114560013353b5ee36c7647ad60083e3eb70f87f6024a5a60485a68d06",
+    "testcase-review/references/review-dimensions.md": "e96ab4f5c31f4d33fa8c50849f526856ed13a3a4427006a5229b25229f8a1742",
+    "testcase-review/review-workflow.md": "049c74e08064666f6d2d1a5d73a63911e9cba0db404d59806e7276ae468d0e36",
     "testcase-review/scripts/prepare_reviewer_input.py": "27bf43e4499f0a6bbe66b718ac1999be740c3522086950896258debd88fa6e3e",
     "testcase-review/tests/test_reviewer_integration.py": "b01aba0ac728e9cea01ad62153c8c5a59590432369db972a429ec21c3af04afd"
   },

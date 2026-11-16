@@ -184,6 +184,65 @@ def _extract_tp_section_metadata(tp_text: str) -> tuple[dict[str, set[str]], set
     return tp_categories, non_functional_tp_ids
 
 
+# ── 设计方法别名映射 ──────────────────────────────────────────────────
+DESIGN_METHOD_ALIASES = {
+    # 1. 等价类
+    "等价类划分": "等价类",
+    "等价类分析": "等价类",
+    # 2. 边界值
+    "边界值分析": "边界值",
+    "边界值测试": "边界值",
+    # 3. 判定表
+    "判定表分析": "判定表",
+    "判定表法": "判定表",
+    "决策表": "判定表",
+    "决策表分析": "判定表",
+    # 4. 流程分析
+    "业务流程分析": "流程分析",
+    "流程分析法": "流程分析",
+    "场景法": "流程分析",
+    # 5. 状态迁移
+    "状态转换": "状态迁移",
+    "状态转换测试": "状态迁移",
+    "状态迁移测试": "状态迁移",
+    "状态迁移法": "状态迁移",
+    # 6. 错误推断
+    "错误推测": "错误推断",
+    "错误推测法": "错误推断",
+    "错误推断法": "错误推断",
+    # 7. 正交实验
+    "正交实验设计": "正交实验",
+    "正交实验法": "正交实验",
+    "正交试验": "正交实验",
+    "正交试验设计": "正交实验",
+    "正交试验法": "正交实验",
+    # 8. 因果图
+    "因果图分析": "因果图",
+    "因果图法": "因果图",
+    # 9. 配对组合
+    "配对组合测试": "配对组合",
+    "配对组合法": "配对组合",
+    "配对测试": "配对组合",
+    "两两组合": "配对组合",
+    "两两组合测试": "配对组合",
+    # 10. 基于属性的测试
+    "属性测试": "基于属性的测试",
+    "基于属性测试": "基于属性的测试",
+    # 11. 变形测试
+    "蜕变测试": "变形测试",
+    # 12. 语法规则分析
+    "语法规则": "语法规则分析",
+    "语法分析": "语法规则分析",
+    "结构语法分析": "语法规则分析",
+}
+
+
+def normalize_design_method(name: str) -> str:
+    """归一化测试设计方法名称，处理全角/半角括号及行业常见同义词。"""
+    cleaned = re.split(r"[（\(]", name)[0].strip()
+    return DESIGN_METHOD_ALIASES.get(cleaned, cleaned)
+
+
 def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[dict]:
     """核对已覆盖 TP 的方法名是否进入生成阶段上下文。"""
     methods_by_tp: dict[str, set[str]] = {}
@@ -201,16 +260,32 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
         method_match = re.match(r"^\s*-\s*设计方法\s*[:：]\s*(.+)$", line)
         if current_tp and method_match:
             names = {
-                name.strip() for name in re.split(r"[、,，]", method_match.group(1)) if name.strip()
+                normalize_design_method(name)
+                for name in re.split(r"[、,，]", method_match.group(1))
+                if name.strip()
             }
             if names:
                 methods_by_tp[current_tp] = names
-    if not methods_by_tp:
-        return []  # 兼容未标方法的旧测试点
+    point_context = re.findall(r"<!--\s*testspec-context\s*(\{.*?\})\s*-->", tp_text, re.DOTALL)
+    context = data.get("_context")
+    context = context if isinstance(context, dict) else {}
+    requires_methods = (
+        bool(point_context)
+        or context.get("source_skill") == "testcase-generate"
+        or context.get("source_revision") is not None
+        or "design_methods" in context
+        or any(
+            isinstance(item.get("origin"), dict)
+            and item["origin"].get("kind") == "testspec-native"
+            for item in [context, *cases]
+        )
+    )
+    if not methods_by_tp and not requires_methods:
+        return []  # 仅兼容没有方法契约元数据的旧产物
 
     methods_doc = Path(__file__).resolve().parents[2] / "test-points/references/test-design-methods.md"
     allowed = {
-        title.split("（", 1)[0].strip()
+        normalize_design_method(title)
         for title in re.findall(r"^## \d+\.\s+(.+)$", methods_doc.read_text(encoding="utf-8"), re.MULTILINE)
     }
     declared = set().union(*methods_by_tp.values())
@@ -224,7 +299,6 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
         errors.append({"type": "UNKNOWN_DESIGN_METHOD", "severity": "error",
                        "methods": unknown, "fix_hint": "测试点设计方法须来自十二种正式方法，辅助策略不写入设计方法"})
 
-    point_context = re.findall(r"<!--\s*testspec-context\s*(\{.*?\})\s*-->", tp_text, re.DOTALL)
     if point_context:
         try:
             point_methods = json.loads(point_context[-1]).get("design_methods")
@@ -233,7 +307,7 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
         if (
             not isinstance(point_methods, list)
             or any(not isinstance(name, str) for name in point_methods)
-            or set(point_methods) != declared
+            or {normalize_design_method(name) for name in point_methods} != declared
         ):
             errors.append({"type": "TESTPOINT_METHOD_CONTEXT_MISMATCH", "severity": "error",
                            "fix_hint": "testpoints.md 上下文方法名须与各 TP 的设计方法一致"})
@@ -244,14 +318,14 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
         if isinstance(ref, str)
     }
     expected = set().union(*(names for tp, names in methods_by_tp.items() if tp in covered))
-    context = data.get("_context")
-    actual = context.get("design_methods") if isinstance(context, dict) else None
+    actual = context.get("design_methods")
     if not isinstance(actual, list) or any(not isinstance(name, str) for name in actual):
         errors.append({"type": "MISSING_DESIGN_METHODS", "severity": "error",
                        "fix_hint": "在 testcases.json._context.design_methods 记录已覆盖 TP 的方法名"})
     else:
-        missing = sorted(expected - set(actual))
-        extra = sorted(set(actual) - expected)
+        normalized_actual = {normalize_design_method(name) for name in actual}
+        missing = sorted(expected - normalized_actual)
+        extra = sorted(normalized_actual - expected)
         if missing or extra:
             errors.append({"type": "DESIGN_METHOD_MISMATCH", "severity": "error",
                            "missing": missing, "extra": extra,
