@@ -1,5 +1,7 @@
 # testcases.json 示例
 
+以下为合成示例，账号和密码仅演示写法，执行时需准备满足前置条件的对应数据；业务结果以当前已确认需求为准。
+
 ```json
 {
   "schema_version": 2,
@@ -36,10 +38,10 @@
       "type": "正向",
       "regression_tier": "Smoke",
       "tp_refs": ["TP_LOGIN_CRED_001"],
-      "preconditions": "1、系统已启动\n2、用户已注册",
-      "test_data": "账号：已注册用户；密码：正确密码",
-      "steps": "1、打开登录页\n2、输入正确账号密码\n3、点击「登录」按钮",
-      "expected_result": "1、登录成功，页面跳转至首页\n2、顶部显示「欢迎回来」提示",
+      "preconditions": "账号已注册。",
+      "test_data": "账号：demo_user；密码：Demo123!",
+      "steps": "1、打开登录页。\n2、输入测试数据中的账号和密码，点击「登录」。",
+      "expected_result": "1、进入首页，顶部显示「欢迎回来」。",
       "priority": "p0",
       "origin": {"kind": "testspec-native", "source_change": "synthetic-account-access"},
       "trust": {"status": "provisional", "basis": "prd-first"}

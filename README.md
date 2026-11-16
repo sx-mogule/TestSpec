@@ -77,6 +77,7 @@ testspec/changes/<change-name>/
 ### Step 3: 用例生成与格式输出 (`testcase-generate`)
 
 - **定位**：根据测试点生成完整功能测试用例集，兼顾执行效率与机器可校验性。
+- **字段写法**：测试名称、前置条件、测试数据、操作步骤、预期结果参考品牌方 UAT 用例的直白短句，只写执行和判定必需的信息。步骤按业务操作阶段组织，同一阶段的连续动作和同一检查点的关联结果可合写，关键条件、边界与中间检查保留。只借鉴表达，沿用当前需求、完整覆盖要求和现有 XMind 格式；细则见 [`case-design-rules.md`](skills/testcase-generate/references/case-design-rules.md)。
 - **用例固定八项业务字段**：
   1. `module`（模块）
   2. `submodule`（子模块）
