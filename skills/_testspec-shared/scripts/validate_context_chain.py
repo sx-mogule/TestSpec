@@ -139,10 +139,30 @@ def validate_bdd_review(report: Path, context: dict[str, Any], fingerprints: dic
     return errors
 
 
+def validate_reviewed_files(context: dict[str, Any], paths: dict[str, Path], change_dir: Path) -> list[str]:
+    reviewed = context.get("reviewed_artifacts")
+    errors: list[str] = []
+    for key, path in paths.items():
+        relative_path = path.relative_to(change_dir).as_posix()
+        digest = reviewed.get(key) if isinstance(reviewed, dict) else None
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            errors.append(f"review: missing or invalid reviewed_artifacts.{key} for {relative_path}; rerun testcase-reviewer")
+            continue
+        try:
+            actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        except OSError as exc:
+            errors.append(f"review: cannot read {relative_path}: {exc}")
+            continue
+        if digest != actual_digest:
+            errors.append(f"review: {relative_path} hash differs from reviewed_artifacts.{key}; rerun testcase-reviewer")
+    return errors
+
+
 def validate(change_dir: Path, through: str, expected_version: int | None) -> list[str]:
     errors: list[str] = []
     try:
-        canonical = load_context(canonical_path(change_dir))
+        source_path = canonical_path(change_dir)
+        canonical = load_context(source_path)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         return [str(exc)]
 
@@ -164,6 +184,8 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
         bdd_hashes, bdd_errors = bdd_artifacts(change_dir)
         errors.extend(bdd_errors)
     generated_methods = None
+    reviewed_paths: dict[str, Path] = {}
+    review_fields = {"points": "testpoints_sha256", "generate": "testcases_sha256"}
     for stage, (relative_path, expected_skill) in list(STAGES.items())[: through_index + 1]:
         path = change_dir / relative_path
         if not path.exists() and stage == "generate":
@@ -173,12 +195,30 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
         if not path.exists():
             errors.append(f"{stage}: missing {relative_path}")
             continue
+        if stage in review_fields:
+            reviewed_paths[review_fields[stage]] = path
 
         try:
             context = load_context(path)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             errors.append(str(exc))
             continue
+
+        if stage == "analysis" and "canonical_source_sha256" in context:
+            recorded = context["canonical_source_sha256"]
+            if not isinstance(recorded, str) or not re.fullmatch(r"[0-9a-f]{64}", recorded):
+                errors.append("analysis: invalid canonical_source_sha256; rerun prd-analysis")
+            else:
+                try:
+                    current = _method_validator._file_digest(source_path)
+                except OSError as exc:
+                    errors.append(f"analysis: cannot read {source_path.name}: {exc}")
+                else:
+                    if current != recorded:
+                        errors.append(
+                            f"analysis: {source_path.name} content differs from the analyzed canonical source; "
+                            "rerun prd-analysis to confirm the current requirements and update the revision if needed"
+                        )
 
         accepted_skills = {expected_skill, "testcase-review"} if stage == "review" else {expected_skill}
         if context.get("source_skill") not in accepted_skills:
@@ -203,6 +243,7 @@ def validate(change_dir: Path, through: str, expected_version: int | None) -> li
                 errors.append("review: design_methods differs from generated cases")
 
         if stage == "review":
+            errors.extend(validate_reviewed_files(context, reviewed_paths, change_dir))
             errors.extend(validate_bdd_review(path, context, bdd_hashes))
             gate = context.get("review_gate")
             if not isinstance(gate, dict) or gate.get("status") not in {"pass", "blocked"}:

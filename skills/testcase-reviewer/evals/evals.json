@@ -482,7 +482,7 @@
     {
       "id": 10,
       "prompt": "运行 testcase-reviewer，评审 synthetic-concise-boundary-gap。以原始需求、测试点与完整用例集为依据，给出独立结论；不修改输入用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "确认确定性校验仍报告TP覆盖率100%，但在H5指出TP_NOTE_TITLE_100的最长合法长度边界缺失；定位现存SYN_CONCISE_003与缺失规则，不生成替代用例，不修改输入。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "expected_output": "确认确定性校验仍报告TP覆盖率100%，但在H5将TP_NOTE_TITLE_100的最长合法长度缺口记为S1；定位现存SYN_CONCISE_003与缺失规则，不生成替代用例，不修改输入。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-concise-boundary-gap/requirements.md",
@@ -512,9 +512,9 @@
           "script": "python3 -B -c \"import sys; sys.path.insert(0, 'skills/_testspec-shared/scripts'); import validate_testcases as v; r=v.validate('testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json', 'testspec/changes/synthetic-concise-boundary-gap/specs/testpoints.md'); assert r['status']=='PASS' and r['coverage']['coverage_rate']==1.0 and r['coverage']['pass']; print('PASS')\""
         },
         {
-          "text": "H5将缺失绑定TP_NOTE_TITLE_100和SYN_CONCISE_003，指出「最长」合法边界缺失",
+          "text": "H5将必测上界缺失记为S1，绑定TP_NOTE_TITLE_100，定位现有SYN_CONCISE_003",
           "check": "programmatic",
-          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-boundary-gap/review-report.md --dimension H5 --id TP_NOTE_TITLE_100 --contains 最长"
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-boundary-gap/review-report.md --dimension H5 --id TP_NOTE_TITLE_100 --severity S1 --contains 最长"
         },
         {
           "text": "输入保留最短用例A，最长ABCDEFGHIJ用例确实缺失；不补造用例、不改写输入",
@@ -522,7 +522,7 @@
           "script": "python3 -B -c \"import json; d=json.load(open('testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json')); c={x['id']:x for x in d['testcases']}; assert 'SYN_CONCISE_003' in c and c['SYN_CONCISE_003']['test_data'].endswith('标题：A。') and 'SYN_CONCISE_004' not in c and all('TP_NOTE_TITLE_100' in x['tp_refs'] for x in c.values() if x['module']=='公告'); print('PASS')\""
         },
         {
-          "text": "Review按H5记录最短/最长边界缺失的具体影响和建议；不把TP引用或其他边界用例当成完整覆盖",
+          "text": "Review按H5记录最长边界缺失、误拒合法值的风险和修复建议，以同一S1 issue进入Gate；最短合法边界已覆盖",
           "check": "qualitative"
         },
         {

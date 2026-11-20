@@ -140,20 +140,18 @@ def validate_generate_contract(errors: list[str]) -> None:
     skill_dir = SKILLS_DIR / "testcase-generate"
     skill_text = read_text(skill_dir / "SKILL.md")
     methods_text = read_text(skill_dir / "references" / "test-design-methods.md")
-    points_methods_text = read_text(SKILLS_DIR / "test-points" / "references" / "test-design-methods.md")
     xmind_text = read_text(skill_dir / "scripts" / "generate_xmind.py")
     validator_text = read_text(SHARED_DIR / "scripts" / "validate_testcases.py")
+    output_contract = SHARED_DIR / "references" / "output-contracts.md"
+    output_text = read_text(output_contract)
+    add_error(errors, output_contract in referenced_paths(skill_dir, skill_text),
+              "testcase-generate 未引用共享输出契约")
 
     for field in BUSINESS_FIELDS:
-        add_error(errors, field in skill_text, f"testcase-generate 缺少字段 {field}")
+        add_error(errors, f"`{field}`" in output_text, f"共享输出契约缺少字段 {field}")
         add_error(errors, field in validator_text, f"validate_testcases.py 缺少字段 {field}")
-    for method in DESIGN_METHODS:
-        add_error(errors, method in methods_text, f"test-design-methods.md 缺少方法：{method}")
-        add_error(errors, method in points_methods_text, f"test-points 测试方法说明缺少方法：{method}")
     add_error(errors, listed_design_methods(methods_text) == DESIGN_METHODS,
-              "testcase-generate 的正式方法集合或顺序与十二种方法契约不一致")
-    add_error(errors, listed_design_methods(points_methods_text) == DESIGN_METHODS,
-              "test-points 的正式方法集合或顺序与十二种方法契约不一致")
+              "正式方法目录的集合或顺序与十二种方法契约不一致")
     add_error(errors, '"design_methods"' in read_text(SKILLS_DIR / "test-points" / "SKILL.md"), "test-points 未声明 design_methods 上下文输出")
     add_error(errors, "_context.design_methods" in skill_text, "testcase-generate 未声明 design_methods 上下文输出")
 

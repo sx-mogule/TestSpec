@@ -55,7 +55,8 @@ Markdown 产物在文件末尾保存：
 |---|---|
 | `source_skill` | 生成当前产物的 Skill 新名称 |
 | `source_revision` | 当前需求口径的版本、摘要和更新者 |
-| `blocking_open_questions` | 未确认就无法继续或无法判断预期的问题 |
+| `canonical_source_sha256` | 仅在 `requirements-analysis.md` 记录实际分析的 canonical 文件字节指纹，由共享 `fingerprint_inputs.py` 计算 |
+| `blocking_open_questions` | 影响当前范围或验收判定的未决问题，保留上游 Q 编号与受影响需求。Review 按 H5 核实是否阻断关键验收 |
 | `dynamic_followups` | 执行期继续关注但不阻塞当前流程的问题 |
 | `material_quality` | 输入质量：high / medium / low |
 | `risks_identified` | 已识别风险 |
@@ -72,11 +73,12 @@ Markdown 产物在文件末尾保存：
 
 ## 版本规则
 
-- `prd-analysis` 创建或更新 `source_revision`。
+- `prd-analysis` 创建或更新 `source_revision`。确认业务规则或验收口径变化后，在 canonical 中更新版本、变更摘要及待更新产物，再生成与其一致的分析。版本已经更新时直接继承。仅格式或元数据变化时，复核内容后可以保留版本并刷新分析指纹。
 - `test-points`、`testcase-generate`、`testcase-reviewer` 必须原样传播版本，不得自行递增。
 - canonical source 没有版本时，按 Legacy 模式继续并告警，不得伪造版本。
 - 直接上游版本低于 canonical source 时停止，并提示重新运行直接上游 Skill。
 - 直接上游版本高于 canonical source 时停止，报告元数据异常。
+- `validate_context_chain.py` 核对已记录的分析指纹；不一致即回 `prd-analysis`，即使版本号相同。历史分析没有指纹时仍可按版本读取，首次建立基线须核对原文并重跑分析。
 
 ## stale 收敛
 
@@ -99,7 +101,7 @@ Review 通过后保留完整集 JSON、XMind 和伴生 BDD，`review-report.md` 
 
 需求或测试点变化影响 BDD 时，将对应 `artifacts/<name>_features.feature` 与其他受影响产物一起列为 stale；生成完成后从 stale 列表移除该 BDD。BDD 内容修改、新增、删除或改名后，旧评审记录失效，须重新评审当前全部 BDD 并更新指纹映射。
 
-`validate_context_chain.py --through generate` 检查 BDD 存在、可读取且非空；`--through review` 还检查 BDD 完成记录、可见评审摘要和全部文件指纹。旧报告仍可读取，但缺少这些记录时不能通过当前完整链路验收，须重评，不补造历史完成状态或指纹。合法的 Gate `blocked` 报告在 BDD 评审已完成且指纹一致时仍可通过结构校验；结构通过不代表交付通过，也不证明 Gherkin 语法或评审语义正确。
+`validate_context_chain.py --through generate` 检查 BDD 存在、可读取且非空；`--through review` 还检查 BDD 完成记录和可见评审摘要，并逐一比对实际评审的 JSON、测试点和全部 BDD 指纹。旧报告仍可读取，缺少记录或指纹不一致时须重评，不补造历史完成状态或指纹。合法的 Gate `blocked` 报告在 BDD 评审已完成且指纹一致时仍可通过结构校验；结构通过不代表交付通过，也不证明 Gherkin 语法或评审语义正确。
 
 ## 消费规则
 

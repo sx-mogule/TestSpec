@@ -8,17 +8,6 @@ description: TestSpec 需求分析和梳理（流程第 1 步）- 对需求做�
 
 铁律：绝不能用重新排版的 PRD 冒充需求分析；每个问题都必须说明它为何影响测试。
 
-```text
-TestSpec 分析进度：
-
-- [ ] 步骤 1：定位当前 change 目录 ⚠️ 必需
-- [ ] 步骤 2：加载 requirements/proposal 和可用 source 材料 ⚠️ 必需
-- [ ] 步骤 3：从 references/analysis-modes.md 选择分析模式
-- [ ] 步骤 4：分析风险、缺口和可测试性
-- [ ] 步骤 5：歧义影响测试设计时执行需求审问闭环
-- [ ] 步骤 6：反思、写入 context 元数据并报告下一步
-```
-
 ## 职责
 
 对需求进行**深度测试分析**，先基于用户目标和上下文选择合适的分析模式，再产出结构化的 `requirements-analysis.md`。核心价值是**发现隐含风险、缺失信息和逻辑漏洞**，而不是把需求文档换个格式重新罗列。
@@ -44,7 +33,7 @@ TestSpec 分析进度：
 ## 执行步骤
 
 1. **确定当前变更目录**。
-2. **读取上下文**：优先读取 `requirements.md`（若存在）；否则读取 `proposal.md`；若两者都不存在，则使用用户本次提供的 PRD、用户故事或需求片段，并先创建最小 `testspec/changes/<name>/` 工作区与 canonical 需求源。若有外部需求文档，尽可能获取内容；本轮新提供的 HTML 即使已有 `requirements.md` 也必须读取，与 canonical 内容核对并更新来源记录；冲突未确认时进入阻塞澄清，不沿用旧口径掩盖新材料。若输入为可交互 HTML 文件，按 `references/html-prd-input.md` 逐项核对按钮及其可观察结果；若链接来自蓝湖，先读取 `references/lanhu-prd-input.md`，再使用 `<prd-analysis-skill-dir>/scripts/direct_extract_axure.py` 走直连读取，并按该说明逐页读取文字与图片内容、核对完整性。
+2. **读取并交接需求**：按下文核对原始材料、canonical 文件和版本，处理冲突后再生成分析。
 3. **判定分析模式**：根据用户目标、已知风险及其对范围和验收判断的影响，从 `references/analysis-modes.md` 中选择相关模式；信号数量仅辅助定位，不限制高影响问题的分析深度。
 4. **按模式执行分析**：合并模式结果，生成兼容现有结构的 `requirements-analysis.md`。
 5. **告知用户**：文件路径及下一步可执行 test-points 提炼测试要点。
@@ -55,14 +44,13 @@ TestSpec 分析进度：
 
 > 按 `../_testspec-shared/references/thinking-protocol.md` 执行推理式决策。
 
-### 材料评估与上下文消费
+### 材料评估与需求交接
 
-1. 读取所有可用需求输入（优先 requirements.md，其次 proposal.md、用户提供的 PRD/需求片段、外部链接）。蓝湖链接按 `references/lanhu-prd-input.md` 对全部页面、文字、图片和可见交互状态建立阅读记录并归档到 canonical source；未逐张视觉阅读的图片不得标为已读，未读资源须明确标为缺口。可交互 HTML 文件按 `references/html-prd-input.md` 建立按钮清单并逐项点击核对；静态源码盘点不能代替点击验证。本 skill 不扫描被测系统的底层生产代码；HTML 结构只用于定位用户提供的需求页面控件，交互结果按来源证据分层，不能直接当作生产系统的业务 Oracle。
-2. 检查上游产物是否包含上下文元数据（按 `../_testspec-shared/references/context-protocol.md`）
+1. 选 `requirements.md` 为 canonical，缺省用 `proposal.md`。两者都缺失时，从用户提供的需求材料建立最小需求源。读取本轮新增材料并与当前口径核对。蓝湖按 `references/lanhu-prd-input.md` 用 `scripts/direct_extract_axure.py` 提取后逐页核对文字、逐张阅读图片，记录未读缺口。可交互 HTML 按 `references/html-prd-input.md` 逐项点击并保留观察证据。原型现象不直接作为验收结果。本阶段只消费用户提供的实现证据。
+2. 用共享 `fingerprint_inputs.py <canonical 文件>` 计算实际字节的 SHA-256，与已有分析的 `canonical_source_sha256` 比较，并按 `../_testspec-shared/references/context-protocol.md` 完成版本交接。即使版本号相同，内容变化也须回到原文核实。确认业务规则或验收口径变更后，由本阶段更新 canonical 版本并标记分析、TP、JSON、XMind、相关 BDD 和报告过期；已有对应新版本时直接继承。未确认的冲突进入需求审问，保留旧分析的指纹和受影响范围。首次记录指纹时先核对内容与分析，勿用新指纹替旧分析背书。
 3. 评估需求质量、主要风险及其对验收结论的影响；信息密度和关键信号只辅助定位与分流，不单独决定分析深度：
    - 若存在 requirements.md：以其「功能列表」「边界声明」「风险点」「阻塞澄清项」「执行期动态跟进」作为主需求源；blocking_open_questions 直接纳入质询清单种子输入，dynamic_followups 作为执行期关注点记录但不阻塞分析
-   - 将 requirements.md（否则 proposal.md）作为 canonical source。若其 context 有 `source_revision`，本次生成必须原样复制该版本；不得自行递增
-   - canonical source 有版本，而现有 requirements-analysis.md 缺少版本、版本更低，或 stale 列表命中 requirements-analysis.md：重新生成分析，不复用旧口径结论
+   - 已确认的 canonical 正文变化、分析版本落后或分析被标记过期时，按本轮口径重新生成分析
    - canonical source 无版本：按 Legacy 模式继续并告警，不得伪造 `source_revision`
    - 重新生成成功后，从向下传播的 stale 列表移除 requirements-analysis.md，保留仍需重跑的 testpoints/cases/review，并把 `next_skill` 指向 test-points
    - 若 requirements.md context 中 `requirement_quality.readiness` 为 `blocked` 或 `needs_revision`：先提示用户需求质量不足；若用户仍要求继续，则加深质询并在 requirements-analysis.md 中标注低置信度
@@ -128,34 +116,19 @@ TestSpec 分析进度：
 产物首次生成后，执行反思循环：
 
 1. **完整性检查**：是否有功能模块被跳过？风险点是否仅停留表面？
-2. **价值检查**：产出中有多少内容是直接从需求文档复述的？每个问题是否指出了"为什么这是风险"？
+2. **证据与影响**：每个风险能否回到有依据的业务场景，说明哪个条件、状态或结果会影响验收？只记录适用范围内的风险，将未决规则留给澄清。
 3. **迭代决策**：points 作者能否从这份分析中直接提炼测试点？
 
 反思后修正产物，最多 2 轮迭代。告知用户迭代次数和修正摘要。
 
 ### 上下文播种
 
-按 `../_testspec-shared/references/context-protocol.md` 写入唯一闭合的 context，传播 canonical 版本、来源策略、证据、问题、质量和 stale 信息。`source_skill` 为 `prd-analysis`，下一步为 `test-points`。
+按 `../_testspec-shared/references/context-protocol.md` 写入唯一闭合的 context，传播 canonical 版本、来源、证据、问题、质量和 stale 信息。规范需求文件写入完成后，记录本轮实际分析的 `canonical_source_sha256` 并运行共享 `validate_context_chain.py --change-dir <变更目录> --through analysis`。`source_skill` 为 `prd-analysis`，下一步为 `test-points`。
 
 本阶段补充：
 - `thinking_summary`、`strategy_used`：简要记录分析模式及原因。
 - `risks_identified`：仅写有来源依据的风险；`intuition_flags` 保留假设的状态和证据。
 - `testlib_coverage`：实际扫描状态、相关模块、已有用例数、可复用项、回归风险及信任过滤条件；未命中不虚构复用结论。
-
-## 反模式识别（Agent 自检参照）
-
-> 生成产物后，对照以下反模式自查。发现符合的情况时自动修正。
-
-| 反模式       | 表现                                       | 正确做法                                                   |
-| ------------ | ------------------------------------------ | ---------------------------------------------------------- |
-| **需求复述** | 分析内容只是把需求文档换了个说法重写一遍   | 每个分析项必须指出"为什么这是风险"或"缺了什么"             |
-| **万能模板** | 所有功能模块的分析结构完全相同，缺少针对性 | 根据模块特性选择性使用分析框架，复杂模块深入、简单模块精简 |
-| **伪风险**   | 风险点全是"可能出错""需要注意"等泛泛之言   | 风险必须指向具体场景（"并发修改同一订单时状态冲突"）       |
-| **实现泄漏** | 本阶段直接扫描代码，或把实现行为混入产品需求 | 本阶段只消费需求材料；用户提供的实现证据必须留在实现证据附录 |
-| **过度发散** | 分析了大量与当前需求无关的"最佳实践"       | 只分析当前需求范围内的内容，标注明确的需求边界             |
-| **缺失审问** | 发现需求不明确但没有列出问题清单           | 发现不明确处必须产出结构化问题，标注测试影响               |
-
----
 
 ## 需求审问（Agentic 能力）
 

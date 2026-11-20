@@ -1,41 +1,6 @@
 # SOP 14项评审模块（原 testcase-review）
 
-铁律：每项评审发现都必须注明具体范围（`case_id`、`TP_ID` 或 `GLOBAL:<rule>`）和具体修复动作。
-
-```text
-TestSpec 评审进度：
-
-- [ ] 步骤 1：定位当前 change 目录 ⚠️ 必需
-- [ ] 步骤 2：加载必需输入并执行健康检查 ⛔ 阻塞
-- [ ] 步骤 3：确定 Import-Quarantine/Provenance-Unknown/Strict/Legacy 模式和评审深度
-- [ ] 步骤 4：完成独立 reviewer 补充评审及 R1-R6、H1-H8 检查，逐项核对发现
-- [ ] 步骤 5：写入带证据的 review-report.md
-- [ ] 步骤 6：写入 Review 门禁 context 并报告结论
-```
-
-## 核心约束
-
-只给可执行、可定位、可修复的结论：实体问题指向具体 `case_id` 或 `TP_ID`；解析失败、全局分布、命名字典缺失等系统性问题使用 `GLOBAL:<rule>`，并列出受影响范围和明确整改动作。
-
-## 职责
-
-以独立评审视角，对统一的 `artifacts/testcases.json` 做 14 维度交叉验证，输出结构化 `review-report.md`。Review 是流程终点；只有门禁通过，生成的 JSON 与 XMind 才作为最终用例产物。
-
-首次按 `../../_testspec-shared/references/execution-efficiency.md` 的相关章节核对输入哈希和读取范围；同一会话已读且未变的内容可复用，不重复加载本阶段无关章节。阶段与门禁照常执行。
-
-## 当前变更目录
-
-参见 `../../_testspec-shared/references/common.md` 中的「当前变更目录定位规则」。
-
-## 共享规则源
-
-- 评审模板：`../../_testspec-shared/templates/review-report-template.md`
-- 维度细则：`references/review-dimensions.md`
-- 通用评审与SOP发现的处置：`references/independent-reviewer.md`（独立 Skill 不承载 TestSpec 规则）
-- 上下文协议：`../../_testspec-shared/references/context-protocol.md`
-- 来源、Legacy Import 和 Oracle scope：`../../_testspec-shared/references/source-provenance.md`
-
----
+[维度细则](references/review-dimensions.md) 是 R1–R6、H1–H8 的判定依据。按 [公共约定](../../_testspec-shared/references/common.md) 定位变更目录，按 [复用规则](../../_testspec-shared/references/execution-efficiency.md) 核对输入版本和读取范围。
 
 ## 深度策略（统一语义）
 
@@ -62,8 +27,8 @@ Strict/Legacy 只决定追溯检查的置信度，不单独决定深度。报告
 
 ### 深度行为差异
 
-- 标准深度：执行 14 项检查，H3 对高风险 TP 全解释
-- 加深深度：执行 14 项检查，额外读取 `requirements-analysis.md`，H3 对所有 TP 全解释，H5 类型门槛提高到 3；需求支持类型不足 3 种时按 H5 适用规则覆盖全部受支持类型
+- 两种深度使用同一套 14 项检查、分级和 Gate 标准。
+- 标准深度对高风险 TP 给出完整的 H3 证据。加深时补读可用的 `requirements-analysis.md` 和相关原文，逐项说明所有 TP 的条件、动作和结果证据，回查关键缺口。
 
 评审开始时必须向用户说明当前深度及理由。
 
@@ -86,8 +51,8 @@ Strict/Legacy 只决定追溯检查的置信度，不单独决定深度。报告
 1. `artifacts/testcases.json` 存在且可解析；只有该文件不存在时才读取根目录 `testcases.json` 作为 Legacy fallback，并明确告警。两者同时存在时始终使用 artifacts 版本
 2. 顶层包含 `testcases` 数组且非空
 3. `specs/testpoints.md` 存在且包含 TP_ID
-4. 检查全部伴生 BDD 特性文件 `artifacts/*_features.feature` 存在、可读取且非空；逐个加载执行 BDD 场景质量评审。缺失、为空或无法读取时，输入健康检查未完成，在通用反馈中记录交付缺口并返回 `testcase-generate` 补齐，不形成 SOP 通过结论
-5. 读取 canonical source（优先 `requirements.md`，否则 `proposal.md`），按 `../../_testspec-shared/references/context-protocol.md` 比较版本
+4. 检查全部伴生 BDD 特性文件 `artifacts/*_features.feature` 存在、可读取且非空；复用入口已完成的 BDD 场景评审。缺失、为空或无法读取时，输入健康检查未完成，在通用反馈中记录交付缺口并返回 `testcase-generate` 补齐，不形成 SOP 通过结论
+5. 读取 canonical source（优先 `requirements.md`，否则 `proposal.md`），按 `../../_testspec-shared/references/context-protocol.md` 比较版本。有分析时先运行共享 `validate_context_chain.py --change-dir <变更目录> --through analysis`，确认分析使用的规范需求指纹仍有效；历史分析无指纹时说明验证限制
 6. canonical 有版本时，`specs/testpoints.md` 与 `testcases.json._context.source_revision` 都必须与 canonical 完全一致：
    - testpoints 缺少版本或版本更低 → 终止并提示先运行 `test-points`，之后再运行 generate
    - testcases 缺少版本或版本更低 → 终止并提示先运行 `testcase-generate`
@@ -111,85 +76,25 @@ Provenance-Unknown 必须产生 `GLOBAL:provenance-unknown` S1，`review_gate.st
 
 ---
 
-## 评审维度（14 项）
-
-执行细则、判定阈值和输出字段见 `references/review-dimensions.md`。本文件只保留最小执行索引。
-
-### R1-R6 规则检查
-
-1. R1 覆盖度
-2. R2 命名契约（同时按 `../../_testspec-shared/references/naming-contract.md` 复核名称是否简短、直白、见名知意）
-3. R3 优先级分布
-4. R4 字段完整性
-5. R5 可执行性最小条件
-6. R6 可追溯性
-
-### H1-H8 启发式检查
-
-1. H1 冗余检测
-2. H2 预期结果质量
-3. H3 意图一致性
-4. H4 前置条件充分性
-5. H5 风险与边界覆盖
-6. H6 可维护性建议
-7. H7 回归价值评估
-8. H8 测试价值与亮点识别
-
----
-
 ## 严重级别体系
 
 - **S1 阻断级**：必须修复（影响可执行性或严重偏离测试意图）
 - **S2 重要级**：应当修复（影响覆盖质量、追溯、维护）
 - **S3 建议级**：可选优化（提升可读性和效率）
 
-S1 仅用于影响可执行性或严重偏离测试意图的问题，禁止因文案精简而滥用。四项描述问题仍按原维度分级；确认的 S2/S3 描述问题也须修复后才能通过描述门禁。其他 S3 仍为可选优化。
+关键分支或预期缺口按维度细则的 H3/H5 记 S1。四项描述问题仍按原维度分级；确认的 S2/S3 描述问题也须修复后才能通过描述门禁。其他 S3 仍为可选优化。
 
 ---
 
-## 执行步骤
+## 执行与报告
 
-1. **定位变更目录**
-2. **读取输入并做健康检查**
-3. **按固定优先级判定 Import-Quarantine/Provenance-Unknown/Strict/Legacy 模式**
-4. **判定深度（auto 或 --deep）并向用户说明**
-5. **衔接通用评审并加载维度细则**：读取同一次入口已形成的完整通用反馈及 GR 编号，保留原始问题、等级、证据、影响和建议，不再次调用本Skill；按 `references/independent-reviewer.md` 记录逐项处置，随后加载 `references/review-dimensions.md`。两部分都执行，不提供单独关闭选项
-6. **按 R1→R6 执行规则检查**
-7. **按 H1→H8 执行启发式检查**：逐条检查完整集的前置条件、测试数据、操作步骤、预期结果，按维度细则执行四项描述门禁，不以抽样代替
-8. **生成报告**：按 `../../_testspec-shared/templates/review-report-template.md` 填写全部结果；先完整展示“通用评审反馈”，再保留每个 GR 编号的原等级、证据和逐项处置，同一问题关联同一原生 issue ID，不机械转换等级或改变门禁公式
-9. **计算总体置信度**
-10. **验证反馈并输出结果**：保存后运行 `python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>` 和 `python3 -B skills/_testspec-shared/scripts/validate_context_chain.py --change-dir <变更目录> --through review`；输出通用反馈、BDD 场景评审、SOP 结论和逐项修复动作。只有状态、没有原始反馈及 BDD 检查摘要的报告不能称整轮完成
+1. 核对输入健康、来源模式和深度。读取入口已经形成的通用反馈，按 [发现处置规则](references/independent-reviewer.md) 复用证据并裁定。
+2. 按 R1–R6、H1–H8 完成 [维度细则](references/review-dimensions.md) 的检查。先匹配原文和已有证据，再补查缺口。完整集的四项描述逐条核对。按 H5 复核上游待澄清项是否影响本次关键验收，再决定是否进入 S1。确认关键缺口时，说明哪种错误可能误通过，以及该回哪个阶段。H3 同时检查范围：有明确依据的埋点和兼容性矩阵按各自 Oracle 核对；未授权的独立 API、安全、性能等类型按 S1 阻断。
+3. 按 [统一报告模板](../../_testspec-shared/templates/review-report-template.md) 和 [输出契约](../../_testspec-shared/references/output-contracts.md) 写当前变更的 `review-report.md`，保留原始 GR、逐项处置、BDD 评审摘要和 SOP 结论。每个问题引用确切的 `case_id`、`TP_ID`、BDD 场景或 `GLOBAL:<rule>`，给出范围和修复动作。BDD 专属发现定位 feature 路径和场景，分配给生成阶段。
+4. 保存后运行 `verify_eval_artifacts.py feedback --report <实际报告路径>` 和 `validate_context_chain.py --change-dir <变更目录> --through review`（脚本在共享目录的 `scripts/` 下）。材料不齐时按健康检查规则交付部分评审，并如实说明结论限制。
+5. 标准交付前，对实际 XMind（默认 `artifacts/<name>_cases.xmind`）运行共享 `verify_eval_artifacts.py xmind --json <实际评审的 JSON> --xmind <实际 XMind>`。文件缺失、不一致或交付路径未确定时，记录交付待补并交回生成阶段。用例评审和 Gate 仍按实际评审的 JSON、测试点与 BDD 判定。
 
-评审对象包含完整 `artifacts/testcases.json` 与全部 `artifacts/*_features.feature`。报告单列 `## BDD 场景评审`，填写 BDD评审状态、评审文件、已检查内容、评审结论；发现沿用通用反馈的 GR 编号及处置。实际完成后写 `bdd_review.status=complete`，未完成写 `incomplete` 并说明原因，整轮不得标为已完成。
-
-写报告时对实际评审的完整 JSON、`specs/testpoints.md` 和全部 BDD 文件计算 SHA-256，分别填入 `reviewed_artifacts.testcases_sha256`、`testpoints_sha256` 及 `bdd_features_sha256`（相对变更目录的文件路径到 SHA-256 映射）。完整集、测试点、BDD 内容或 BDD 文件集合改变后须重新评审当前产物，再刷新指纹；不得只更新哈希代替评审。旧报告缺少 BDD 完成记录或指纹须重评，不自动补通过。该追溯不改变 S1 分级或 Review Gate 计算。
-
-H3/H7 必须检查组件与 Oracle 范围：`indirect` 用例不得断言下游副作用已完成，`out-of-scope` 不应成为正式用例。
-H3/H2 还须按测试点“设计方法”核对方法要求的场景和 Oracle：基于属性的测试核对各数据组的不变量，变形测试核对成对操作与前后结果关系，语法规则分析核对合法/非法结构及可判定结果；在 H3 现有“证据/说明”列引用具体用例及数据、操作或断言，不能只列方法名。缺少需求依据或无法独立判定时不得通过 Review。
-H3 同时检查范围：有需求依据且可判定的埋点与兼容性矩阵用例允许通过；事件口径、环境组合或预期缺失时记 S1。独立 API、安全、性能及其他未授权类型仍不得通过 Review，发现时以 S1 阻断并退回上游。
-
----
-
-## 报告要求
-
-报告的字段、矩阵、问题清单、指纹及 Gate 输出要求统一遵循 `../../_testspec-shared/references/output-contracts.md` 的“review-report.md”小节，结构读取 `../../_testspec-shared/templates/review-report-template.md`。生成报告仍保存到当前变更目录，不写入共享资源目录。
-
-用户已明确要求按报告返修且范围包含 accepted 描述问题时，Review 先以原 issue ID 将该项重开为 open，保留严重度、case/字段定位、owner 和现有未解决计数/ID，Gate 仍为 blocked；Generate 只消费 open 且 owner=generate 的项目。未纳入范围的 accepted 项保持 accepted 并继续阻断。修复后 Review 重评完整集，对同一 ID 标记 resolved 或保持未解决，按原公式重算 Gate 并刷新两个 SHA-256；旧哈希不再代表已改变的用例集。
-
----
-
-## 反模式识别
-
-| 反模式 | 表现 | 修正 |
-|--------|------|------|
-| 走形式检查 | 全部“通过”但无证据 | 每项至少给 1 个量化指标 |
-| 模糊建议 | “建议优化”“需要改进” | 明确到字段和修改动作 |
-| 遗漏范围 | 问题无 case_id/TP_ID/全局规则 | 实体问题绑定 ID；系统问题使用 `GLOBAL:<rule>` 并列受影响范围 |
-| 比例至上 | 只看占比不看内容 | 先核实关键场景是否真实覆盖 |
-| 忽视上游 | 不消费风险/阻塞澄清信息 | 强制读取上游 context |
-| 过度报告 | 把细节问题都标 S1 | 严格按分级定义降噪 |
-
----
+用户授权返修时，按输出契约重开其指定的已 accepted 描述问题，保留原 ID、等级、定位及 owner。返修后按同一 ID 重评，并以实际评审产物刷新完整 JSON、TP 和全部 BDD 指纹。
 
 ## 总体置信度
 

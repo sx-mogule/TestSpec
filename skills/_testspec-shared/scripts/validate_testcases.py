@@ -283,7 +283,7 @@ def check_design_methods(data: dict, cases: list[dict], tp_text: str) -> list[di
     if not methods_by_tp and not requires_methods:
         return []  # 仅兼容没有方法契约元数据的旧产物
 
-    methods_doc = Path(__file__).resolve().parents[2] / "test-points/references/test-design-methods.md"
+    methods_doc = Path(__file__).resolve().parents[2] / "testcase-generate/references/test-design-methods.md"
     allowed = {
         normalize_design_method(title)
         for title in re.findall(r"^## \d+\.\s+(.+)$", methods_doc.read_text(encoding="utf-8"), re.MULTILINE)

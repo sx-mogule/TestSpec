@@ -6,173 +6,23 @@ description: TestSpec 测试点（流程第 2 步）- 从需求分析中提炼�
 
 # test-points：测试点
 
-铁律：测试点只描述“验证什么”，绝不描述“如何执行”。
+从已确认需求提炼可独立验证的业务差异，交给 `testcase-generate` 展开。正式测试点描述验证目标和结果关系，执行步骤、具体测试数据和断言表达式留给用例。
 
-```text
-TestSpec 测试点进度：
+## 读什么
 
-- [ ] 步骤 1：定位当前 change 目录 ⚠️ 必需
-- [ ] 步骤 2：加载 canonical 需求与 requirements-analysis.md（仅明确获准时跳过分析）⚠️ 必需
-- [ ] 步骤 3：消费上游 context 和 TestLib 信号
-- [ ] 步骤 4：生成包含命名字典的 specs/testpoints.md
-- [ ] 步骤 5：校验命名契约并反思
-- [ ] 步骤 6：写入 context 元数据并报告下一步
-```
+- 按 `../_testspec-shared/references/common.md` 定位变更；读适用的 `project-interaction-spec.md`、canonical 需求（先 `requirements.md`，缺省用 `proposal.md`）和直接上游 `requirements-analysis.md`。
+- 按 `../_testspec-shared/references/context-protocol.md` 核对版本和待更新产物。有分析时先运行共享 `validate_context_chain.py --change-dir <变更目录> --through analysis`，发现规范需求与分析指纹不一致时回到需求分析。缺少分析，或已有分析过期、缺版本、版本异常时，回到 `prd-analysis`。仅用户明确跳过分析时用 canonical 降级提炼并注明低置信度。canonical 无版本按 Legacy 处理；本阶段产物过期时重新生成。
+- 按 `../_testspec-shared/references/execution-efficiency.md` 复用已读材料。复用分析已有的 TestLib 检索结果；上游未扫描且索引存在时，只匹配当前模块和功能。按 `../_testspec-shared/references/source-provenance.md` 核对来源，记录可复用项和回归提示。
 
-## 职责
+## 怎么提炼
 
-从需求分析结论中**提炼**出简短的测试覆盖要点清单，作为 testcase-generate 的直接输入。
+1. 逐项对照已确认需求、分析中的证据和适用项目规范，覆盖会改变结果或具有独立验证价值的条件、状态和业务规则。每条 TP 表达一个可独立验证的意图。分类、序号和回归层级见 `references/testpoint-design-rules.md`，命名字典见 `../_testspec-shared/references/naming-contract.md`。分类由需求决定，单一且可判定的规则可以只对应一个 TP。
+2. 按 `references/test-design-methods.md` 选择方法，写清它要区分的业务条件、边界或关系。已确认风险影响优先级和覆盖重点。未核实假设用于后续核查；TestLib 用于命名、回归和复用，业务规则及 Oracle 以当前需求为准。冒烟层级标记完整集内的核心闭环。
+3. 为正式 TP 写清需求引用、方法、优先级与 Oracle 状态和范围。间接验证只断言当前系统的可观察结果。原型 HTML 逐项消费分析中的 `BTN_ID`，已确认行为关联到 TP，禁用、不可达、未执行或含糊的项保留状态及依据。
+4. 会改变通过或失败判定的未决规则，保留上游 Q 编号及影响，标记 `oracle_status: needs-confirmation`；尚无编号时用稳定的 `Q-001` 等编号。明确关联需求和潜在影响优先级。已确认部分继续提炼，待澄清和已确认排除范围的部分不生成正式 TP；已确认却遗漏的需求记覆盖缺口。口径确认后重新生成受影响产物。
 
-**与 analysis 的关系**：analysis 做深度拆解（等价类、边界值、状态迁移、风险点），points 是 analysis 的"精华版"——把分析结论转化为一条条简短的"要验什么"。默认必须消费 `requirements-analysis.md`；只有用户明确要求跳过需求分析时，才按 `requirements.md` → `proposal.md` 降级提炼，并在产物中标记低置信度。
+## 交付
 
----
+按 `references/testpoints-template.md` 写入 `specs/testpoints.md`。使用模板的命名字典、需求去向和唯一上下文；实际命中 TestLib 时记录可复用资产。保持 canonical 版本和上游来源、问题、质量及待更新信息。从 stale 列表移除本阶段产物，保留下游项。按模板记录 `coverage_estimate`、`risks_identified`、`regression_tiers`、`testlib_reuse` 与 `"design_methods"`，方法集合与各 TP 标注一致。
 
-## 设计契约
-
-生成测试点前，加载 `references/testpoint-design-rules.md`，获取：
-
-- Functional/Boundary/Exception/Integration，以及有明确需求证据时的 Tracking/Compatibility 分类
-- `TP_<MODULE>_<FEATURE>_<SEQ>` 分配规则
-- p0/p1/p2 与 Smoke/Full/Targeted 规则
-- 粒度、禁止内容和反模式
-
-同时加载 `../_testspec-shared/references/naming-contract.md`。仅在涉及 TestLib 复用或信任分类时，加载 `../_testspec-shared/references/source-provenance.md`。
-读取 `references/test-design-methods.md` 的选择规则与十二种方法目录，按已确认需求的业务差异展开适用章节；该文件与 `testcase-generate` 的方法集合保持一致。完成后按该文档的“完成核对”检查覆盖，不要求每个 TP 使用全部方法，也不按方法数量评价质量。
-
-不可妥协的规则：
-
-- 测试点只说明验证目标，不写执行步骤或具体测试数据。即使输入包含 OpenAPI，也不得写测试账号、请求体样例、可执行参数或具体断言表达式。
-- 每个测试点只表达一个稳定验证意图。
-- TestLib 绝不覆盖 PRD；未验证导入不能提供 priority 或 oracle。
-- 每个测试点都有 category、TP_ID、priority、requirement reference、`oracle_scope` 和 `oracle_status`。
-- 每个测试点记录所采用的方法名（可多个），验证要点体现其覆盖的业务差异或结果关系，供 `testcase-generate` 继承并展开。
-
----
-
-首次按 `../_testspec-shared/references/execution-efficiency.md` 的相关章节核对输入哈希和读取范围；同一会话已读且未变的内容可复用，不重复加载本阶段无关章节。阶段与门禁照常执行。
-
-## 当前变更目录
-
-参见 `../_testspec-shared/references/common.md` 中的「当前变更目录定位规则」。
-
----
-
-## 推理式策略选择
-
-> 按 `../_testspec-shared/references/thinking-protocol.md` 执行推理式决策。
-
-### 上游上下文消费
-
-1. 读取 canonical source（优先 `requirements.md`，否则 `proposal.md`）及直接上游 `requirements-analysis.md`（若存在）
-2. 按 `../_testspec-shared/references/context-protocol.md` 比对 canonical revision：
-   - 有 analysis 时，canonical 有版本但 analysis 缺少版本或版本更低：停止并提示先运行 `prd-analysis`
-   - 无 analysis 时，默认停止并提示先运行 `prd-analysis`；只有用户明确要求跳过时，才从 canonical source 降级生成并标记低置信度
-   - canonical 无版本时按 Legacy 模式继续并告警，不伪造版本
-   - 现有 testpoints 过期表示本 skill 应重新生成，不得提示用户再次运行当前 skill
-3. 消费直接上游上下文：
-   - 提取有证据的 `risks_identified` → 按影响决定测试点优先级
-   - `intuition_flags.status = unverified` → 仅作为核查提示，不自动提升优先级
-   - 提取 `blocking_open_questions` → 关联到待澄清项；会改变通过/失败判断且暂无已确认 Oracle 的内容不分配正式 TP_ID
-   - 提取 `material_quality` → 影响推理深度
-   - 提取 `testlib_coverage`（若有）→ 直接使用 analysis 的扫描结论
-   - 提取 `canonical_source_policy`、`evidence_sources`、`questions` → 原样传播 PRD-first 证据和稳定问题状态
-4. 成功生成后原样传播 canonical envelope，从 stale 列表移除 `specs/testpoints.md`，保留 cases/review，并将 `next_skill` 指向 `testcase-generate`
-
-### testlib 知识库检索
-
-若上游 `testlib_coverage` 不存在或 `scanned = false`，points 自行扫描：
-
-1. 检查 `testspec/testlib/index.json` 是否存在
-2. 若存在，读取 index.json 并匹配当前变更涉及的模块关键词
-3. 从匹配的模块中提取：
-   - **已有 TP_ID 列表**（`tp_ids` 字段）：该功能历史用例曾覆盖过的测试点，用于理解覆盖范围
-   - **已有功能覆盖**：哪些功能点已有测试覆盖
-   - **关联功能**（`related_features`）：可能需要回归的关联功能
-4. 检索结论影响测试点生成策略：
-   - **功能未变更，已验证 TestLib 用例覆盖** → 可标注“testlib 已覆盖”；不得仅凭未验证 legacy import 减少覆盖
-   - **功能有变更** → 正常生成新 TP（每次变更 SEQ 独立），并结合历史 `tp_ids` 判断哪些区域需要回归
-   - **全新功能** → 正常生成
-   - **关联功能** → 考虑是否需要补充集成/回归类测试点
-
-### 可复用资产识别
-
-实际命中TestLib时，按 `references/testpoints-template.md` 的“可复用资产”记录可复用功能、可共享数据及高收益TP。已覆盖功能标为复用优先，供生成阶段参考表达风格；高收益点优先安排，不改变需求范围、完整覆盖或来源信任要求。未命中不输出空的复用小节。
-
-### 覆盖策略推理
-
-通过 4 个核心问题决定覆盖深度：
-
-- **"核心业务价值链是什么？"** → 决定 p0 测试点集中在哪些模块
-- **"哪些区域风险最高？"** → 上游标注的风险区域加深覆盖
-- **"验证粒度应该多细？"** → 按独立业务意图、条件分支和可判定结果确定；材料不足时澄清，不用多拆测试点补足信息
-- **"知识库中已有哪些覆盖？"** → testlib 已覆盖的功能点可降低优先级或标记复用
-
----
-
-## 执行步骤
-
-1. **确定当前变更目录**。
-2. **读取上下文**：
-   - 读取 canonical 需求（优先 `requirements.md`，否则 `proposal.md`）及 `requirements-analysis.md`，按上游上下文规则核对版本与来源
-   - 缺少 analysis 时默认停止；只有用户已明确要求跳过，才从 canonical 需求降级提炼并标记低置信度
-3. **生成 specs/testpoints.md**：
-
-### 写入策略
-
-使用标准文件编辑机制写入完整内容；一次写入失败时分段写入同一文件，保持Markdown结构。读回开头和末尾context，核对写入结果。
-
-### 提炼原则
-
-- 按模块/功能点组织，并按 Functional / Boundary / Exception / Integration / Tracking / Compatibility 分类分区；后两类仅在需求明确规定事件口径或环境组合及可判定预期时生成
-- 每条测试点必须包含：TP_ID、测试点名称、验证要点、优先级（p0/p1/p2）、关联需求
-- Smoke/Full/Targeted 只标记回归层级；即使用户需要冒烟，仍保留当前需求的完整测试点范围，供完整用例集按全部 TP 校验。层级仅作分类元数据，不派生独立用例文件。
-- 每条正式测试点标注 `oracle_scope: direct/contract/indirect`；`indirect` 不得声称下游副作用完成；`out-of-scope` 记录在范围说明，不分配正式 TP_ID
-- 确保覆盖 analysis 中识别的风险点和边界值
-- 若需求来源是可交互 HTML，逐项核对 analysis 的 `BTN_ID` 清单：已确认的按钮行为关联到 TP；禁用、不可达、未执行或结果含糊的项保留原因及澄清问题，不得当作已覆盖功能
-- 在测试点中记录适用的方法：等价类、边界值、判定表、流程分析、状态迁移、错误推断、正交实验、因果图、配对组合、基于属性的测试、变形测试或语法规则分析；风险排序和探索式测试是辅助策略，不写入 `design_methods`
-- 会改变通过/失败判断且暂无已确认 Oracle 的事项，以稳定 `Q-001` 等编号记录在待澄清清单，标注 `oracle_status: needs-confirmation`、关联需求和潜在影响优先级（高影响歧义可为 p0/p1）；不得分配正式 TP_ID 或补充假设性业务规则。确认后转成正式测试点并重新生成下游产物
-
-### 输出质量要求
-
-- 测试点必须完整覆盖已确认需求；逐条核对 `requirements.md` 的 REQ 并关联正式 TP。已确认且在范围内但没有 TP 的，记录为覆盖缺口，不能改标待澄清或范围外；待澄清仅用于未确认规则，范围外须有依据。
-- 测试点之间不得重复
-- 每个测试点必须可独立验证
-- 测试点应可直接用于后续测试用例设计
-
-### 默认行为
-
-- 未特别说明时，按"最小充分覆盖"原则生成测试点
-- 不主动扩展需求之外的业务场景
-- 不推断实现细节
-
-### 产出结构
-
-执行前读取 `references/testpoints-template.md`，严格按模板生成。产物至少包含：
-
-- 概述；实际命中时才输出知识库复用摘要和可复用资产
-- 模块/功能命名字典
-- 四类功能测试点分组，以及适用时的埋点和兼容性矩阵测试点分组
-- 每条 TP 的 ID、验证要点、影响型优先级、Oracle 状态、回归层级和关联需求
-- 文件末尾 canonical revision envelope
-
-4. **告知用户**：产出路径及下一步可执行 testcase-generate。
-
----
-
-## 反思与迭代
-
-> 按 `../_testspec-shared/references/reflection-protocol.md` 执行产物反思。
-
-产物首次生成后，执行反思循环：
-
-1. **需求覆盖**：已确认且在范围内的需求及关键业务分支是否均有测试点？模块间数量差异只用于提示复核，不能据此补造或删除测试点。
-2. **粒度一致性**：每个测试点是否表达一个独立业务意图？是否因同一意图重复拆分，或把不同条件与结果强行合并？不设跨模块数量比例。
-3. **方法与验证要点质量**：所选方法是否适用，验证目标和可判定结果是否清楚？按方法文档完成核对，不以方法标签或“验证功能正常”代替具体含义。
-
-反思后修正产物，最多 2 轮迭代。告知用户迭代次数和修正摘要。
-
-### 上下文播种
-
-按 `../_testspec-shared/references/context-protocol.md` 原样传播 canonical 版本、来源、问题、质量和 stale 信息，`source_skill` 为 `test-points`，下一步为 `testcase-generate`。
-
-补充 `coverage_estimate`、`risks_identified` 和 `"design_methods"`；方法集合与各 TP 标注一致。`regression_tiers` 记录 smoke/full/targeted 的 TP 归属；`testlib_reuse` 记录实际复用、新增 TP 及信任过滤条件。完整结构使用 `references/testpoints-template.md`。
+交付前按 `../_testspec-shared/references/reflection-protocol.md` 核对需求覆盖、独立意图和方法落地，读回文件头和上下文。报告修正摘要及产物路径，下一步为 `testcase-generate`。

@@ -132,8 +132,13 @@ class TestNewDesignMethods(unittest.TestCase):
                     "**评审结论**: 此记录仅用于上下文校验回归；实际语义评审仍待执行。",
                     stage_context("testcase-review", [], design_methods=list(METHODS),
                                   bdd_review={"status": "complete"},
-                                  reviewed_artifacts={"bdd_features_sha256": {
-                                      "artifacts/synthetic_features.feature": hashlib.sha256(feature.read_bytes()).hexdigest()}},
+                                  reviewed_artifacts={
+                                      "testcases_sha256": hashlib.sha256(cases.read_bytes()).hexdigest(),
+                                      "testpoints_sha256": hashlib.sha256(points.read_bytes()).hexdigest(),
+                                      "bdd_features_sha256": {
+                                          "artifacts/synthetic_features.feature": hashlib.sha256(feature.read_bytes()).hexdigest(),
+                                      },
+                                  },
                                   review_gate={"status": "blocked", "s1_unresolved_count": 1,
                                                "s1_issue_ids": ["SYN-REVIEW-PENDING"],
                                                "description_unresolved_count": 1,

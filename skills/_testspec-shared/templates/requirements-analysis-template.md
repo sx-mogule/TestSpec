@@ -103,6 +103,7 @@
   "evidence_sources": [],
   "questions": [],
   "source_revision": {"version": "<canonical 版本>", "summary": "<原样继承>", "updated_by_skill": "<原样继承>"},
+  "canonical_source_sha256": "<本轮实际分析的 canonical 文件 SHA-256>",
   "blocking_open_questions": [],
   "dynamic_followups": [],
   "material_quality": "<从上游继承或复核>",

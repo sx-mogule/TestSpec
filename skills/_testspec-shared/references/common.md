@@ -27,7 +27,7 @@ prd-analysis → test-points → testcase-generate → testcase-reviewer
 |---|---|---|---|
 | `prd-analysis` | 有 PRD、蓝湖事实或用户需求 | canonical `requirements.md` 与 `requirements-analysis.md` 可追溯，风险/边界/待确认项已分开 | 补充需求来源 |
 | `test-points` | analysis 与 canonical revision 一致 | 每个 TP 有 ID、验证目标、优先级、Oracle 状态和需求引用 | 回到 `prd-analysis` |
-| `testcase-generate` | testpoints 与 canonical revision 一致 | JSON 8 字段完整，TP 引用有效，JSON/XMind 通过格式校验 | 回到 `test-points` 或本阶段修复 |
+| `testcase-generate` | testpoints 与 canonical revision 一致 | JSON 八字段和 TP 引用有效，正式 XMind 与 JSON 比对通过，伴生 BDD 齐备 | 回到 `test-points` 或本阶段修复 |
 | `testcase-reviewer` | 用例和测试点版本一致 | 14 项及四项描述检查完成，未解决 S1 和描述问题均为 0，`review_gate.status=pass`（见 `output-contracts.md`） | 回到 `testcase-generate` |
 
 ## 智能编排指引

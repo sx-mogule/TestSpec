@@ -53,15 +53,54 @@ class TestFourStageContext(unittest.TestCase):
         (root / "artifacts").mkdir()
         (root / "artifacts/testcases.json").write_text(json.dumps({"schema_version": 2, "_context": generated, "testcases": []}), encoding="utf-8")
         (root / "artifacts/synthetic_features.feature").write_text(BDD_TEXT, encoding="utf-8")
-        reviewed = context("testcase-review", [], bdd_review={"status": "complete"},
-                           reviewed_artifacts={"bdd_features_sha256": {
-                               "artifacts/synthetic_features.feature": hashlib.sha256(BDD_TEXT.encode()).hexdigest(),
-                           }}, review_gate={
-            "status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": [],
-            "description_unresolved_count": 0, "description_issue_ids": [],
-        })
+        reviewed = context(
+            "testcase-review", [], bdd_review={"status": "complete"},
+            reviewed_artifacts={
+                "testcases_sha256": hashlib.sha256((root / "artifacts/testcases.json").read_bytes()).hexdigest(),
+                "testpoints_sha256": hashlib.sha256((root / "specs/testpoints.md").read_bytes()).hexdigest(),
+                "bdd_features_sha256": {
+                    "artifacts/synthetic_features.feature": hashlib.sha256(BDD_TEXT.encode()).hexdigest(),
+                },
+            }, review_gate={
+                "status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": [],
+                "description_unresolved_count": 0, "description_issue_ids": [],
+            },
+        )
         write_markdown(root / "review-report.md", reviewed)
         return reviewed
+
+    def test_canonical_content_drift_invalidates_analysis_at_same_revision(self):
+        for filename in ("requirements.md", "proposal.md"):
+            with self.subTest(filename=filename), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.make_change(root)
+                canonical = root / filename
+                (root / "requirements.md").rename(canonical)
+                analysis = root / "requirements-analysis.md"
+                context = chain.load_context(analysis)
+                context["canonical_source_sha256"] = hashlib.sha256(canonical.read_bytes()).hexdigest()
+                write_markdown(analysis, context)
+                self.assertEqual(chain.validate(root, "review", 1), [])
+
+                old_text = canonical.read_text(encoding="utf-8")
+                canonical.write_text(old_text.replace("# Fixture", "# 修改订单状态验收规则"), encoding="utf-8")
+                for stage in ("analysis", "review"):
+                    errors = chain.validate(root, stage, 1)
+                    self.assertTrue(
+                        any(f"{filename} content differs from the analyzed canonical source" in error for error in errors),
+                        errors,
+                    )
+
+    def test_invalid_canonical_source_fingerprint_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            analysis = root / "requirements-analysis.md"
+            context = chain.load_context(analysis)
+            context["canonical_source_sha256"] = "placeholder"
+            write_markdown(analysis, context)
+            self.assertIn("analysis: invalid canonical_source_sha256; rerun prd-analysis",
+                          chain.validate(root, "analysis", 1))
 
     def test_review_is_terminal_stage(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -220,6 +259,50 @@ class TestFourStageContext(unittest.TestCase):
                 write_markdown(root / "review-report.md", reviewed)
                 self.assertTrue(any("bdd_features_sha256" in error for error in chain.validate(root, "review", 1)))
 
+    def test_json_and_testpoint_content_changes_invalidate_review(self):
+        for relative_path, changed in (
+            ("artifacts/testcases.json", lambda text: text.replace('"testcases": []', '"testcases": [{"expected_result": "状态仍为待支付"}]')),
+            ("specs/testpoints.md", lambda text: text.replace("# Fixture", "# 新增一条验收规则")),
+        ):
+            with self.subTest(path=relative_path), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.make_change(root)
+                path = root / relative_path
+                before = path.read_text(encoding="utf-8")
+                after = changed(before)
+                self.assertNotEqual(before, after)
+                path.write_text(after, encoding="utf-8")
+                self.assertEqual(chain.validate(root, "generate", 1), [])
+                errors = chain.validate(root, "review", 1)
+                self.assertTrue(any(f"{relative_path} hash differs" in error for error in errors), errors)
+
+    def test_missing_or_invalid_json_and_testpoint_review_hashes_require_rereview(self):
+        for field in ("testcases_sha256", "testpoints_sha256"):
+            for digest in (None, "placeholder"):
+                with self.subTest(field=field, digest=digest), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    reviewed = self.make_change(root)
+                    if digest is None:
+                        del reviewed["reviewed_artifacts"][field]
+                    else:
+                        reviewed["reviewed_artifacts"][field] = digest
+                    write_markdown(root / "review-report.md", reviewed)
+                    errors = chain.validate(root, "review", 1)
+                    self.assertTrue(any(f"missing or invalid reviewed_artifacts.{field}" in error for error in errors), errors)
+
+    def test_review_hash_follows_the_selected_json_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            current = root / "artifacts/testcases.json"
+            fallback = root / "testcases.json"
+            current.rename(fallback)
+            self.assertEqual(chain.validate(root, "review", 1), [])
+
+            current.write_bytes(fallback.read_bytes())
+            fallback.write_text("invalid fallback content", encoding="utf-8")
+            self.assertEqual(chain.validate(root, "review", 1), [])
+
     def test_bdd_edits_additions_deletions_and_renames_invalidate_review(self):
         for action in ("edit", "add", "delete", "rename"):
             with self.subTest(action=action), tempfile.TemporaryDirectory() as directory:
@@ -270,6 +353,7 @@ class TestFourStageContext(unittest.TestCase):
             generated["_context"]["design_methods"] = ["基于属性的测试"]
             generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
             reviewed["design_methods"] = ["变形测试"]
+            reviewed["reviewed_artifacts"]["testcases_sha256"] = hashlib.sha256(generated_path.read_bytes()).hexdigest()
             write_markdown(root / "review-report.md", reviewed)
             self.assertIn("review: design_methods differs from generated cases", chain.validate(root, "review", 1))
 
@@ -282,6 +366,7 @@ class TestFourStageContext(unittest.TestCase):
             generated["_context"]["design_methods"] = ["基于属性的测试", "变形测试"]
             generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
             reviewed["design_methods"] = ["变形测试", "基于属性的测试"]
+            reviewed["reviewed_artifacts"]["testcases_sha256"] = hashlib.sha256(generated_path.read_bytes()).hexdigest()
             write_markdown(root / "review-report.md", reviewed)
             self.assertEqual(chain.validate(root, "review", 1), [])
 
@@ -299,6 +384,7 @@ class TestFourStageContext(unittest.TestCase):
                 generated["_context"]["design_methods"] = generated_names
                 generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
                 reviewed["design_methods"] = reviewed_names
+                reviewed["reviewed_artifacts"]["testcases_sha256"] = hashlib.sha256(generated_path.read_bytes()).hexdigest()
                 reviewed_path = root / "review-report.md"
                 write_markdown(reviewed_path, reviewed)
                 before = [path.read_bytes() for path in (generated_path, reviewed_path)]
@@ -314,6 +400,7 @@ class TestFourStageContext(unittest.TestCase):
             generated["_context"]["design_methods"] = ["等价类划分"]
             generated_path.write_text(json.dumps(generated, ensure_ascii=False), encoding="utf-8")
             reviewed["design_methods"] = ["边界值分析"]
+            reviewed["reviewed_artifacts"]["testcases_sha256"] = hashlib.sha256(generated_path.read_bytes()).hexdigest()
             write_markdown(root / "review-report.md", reviewed)
             self.assertIn("review: design_methods differs from generated cases", chain.validate(root, "review", 1))
 

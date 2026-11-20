@@ -1,6 +1,6 @@
 ---
 name: testcase-reviewer
-description: 统一测试用例评审入口，也是TestSpec流程第4步。每次执行通用用例/套件/BDD评审与SOP原有R1-R6、H1-H8共14项检查，逐项核实发现并汇总报告及Review Gate；支持评分、辅导和按用户要求改写或起草BDD。输入不足时给出可核实的评审及缺项，不补造需求、TP或通过结论。不从零设计传统测试用例或编写自动化代码。
+description: 评审测试用例、套件和 BDD/Gherkin，也用于 TestSpec 第四阶段。对照需求找覆盖和判定缺口，保留通用反馈，执行 SOP 的 14 项检查并给出 Review Gate。也支持按需评分、改写和 BDD 起草。
 metadata:
   version: 2.0.0
   dispatcher-category: testing
@@ -17,155 +17,38 @@ metadata:
 
 # 测试用例评审器
 
-> **版本：** 2.0.0 | **许可证：** MIT
+## 统一评审
 
-像资深测试设计人员一样评审测试稿：对照事实来源，先列发现，并提供可执行的具体建议。此 Skill 涵盖两类遵循相同评审原则的材料：传统测试用例与 BDD/Gherkin。
+1. **先核对需求依据。** 有当前 PRD、验收条款或已确认的澄清原文时，先从原文定位关键业务路径、明确必测的条件与可观察结果，再对照测试稿。原件缺失时用现有的 canonical 需求、验收标准或获批资料，说明依据和限制。按适用项目规范核实交互和默认边界；已提供的原型记录、实现证据和历史用例可帮助发现差异。验收规则冲突或含糊时列待确认项。仅有测试稿时，检查结构、可执行性和内部一致性。
+2. **先完成通用评审。** 按下方材料路径核对完整测试稿。标准 SOP 同时审完整 JSON 和全部伴生 BDD，BDD 单独核查场景质量和关键规则。每项发现保留稳定 GR 编号、原等级、定位、依据、影响和建议。通用反馈先形成，再进入 SOP，依据来自本轮实际材料。
+3. **再做 SOP 检查。** 同一模型执行 [内部 SOP 模块](testcase-review/review-workflow.md)，核对输入并完成 R1–R6、H1–H8。按 [发现处置规则](testcase-review/references/independent-reviewer.md) 复用首轮已核实的原文和用例证据，补查未覆盖的维度，独立判断 SOP 分级及 Gate。关键分支和结果判定按 [H3/H5 细则](testcase-review/references/review-dimensions.md) 处理。
+4. **汇总报告。** 完整展示通用反馈，再列 SOP 结论、BDD 场景评审和逐项处置。整轮完成要求两部分和必需的 BDD 评审完成、每项发现有处置。材料不足时，完成有据可查的检查，说明缺项和结论限制。若 SOP 输入健康检查失败，状态为未完成，Gate 未计算。
 
-## 统一执行顺序（每次调用均执行）
+按 [输出契约](../_testspec-shared/references/output-contracts.md) 选模板。完整 TestSpec 输入写入当前变更的 `review-report.md`，记录 Gate 和实际评审的 JSON、TP、全部 BDD 指纹。评审以只读方式使用正式产物，定向返修交给责任阶段。普通材料仅在用户要求保存时写文件。新报告的 `source_skill` 为 `testcase-reviewer`，旧报告可兼容读取 `testcase-review`。此目录只有一个 Skill 入口，单独分发须同时携带同级 `_testspec-shared/`。
 
-输出报告前，先读取 `../_testspec-shared/references/output-contracts.md` 的报告路由与保存规则，再按材料类型读取共享模板。本 Skill 的报告模板与输出规范统一由同级 `_testspec-shared/` 提供；单独分发时需同时携带该共享目录。
+### 通用发现分级
 
-本目录只有 `$testcase-reviewer` 一个入口。`testcase-review/review-workflow.md` 是保留原 `testcase-review` 能力的内部模块，不再独立调用；没有“仅通用”或“仅SOP”开关。
-
-1. **通用评审与 BDD 独立评审**：同一模型先按通用用例与 BDD 规则，基于原始需求与完整测试稿评审。在标准 SOP 流程中，输入同时涵盖完整用例集（`artifacts/testcases.json`）与伴生 BDD 特性文件（`artifacts/*_features.feature`），分别执行功能用例通用评审与 BDD 独立质量评审（重点核查反模式、Given/When/Then 规范、单一职责与可观察 Oracle）；在当前上下文形成完整的“通用评审反馈”，逐项保留 GR 编号、Critical/High/Medium/Low 原等级、定位、依据、问题、影响和建议。先形成该部分再读取 SOP 结论，不用原有 R/H 意见反推或代写通用反馈。
-2. **SOP检查**：必读 `testcase-review/review-workflow.md`，执行输入健康检查和原有R1-R6、H1-H8。模板为 `../_testspec-shared/templates/review-report-template.md`，细则为 `testcase-review/references/review-dimensions.md`；按风险决定auto或加深，不跳过任何检查维度。
-3. **分别展示并逐项处置**：按 `testcase-review/references/independent-reviewer.md`，在同一报告中分别展示“通用评审反馈”、SOP检查结果及“通用发现处置”。通用与 BDD 原始反馈先完整保留，再以 GR 编号关联原生 issue，记录采纳/重复关联/不适用/待确认及理由；去重只作用于原生问题计数，不删除通用原始反馈。只有两部分均完成且发现全部有处置才可宣称整轮完成。
-
-TestSpec输入齐全时，统一写 `review-report.md`，沿用原S1与四项描述Gate公式，并记录完整JSON/TP/BDD指纹；评审不改写正式JSON或XMind。缺少需求、TP、来源或版本等必需输入时，仍完成通用评审及可判定的R/H检查，列出14项中无法完成的项和具体缺失材料，SOP状态为“未完成”，不伪造context、TP或Gate通过结果。普通用例与BDD的原有评审能力因此保留，无需先补造SOP产物。
-
-标准 SOP 的 BDD 缺失、为空或未评审时，整轮未完成并返回生成阶段补齐。报告单列“BDD 场景评审”的状态、文件、已检查内容和结论；实际完成后记录 `bdd_review.status=complete` 与 `reviewed_artifacts.bdd_features_sha256` 全文件映射。BDD 修改或文件集合变化后须重新评审，保存报告后运行共享 `validate_context_chain.py --change-dir <变更目录> --through review`；指纹与完成性检查不改变原 Gate 公式。
-
-BDD的rewrite/generate/hybrid模式仍按原规则产出材料；随后对可评审的草稿执行上述两部分检查。输入不支持某项检查时明确记录限制。普通材料仅在用户要求保存时写文件；TestSpec完整输入按流程写统一报告。
-
-旧报告的 `source_skill: testcase-review` 仅作为历史来源标识兼容读取，新报告使用 `source_skill: testcase-reviewer`。单个模型顺序执行两套规则不称为独立评审者或多模型复核。
-
-## 1. 判断材料类型和模式
-
-**材料类型**
-
-| 类型 | 材料 | 参考目录 |
-|---|---|---|
-| 测试用例 | 带有前置条件、步骤和预期结果的手工、UAT 或回归测试用例；测试套件及其层级；需求到测试的追溯矩阵 | `references/test-cases/` |
-| BDD | Gherkin 特性文件、场景、Scenario Outline（场景大纲）、`Rule:` 规则块、示例映射 | `references/bdd/` |
-
-若输入同时包含两类材料，分别按各自路径评审，再合并成一份报告。
-
-**模式**
-
-- `review`（默认，适用两类）：评估并排列发现；用户要求时评分。
-- `rewrite`（适用两类）：在保留原意的前提下改进材料。测试用例路径须先完成评审，再提出修订用例，且每项修订都要关联到明确的问题。
-- `generate`（仅适用 BDD）：根据业务规则、验收标准、用户故事或示例映射起草 Gherkin。从零设计传统测试用例应使用 `test-design-orchestrator`。
-- `hybrid`（适用两类）：先简要列出发现，再给出修订后的材料。
-
-模式不明显时，在回复开头说明材料类型和模式。除非用户要求更多内容，否则保持在评审模式。
-
-## 2. 确立判定依据
-
-仅依据事实来源判断正确性，按可信度从高到低排列：
-
-1. 已批准的业务规则和需求
-2. 验收标准
-3. 用户故事、用例、分析文档
-4. 利益相关方批准的备注、用户手册
-5. 材料自身的文字（最弱，只能用于检查其内部一致性）
-
-始终遵循：
-
-- 写明所依据的来源，并评为强、部分或弱；
-- 区分已确认行为与假设；
-- 缺少需求时，仍可检查结构和质量，但要标明追溯与覆盖结论受限，并列出完成全面评审还需要什么。
-
-禁止：
-
-- 将实现代码作为主要判定依据，除非用户明确要求检查代码与测试是否一致（照着代码编写的测试，可能在业务规则错误时仍然通过）；
-- 臆造需求 ID、角色、标签、优先级、业务规则、策略限制或框架语义。缺失的元数据应作为缺口报告。
-
-## 3. 使用统一等级评定发现
-
-| 严重度 | 含义 |
+| 等级 | 判定 |
 |---|---|
-| `Critical`（严重） | 被测行为错误、矛盾、缺失，或含糊到无法信任；某项需求完全没有覆盖 |
-| `High`（高） | 可能误导执行、自动化、评审或签核，例如缺少反向或错误路径、预期结果不可观察、一个场景混合多条规则分支 |
-| `Medium`（中） | 影响范围有限的真实质量问题，例如一个预期结果较弱、标题过于笼统而隐藏了条件、场景可读但内容过载 |
-| `Low`（低） | 措辞、可读性、命名、元数据或低风险清理项 |
+| Critical | 核心行为错误或矛盾、整项需求无覆盖，或判定依据缺失到无法信任结论 |
+| High | 容易误导执行或签核，例如必要错误路径缺失、关键结果不可观察、分支混在一个场景中 |
+| Medium | 影响局部质量，例如条件表达不清或场景承担了过多细节 |
+| Low | 措辞、命名或元数据等低影响问题 |
 
-每条 Critical 和 High 发现都要引用依据，并指出受影响的需求、套件、用例或场景。优先写 `REQ-04 has no negative-path coverage`（REQ-04 缺少反向路径覆盖），而不要只写“增加更多测试”。材料质量良好时，应写 `No material defects identified`（未发现实质性缺陷），不要为了找问题而臆造缺陷。
+Critical 和 High 引用具体原文及受影响的需求、用例或场景。没有实质性缺陷时，如实记录已审范围和证据。
 
-## 4. 测试用例评审路径
+## 选择材料路径和模式
 
-完整流程见 `references/test-cases/review-workflow.md`。仅在任务需要时加载其他资料：
+默认 `review`。用户要求时可评分、辅导或进入 `rewrite` / `hybrid`，先评审，再提供与发现逐项对应的修订。仅 BDD 支持 `generate`，依据业务规则、验收标准或示例映射起草。本项目从零设计传统用例按需求分析、测试点、用例生成进入 SOP。改写或起草产物形成后，按可用输入完成评审。执行范围以用户指定的材料为准。
 
-- 判断标题、前置条件、步骤、预期结果或优先级时，读取 `test-case-protocol.md`；
-- 涉及套件、文件夹、层级或重复时，读取 `test-suite-protocol.md`；
-- 编写最终评审时，读取 `../_testspec-shared/templates/testcase-review-report-template.md`；
-- 校准优劣示例时，读取 `examples-test-case-quality.md`、`examples-review-comments.md`、`examples-mini-review-reports.md`、`examples-bad-input-artifacts.md`。
+### 测试用例与套件
 
-工作流程：
+- 按 `references/test-cases/review-workflow.md` 检查需求追溯、适用的成功/扩展/错误路径、技术正确性和套件结构。
+- 涉及字段或分组的具体判断时，分别读取该目录的 `test-case-protocol.md` 或 `test-suite-protocol.md`。校准反馈可查同目录的质量、评论、报告和薄弱输入示例。
+- 单独出具普通用例评审时使用 `../_testspec-shared/templates/testcase-review-report-template.md`。标准 SOP 直接汇入统一模板。
 
-1. **范围与清点。** 明确范围是仅需求、仅用例、用例加套件，还是完整材料包。统计需求、用例和套件数量，并列出缺少的材料。
-2. **需求与追溯。** 将每项需求标记为清晰、含糊或缺少细节。把需求映射到用例，指出未覆盖项。
-3. **套件结构**（如适用）。层级宜为组件或测试级别 → 测试类型 → 判定依据或需求单元。若底层套件超过约 20 条用例，指出可拆分之处；也要指出容易造成重复用例的结构。
-4. **覆盖。** 每项需求至少有一条测试。适用时应覆盖主成功路径（MSS）、扩展路径（EXT）和错误路径（ERR）。覆盖薄弱时，指出缺失的设计方法：用等价类划分输入类别，用边界值分析检查限值，用决策表分析规则组合，用状态转换分析状态驱动行为，用用例路径分析参与者流程。
-5. **技术正确性。** 前置条件应建立所需状态，包括不直观的状态。步骤须可执行且确定。预期结果应具体、可观察，例如 UI 提示、API 状态码和响应体、数据库记录、事件或文件，不能只写 `Success` 或 `OK`。测试数据应描述所需状态（如“一个没有待处理订单的有效用户”），而不是硬编码易失效的 ID；还应覆盖边界和无效输入。
-6. **规范符合性。** 检查命名、必填字段、追溯链接、MSS/EXT/ERR 分类，以及适用时的测试级别或优先级。
-7. **辅导。** 总结优点和重复出现的问题，并按影响排序给出 3 至 5 条建议。
+### BDD / Gherkin
 
-按 `../_testspec-shared/templates/testcase-review-report-template.md` 组织通用评审内容，并按共享输出契约汇入本轮报告。若无法验证追溯，应说明限制；建议必须具体到下一步可执行的行动。
-
-发现及修复示例：
-
-```text
-High：REQ-07 仅由一条成功路径用例覆盖。需求还定义了无效账户状态，但没有 ERR 场景检查账户是否已停用或关闭。
-修复：针对账户状态的等价类划分，增加两条 ERR 用例（一条针对停用账户，一条针对已关闭账户）。
-验证拒绝提示，并确认账户余额未发生变化。
-```
-
-## 5. BDD 评审路径
-
-将 BDD 视为面向业务的行为规格，而非 UI 操作脚本。按需读取以下资料：
-
-- 请求、判定依据或模式不明确时，读取 `references/bdd/intake-and-decision-flow.md`；
-- 进行正式评审或先列发现时，读取 `references/bdd/review-workflow.md`；
-- 检查反模式和改写方法时，读取 `references/bdd/quality-rules.md`；
-- 检查 `Feature:`、`Rule:`、`Background:`、`Scenario Outline`、标签和命名时，读取 `references/bdd/feature-and-scenario-protocol.md`；
-- 评分或撰写正式报告时，读取 `../_testspec-shared/references/bdd-report-rubric.md` 和 `../_testspec-shared/templates/bdd-review-report-template.md`；
-- 需要严格输出格式时，读取 `../_testspec-shared/references/bdd-output-contracts.md`。
-
-约束：始终优先描述业务行为，而非 UI 操作过程；每个场景只覆盖一条行为路径；`When` 中只保留一个主要事件；`Then` 应是外部可观察的结果；`Given` 应尽量精简且足够；使用来源支持的具体业务示例；明确保留追溯关系。不要在 Gherkin 中叙述测试脚本，不要在一个场景混合多条规则分支，也不要添加行为本身不需要的实现细节。
-
-- **`review`：** 评估意图与范围、追溯、场景结构（命名、分组、重复）、路径覆盖（主路径、替代路径、错误路径，以及适用时的角色、权限、边界或生命周期），以及 BDD 质量（业务语言、可观察结果、具体示例、不包含 UI 脚本和混合分支）。先列发现。
-- **`rewrite`：** 保留原意；将场景标题改为条件加结果；拆分过载场景；除非 UI 交互本身就是规则，否则以业务行为替换 UI 步骤；将含糊结果改成可观察结果；将无依据的元数据明确记录为缺口。完整特性文件使用 `assets/bdd-feature-template.feature`。
-- **`generate`：** 从规则、决策和示例开始，将规则空间映射到主路径、替代路径和错误行为；每条行为路径或规则分支对应一个场景；使用具体角色、日期、状态和金额。只生成来源支持的行为，并列出未解决的缺口；来源信息不足时停止。
-- **`hybrid`：** 先列最重要的发现，再给出改进后的材料，最后列出未确认的假设。
-
-各模式的回复结构统一读取 `../_testspec-shared/references/bdd-output-contracts.md`；正式报告按共享报告路由选择模板。示例见 `examples/bdd/`。
-
-## 6. 处理薄弱输入
-
-- **判定依据较弱：** 评审结构和质量，降低可信度，避免断言正确性，并请用户提供权威来源。
-- **套件层级不清楚：** 根据现有分组进行分析，对照套件规范，建议更清晰的结构。
-- **预期结果笼统：** 用可观察的方式重述问题，并指出缺少哪个断言目标。
-- **单个特性或套件范围过大：** 建议按能力、规则集、角色或生命周期阶段拆分。
-- **用户要求改写，而非仅评审：** 先完成评审，再改写；每项改动都要关联到一条发现。
-
-## 7. 易错点
-
-- **只关注成功路径：** 不要停留在主成功路径；检查扩展、错误、状态转换和边界覆盖。
-- **自动化交接：** 除非用户明确要求，否则不编写 Cucumber、Playwright 或 Cypress 代码；这属于对应框架 Skill 的职责。
-- **过度修正：** 对质量良好的材料，应写 `No material defects identified`（未发现实质性缺陷），不能臆造问题。
-- **写得好不代表行为正确：** 必须依据事实来源核对行为，而不能只看结构。
-- **避免范围蔓延：** 只评审用户指定的内容。用户只问两个场景时，不要生成完整特性文件。
-
-## 8. 文件与记忆
-
-在对话中保留工作笔记。TestSpec完整输入按统一执行顺序保存报告；其他材料只有用户要求保存报告、评分表或改写后的材料时才写入文件，并保存到用户指定的位置。
-
-## 9. 最终检查
-
-1. 每条重要结论都有材料依据。
-2. 每个覆盖缺口都关联到明确的需求、路径、规则或状态。
-3. 建议具体到无需猜测即可执行。
-4. 将必须修复的问题与辅导建议分开。
-
-5. 报告中必须直接展示完整“通用评审反馈”，不能只写执行状态、发现数或“详见SOP意见”；没有发现时如实写明范围、已检查内容和“未发现实质性缺陷”，未完成时说明原因，不能用“无”代替未执行。
-6. 保存新报告后，运行 `python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>` 检查通用反馈和逐项处置是否齐全；只在对话中输出时按同一结构自查，不为校验另建文件。格式检查不能证明语义正确，失败时补齐记录，不修改Gate公式或伪造完成。
+- 按 `references/bdd/review-workflow.md` 评审。用业务语言表达规则，每个场景一条行为路径，`When` 一个主要事件，`Then` 给出外部可观察的结果。完整 SOP 中按相同业务条件对照 JSON 与 BDD 的关键结果，出现分歧时回到需求原文判定。
+- 任务或依据不清时读 `references/bdd/intake-and-decision-flow.md`。核对语义、结构或改写时，按需读 `references/bdd/quality-rules.md`、`references/bdd/feature-and-scenario-protocol.md`。
+- 起草或改写完整特性文件可用 `assets/bdd-feature-template.feature`。各模式输出见 `../_testspec-shared/references/bdd-output-contracts.md`，评分或单独正式报告按共享输出契约加载评分规则和模板。示例见 `examples/bdd/`。
