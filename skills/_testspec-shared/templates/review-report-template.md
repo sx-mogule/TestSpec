@@ -79,7 +79,7 @@ BDD 发现完整保留在上方通用反馈中，并使用相同 GR 编号逐项
 | H5 风险与边界覆盖 | <result> | <metric> | <count> |
 | H6 可维护性建议 | <result> | <metric> | <count> |
 | H7 回归价值评估 | <result> | <metric> | <count> |
-| H8 测试价值与亮点 | — | 标杆用例数 | <count> |
+| H8 测试价值与亮点 | — | 标杆用例数 <count>；可复用模式数 <count> | <count> |
 
 ---
 
