@@ -12,7 +12,6 @@ REQUIRED_FILES = [
     "agents/openai.yaml",
     "testcase-review/review-workflow.md",
     "testcase-review/references/review-dimensions.md",
-    "testcase-review/references/independent-reviewer.md",
     "testcase-review/scripts/prepare_reviewer_input.py",
     "evals/evals.json",
     "assets/bdd-feature-template.feature",

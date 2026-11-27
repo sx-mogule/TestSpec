@@ -23,7 +23,8 @@
     "questions": [],
     "origin": {"kind": "testspec-native", "source_change": "synthetic-account-access"},
     "trust": {"status": "provisional", "basis": "prd-first"},
-    "design_methods": ["等价类"]
+    "design_methods": ["等价类"],
+    "oracle_strength": {"checked": 1, "strengthened": [], "merged_or_removed": [], "weak_remaining": []}
   },
   "testcases": [
     {

@@ -188,12 +188,16 @@ def validate_generate_contract(errors: list[str]) -> None:
                   f"测试点缺少允许分类：{category}")
         add_error(errors, case_type in validator_text and case_type in type_rules and case_type in review_text,
                   f"用例生成或 Review 缺少允许类型：{case_type}")
-    add_error(errors, "H3 同时检查范围" in review_text and "S1 阻断" in review_text,
+    add_error(errors, "J3 同时检查范围" in review_text and "S1 阻断" in review_text,
               "Review 未保持范围阻断")
     for method in DESIGN_METHODS[-3:]:
         add_error(errors, method in review_dimensions, f"Review 未覆盖新增方法：{method}")
     add_error(errors, '"design_methods"' in review_template and "| 设计方法 |" in review_template,
               "Review 模板未保留方法追溯")
+    add_error(errors, '"judgment_issue_ids"' in review_template and "需求判定力表" in review_template,
+              "Review 模板缺少判定力门禁或需求判定力表")
+    for dimension in ("M1", "M5", "J1", "J4", "D1", "D5"):
+        add_error(errors, f"{dimension} " in review_dimensions, f"Review 维度细则缺少编号 {dimension}")
     add_error(errors, "反馈合成闭环" not in review_text and "feedback_for_" not in review_text + review_template,
               "Review 仍含反馈合成流程")
 

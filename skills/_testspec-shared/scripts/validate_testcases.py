@@ -360,7 +360,7 @@ def check_required_fields(cases: list[dict]) -> list[dict]:
 
 
 def check_field_quality(cases: list[dict]) -> list[dict]:
-    """检查动作词和明确含糊的表达；有限动作词只提供提示，不替代 R5 可执行性评审。"""
+    """检查动作词和明确含糊的表达；有限动作词只提供提示，不替代 Review D3 可执行性评审。"""
     issues = []
     vague_step = re.compile(r"(?:(?:进行|执行|完成)(?:相关|上述|必要)?操作|操作|点击|输入|选择)")
     vague_expected = re.compile(
@@ -722,6 +722,73 @@ def compute_distribution(cases: list[dict]) -> dict:
     return distribution
 
 
+CASE_PROVENANCE_PAIRS = {
+    ("testspec-native", "provisional"),
+    ("testspec-native", "verified"),
+    ("legacy-import", "verified"),
+    ("legacy-import", "unverified"),
+}
+QUARANTINED_PROVENANCE = ("legacy-import", "unverified")
+
+
+def _provenance_pair(record: dict | None) -> tuple[str | None, str | None]:
+    if not isinstance(record, dict):
+        return None, None
+    origin, trust = record.get("origin"), record.get("trust")
+    kind = origin.get("kind") if isinstance(origin, dict) else None
+    status = trust.get("status") if isinstance(trust, dict) else None
+    return (kind if isinstance(kind, str) else None, status if isinstance(status, str) else None)
+
+
+def check_provenance(data: dict) -> dict:
+    """Compute the M5 mode and blocking finding from the complete current testcase set."""
+    cases = data["testcases"]
+    context_pair = _provenance_pair(data.get("_context"))
+    kind, status = context_pair
+    valid_context = context_pair in CASE_PROVENANCE_PAIRS or (
+        "mixed" in context_pair
+        and kind in {"testspec-native", "legacy-import", "mixed"}
+        and status in {"provisional", "verified", "mixed"}
+    )
+    pairs = []
+    invalid_locations = []
+    quarantined_cases = []
+    for index, case in enumerate(cases):
+        case_id = case.get("id") if isinstance(case, dict) else None
+        location = case_id if isinstance(case_id, str) and case_id.strip() else f"testcases[{index}]"
+        pair = _provenance_pair(case)
+        if pair == QUARANTINED_PROVENANCE:
+            quarantined_cases.append(location)
+        if pair not in CASE_PROVENANCE_PAIRS:
+            invalid_locations.append(location)
+            continue
+        pairs.append(pair)
+        if valid_context and any(aggregate not in (value, "mixed") for aggregate, value in zip(context_pair, pair)):
+            invalid_locations.append(location)
+
+    if context_pair == QUARANTINED_PROVENANCE:
+        return {"mode": "Import-Quarantine", "status": "blocked", "issues": [{
+            "severity": "S1", "scope": "GLOBAL:legacy-traceability", "locations": ["_context", *quarantined_cases],
+        }]}
+
+    false_mix = any(
+        aggregate == "mixed" and len({pair[index] for pair in pairs}) < 2
+        for index, aggregate in enumerate(context_pair)
+    )
+    if not valid_context or false_mix:
+        invalid_locations.insert(0, "_context")
+    if invalid_locations or quarantined_cases:
+        locations = list(dict.fromkeys([*invalid_locations, *quarantined_cases]))
+        return {"mode": "Provenance-Unknown", "status": "blocked", "issues": [{
+            "severity": "S1", "scope": "GLOBAL:provenance-unknown", "locations": locations,
+        }]}
+
+    strict = data.get("schema_version") == 2 and all(
+        isinstance(case.get("tp_refs"), list) and case["tp_refs"] for case in cases
+    )
+    return {"mode": "Strict" if strict else "Legacy", "status": "pass", "issues": []}
+
+
 # ── 主流程 ──────────────────────────────────────────────────────
 
 def validate(testcases_path: str, testpoints_path: str | None = None, *, details_path: str | None = None) -> dict:
@@ -737,11 +804,15 @@ def validate(testcases_path: str, testpoints_path: str | None = None, *, details
     except json.JSONDecodeError as e:
         return {"status": "ERROR", "message": f"JSON 解析失败: {e}"}
 
-    if not isinstance(data, dict) or data.get("schema_version") != 2 or not isinstance(data.get("testcases"), list):
+    if not isinstance(data, dict) or not isinstance(data.get("testcases"), list):
         return {"status": "ERROR", "message": "用例必须是包含 schema_version=2 和 testcases 数组的对象"}
     cases = data["testcases"]
     if not cases or not all(isinstance(case, dict) for case in cases):
         return {"status": "ERROR", "message": "testcases 为空或包含非对象用例"}
+    provenance = check_provenance(data)
+    if data.get("schema_version") != 2:
+        return {"status": "ERROR", "message": "用例必须是包含 schema_version=2 和 testcases 数组的对象",
+                "provenance": provenance}
 
     # 加载 testpoints（可选）
     tp_ids: set[str] = set()
@@ -830,6 +901,7 @@ def validate(testcases_path: str, testpoints_path: str | None = None, *, details
 
     result = {
         "status": status,
+        "provenance": provenance,
         "summary": {
             "total_cases": len(cases),
             "error_count": len(errors),

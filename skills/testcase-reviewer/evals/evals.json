@@ -16,7 +16,7 @@
         },
         {
           "path": "testspec/changes/synthetic-profile-sync/requirements-analysis.md",
-          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"risks_identified\":[]}\n-->\n"
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"canonical_source_sha256\": \"ba7ac9186b3b33b09e11554b8b5ad577fe0e0bdc6ce8cb6bcf44297055abe6c2\",\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"risks_identified\":[]}\n-->\n"
         },
         {
           "path": "testspec/changes/synthetic-profile-sync/specs/testpoints.md",
@@ -59,7 +59,7 @@
         {
           "text": "通过报告同时满足S1与四项描述门禁",
           "check": "programmatic",
-          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-profile-sync/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'pass'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']==0 and g['\"'\"'description_issue_ids'\"'\"']==[]; print('\"'\"'PASS'\"'\"')'"
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-profile-sync/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'pass'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'judgment_unresolved_count'\"'\"']==0 and g['\"'\"'judgment_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']==0 and g['\"'\"'description_issue_ids'\"'\"']==[]; print('\"'\"'PASS'\"'\"')'"
         },
         {
           "text": "BDD 输入未改写、场景评审摘要齐全且当前全部指纹一致",
@@ -205,7 +205,7 @@
     {
       "id": 5,
       "prompt": "运行 testcase-reviewer，评审 synthetic-profile-naming 的用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "R2 识别一条名称冗长和一条名称含糊的 S2 问题，逐项给出 case_id、原名称、原因和简短建议名称；建议保留展示/再次进入后保留这两个不同意图，评审不直接修改用例。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "expected_output": "D5 识别一条名称冗长和一条名称含糊的 S2 问题，逐项给出 case_id、原名称、原因和简短建议名称；建议保留展示/再次进入后保留这两个不同意图，评审不直接修改用例。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-profile-naming/requirements.md",
@@ -213,7 +213,7 @@
         },
         {
           "path": "testspec/changes/synthetic-profile-naming/requirements-analysis.md",
-          "content": "# Analysis\n\n<!-- testspec-context\n{\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"risks_identified\":[]}\n-->\n"
+          "content": "# Analysis\n\n<!-- testspec-context\n{\"canonical_source_sha256\": \"ee27839fcfcc9ce71096f78ecae87a4a1070342f5042d5459a8e2dbaf0251051\",\"source_skill\":\"prd-analysis\",\"source_revision\":{\"version\":1,\"summary\":\"synthetic profile sync\",\"updated_by_skill\":\"prd-analysis\"},\"blocking_open_questions\":[],\"dynamic_followups\":[],\"material_quality\":\"high\",\"stale_downstream_artifacts\":[\"review-report.md\"],\"stale_reason\":\"review pending\",\"next_skill\":\"testcase-reviewer\",\"risks_identified\":[]}\n-->\n"
         },
         {
           "path": "testspec/changes/synthetic-profile-naming/specs/testpoints.md",
@@ -230,12 +230,12 @@
       ],
       "assertions": [
         {
-          "text": "评审报告定位两条名称问题并保留 R2 记录",
+          "text": "评审报告定位两条名称问题并以 D5 编号登记",
           "check": "programmatic",
-          "script": "python3 -c \"from pathlib import Path; t=Path('testspec/changes/synthetic-profile-naming/review-report.md').read_text(); assert all(s in t for s in ['R2','SYN_PROFILE_001','SYN_PROFILE_002','S2']); print('PASS')\""
+          "script": "python3 -c \"from pathlib import Path; t=Path('testspec/changes/synthetic-profile-naming/review-report.md').read_text(); assert all(s in t for s in ['[D5]','SYN_PROFILE_001','SYN_PROFILE_002','S2']); print('PASS')\""
         },
         {
-          "text": "将流程堆叠的名称和功能正常的含糊名称分别记为 R2 S2；每项给出原名称、具体原因和建议名称",
+          "text": "将流程堆叠的名称和功能正常的含糊名称分别记为 D5 S2；每项给出原名称、具体原因和建议名称",
           "check": "qualitative"
         },
         {
@@ -256,7 +256,7 @@
     {
       "id": 6,
       "prompt": "运行 testcase-reviewer，评审 synthetic-concise-quality。表述保持简短、直白、去套话，不修改输入用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "逐条核对主要目标：识别 SYN_CONCISE_002 缺少订单取消状态预期，按 H3 意图偏移记 S1，Review Gate blocked；SYN_CONCISE_001 不因步骤与预期数量不同被判错，最短和最长标题用例保留。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "expected_output": "逐条核对主要目标：识别 SYN_CONCISE_002 缺少订单取消状态预期，按 J2 拦不住记 S1，Review Gate blocked；SYN_CONCISE_001 不因步骤与预期数量不同被判错，最短和最长标题用例保留。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-concise-quality/requirements.md",
@@ -286,9 +286,9 @@
           "script": "python3 skills/_testspec-shared/scripts/validate_testcases.py --input testspec/changes/synthetic-concise-quality/artifacts/testcases.json --testpoints testspec/changes/synthetic-concise-quality/specs/testpoints.md"
         },
         {
-          "text": "在H3以S1定位SYN_CONCISE_002，证据指出其预期遗漏「已取消」，且Gate blocked",
+          "text": "在J2以S1定位SYN_CONCISE_002，证据指出其预期遗漏「已取消」，且Gate blocked",
           "check": "programmatic",
-          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-quality/review-report.md --dimension H3 --id SYN_CONCISE_002 --severity S1 --contains 已取消 && python3 -B -c \"from pathlib import Path; import json,re; t=Path('testspec/changes/synthetic-concise-quality/review-report.md').read_text(); c=json.loads(re.search(r'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->',t,re.S).group(1)); g=c['review_gate']; assert g['status']=='blocked' and g['s1_unresolved_count']>=1; print('PASS')\""
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-quality/review-report.md --dimension J2 --id SYN_CONCISE_002 --severity S1 --contains 已取消 && python3 -B -c \"from pathlib import Path; import json,re; t=Path('testspec/changes/synthetic-concise-quality/review-report.md').read_text(); c=json.loads(re.search(r'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->',t,re.S).group(1)); g=c['review_gate']; assert g['status']=='blocked' and g['s1_unresolved_count']>=1; print('PASS')\""
         },
         {
           "text": "评审不改写输入用例，不删除边界场景",
@@ -300,16 +300,16 @@
           "check": "qualitative"
         },
         {
-          "text": "SYN_CONCISE_002只验证返回列表，遗漏TP要求的取消状态；即使同一TP还有合格用例，也要逐条定位该用例的H3 S1问题",
+          "text": "SYN_CONCISE_002只验证返回列表，遗漏TP要求的取消状态；即使同一TP还有合格用例，也要逐条定位该用例的J2 S1问题",
           "check": "qualitative"
         },
         {
-          "text": "H5把TP_NOTE_TITLE_100与SYN_CONCISE_003/004、最短A和最长ABCDEFGHIJ关联，确认两端边界都在完整集中",
+          "text": "需求判定力表把TP_NOTE_TITLE_100与SYN_CONCISE_003/004、最短A和最长ABCDEFGHIJ关联，确认两端边界都在完整集中",
           "check": "programmatic",
-          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py evidence --report testspec/changes/synthetic-concise-quality/review-report.md --dimension H5 --id TP_NOTE_TITLE_100 --id SYN_CONCISE_003 --id SYN_CONCISE_004 --contains 最短 --contains 标题：A --contains 最长 --contains ABCDEFGHIJ"
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py evidence --report testspec/changes/synthetic-concise-quality/review-report.md --dimension J1 --id TP_NOTE_TITLE_100 --id SYN_CONCISE_003 --id SYN_CONCISE_004 --contains 最短 --contains 标题：A --contains 最长 --contains ABCDEFGHIJ"
         },
         {
-          "text": "消费按组候选，比较全部成员的实际差异，按需查询逐对明细；同组不表示任意两条都相似，缓存命中不替代本次H3目标核对",
+          "text": "消费按组候选，比较全部成员的实际差异，按需查询逐对明细；同组不表示任意两条都相似，缓存命中不替代本次J层目标核对",
           "check": "qualitative"
         },
         {
@@ -322,7 +322,7 @@
     {
       "id": 7,
       "prompt": "运行 testcase-reviewer，评审 synthetic-theme-data 的测试数据是否简短、准确、够用。不要改写输入用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "SYN_DATA_001的无关素材配置仍按H6记S3，并计入四项描述未解决问题，Review Gate blocked；SYN_DATA_002短数据和SYN_DATA_003精确素材值可用，不按字符数判错。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "expected_output": "SYN_DATA_001的无关素材配置按D2记S3，并计入四项描述未解决问题，Review Gate blocked；SYN_DATA_002短数据和SYN_DATA_003精确素材值可用，不按字符数判错。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-theme-data/requirements.md",
@@ -352,7 +352,7 @@
           "script": "python3 -B -c 'from pathlib import Path; import hashlib; assert hashlib.sha256(Path('\"'\"'testspec/changes/synthetic-theme-data/artifacts/testcases.json'\"'\"').read_bytes()).hexdigest()=='\"'\"'143405e0269f402c1601def5cdd9847ad2aedc4cc058df2e817ac2d6bf61bda1'\"'\"'; print('\"'\"'PASS'\"'\"')'"
         },
         {
-          "text": "在H6定位SYN_DATA_001的无关图片、文案和视频数量，保留S3分级并纳入description_issue_ids，使Gate blocked；提供可直接替换的短数据，不把单纯冗余升为R5 S1。",
+          "text": "以D2定位SYN_DATA_001的无关图片、文案和视频数量，保留S3分级并纳入description_issue_ids，使Gate blocked；提供可直接替换的短数据，不把单纯冗余升为“无法执行”的S1。",
           "check": "qualitative"
         },
         {
@@ -442,7 +442,7 @@
         },
         {
           "path": "testspec/changes/synthetic-four-fields-pass/requirements-analysis.md",
-          "content": "# 合成分析\n标题与正文保存各验证一次操作和回读即可；全文逐字比对需要完整保留正文，较长本身不构成问题。只覆盖两个已确认TP，方法为流程分析。\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
+          "content": "# 合成分析\n标题与正文保存各验证一次操作和回读即可；全文逐字比对需要完整保留正文，较长本身不构成问题。只覆盖两个已确认TP，方法为流程分析。\n\n<!-- testspec-context\n{\n  \"canonical_source_sha256\": \"528e7a61256fd37697a28e02b1cd2cd545beaa689006ac83d7f69abb023a627d\",\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成四项描述门禁\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"risks_identified\": [],\n  \"stale_downstream_artifacts\": [\n    \"review-report.md\"\n  ],\n  \"stale_reason\": \"review pending\",\n  \"next_skill\": \"testcase-reviewer\",\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"requirements.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": []\n}\n-->\n"
         },
         {
           "path": "testspec/changes/synthetic-four-fields-pass/specs/testpoints.md",
@@ -461,7 +461,7 @@
         {
           "text": "合格四项描述可正常通过",
           "check": "programmatic",
-          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-four-fields-pass/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'pass'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']==0 and g['\"'\"'description_issue_ids'\"'\"']==[]; print('\"'\"'PASS'\"'\"')'"
+          "script": "python3 -B -c 'from pathlib import Path; import json,re; t=Path('\"'\"'testspec/changes/synthetic-four-fields-pass/review-report.md'\"'\"').read_text(); c=json.loads(re.search(r'\"'\"'<!--\\s*testspec-context\\s*(\\{.*?\\})\\s*-->'\"'\"',t,re.S).group(1)); g=c['\"'\"'review_gate'\"'\"']; assert g['\"'\"'status'\"'\"']=='\"'\"'pass'\"'\"' and g['\"'\"'s1_unresolved_count'\"'\"']==0 and g['\"'\"'s1_issue_ids'\"'\"']==[] and g['\"'\"'judgment_unresolved_count'\"'\"']==0 and g['\"'\"'judgment_issue_ids'\"'\"']==[] and g['\"'\"'description_unresolved_count'\"'\"']==0 and g['\"'\"'description_issue_ids'\"'\"']==[]; print('\"'\"'PASS'\"'\"')'"
         },
         {
           "text": "Review不截断长正文或改写输入",
@@ -482,7 +482,7 @@
     {
       "id": 10,
       "prompt": "运行 testcase-reviewer，评审 synthetic-concise-boundary-gap。以原始需求、测试点与完整用例集为依据，给出独立结论；不修改输入用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "确认确定性校验仍报告TP覆盖率100%，但在H5将TP_NOTE_TITLE_100的最长合法长度缺口记为S1；定位现存SYN_CONCISE_003与缺失规则，不生成替代用例，不修改输入。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "expected_output": "确认确定性校验仍报告TP覆盖率100%，但以J1将TP_NOTE_TITLE_100的最长合法长度缺口记为S1；定位现存SYN_CONCISE_003与缺失规则，不生成替代用例，不修改输入。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-concise-boundary-gap/requirements.md",
@@ -512,9 +512,9 @@
           "script": "python3 -B -c \"import sys; sys.path.insert(0, 'skills/_testspec-shared/scripts'); import validate_testcases as v; r=v.validate('testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json', 'testspec/changes/synthetic-concise-boundary-gap/specs/testpoints.md'); assert r['status']=='PASS' and r['coverage']['coverage_rate']==1.0 and r['coverage']['pass']; print('PASS')\""
         },
         {
-          "text": "H5将必测上界缺失记为S1，绑定TP_NOTE_TITLE_100，定位现有SYN_CONCISE_003",
+          "text": "J1将必测上界缺失记为S1，绑定TP_NOTE_TITLE_100，定位现有SYN_CONCISE_003",
           "check": "programmatic",
-          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-boundary-gap/review-report.md --dimension H5 --id TP_NOTE_TITLE_100 --severity S1 --contains 最长"
+          "script": "python3 skills/_testspec-shared/scripts/verify_eval_artifacts.py finding --report testspec/changes/synthetic-concise-boundary-gap/review-report.md --dimension J1 --id TP_NOTE_TITLE_100 --severity S1 --contains 最长"
         },
         {
           "text": "输入保留最短用例A，最长ABCDEFGHIJ用例确实缺失；不补造用例、不改写输入",
@@ -522,7 +522,7 @@
           "script": "python3 -B -c \"import json; d=json.load(open('testspec/changes/synthetic-concise-boundary-gap/artifacts/testcases.json')); c={x['id']:x for x in d['testcases']}; assert 'SYN_CONCISE_003' in c and c['SYN_CONCISE_003']['test_data'].endswith('标题：A。') and 'SYN_CONCISE_004' not in c and all('TP_NOTE_TITLE_100' in x['tp_refs'] for x in c.values() if x['module']=='公告'); print('PASS')\""
         },
         {
-          "text": "Review按H5记录最长边界缺失、误拒合法值的风险和修复建议，以同一S1 issue进入Gate；最短合法边界已覆盖",
+          "text": "Review按J1记录最长边界缺失、误拒合法值的风险和修复建议，以同一S1 issue进入Gate；最短合法边界已覆盖",
           "check": "qualitative"
         },
         {
@@ -534,8 +534,8 @@
     },
     {
       "id": 11,
-      "prompt": "使用 $testcase-reviewer 评审当前 change，执行通用评审与SOP检查。只输出评审报告，不修改用例。 目录：testspec/changes/synthetic-reviewer-oracle。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "同一模型的通用评审 根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "prompt": "使用 $testcase-reviewer 评审当前 change，执行单次评审与SOP检查。只输出评审报告，不修改用例。 目录：testspec/changes/synthetic-reviewer-oracle。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
+      "expected_output": "根据需求指出 SYN_REVIEW_001 的预期结果不可观察，登记为一个 issue 并阻断描述门禁。 报告为单次评审：写评审执行记录，每个问题只登记一个 issue ID，不另设通用反馈与处置映射表；同一模型执行，不称独立评审者。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-reviewer-oracle/raw-prd.md",
@@ -583,20 +583,20 @@
           "check": "qualitative"
         },
         {
-          "text": "通用评审根据需求指出 SYN_REVIEW_001 的预期结果不可观察；原生 Review 核实、关联到同一问题并阻断描述门禁。",
+          "text": "根据需求指出 SYN_REVIEW_001 的预期结果不可观察，登记为一个 issue 并阻断描述门禁。",
           "check": "qualitative"
         },
         {
-          "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "text": "评审执行记录说明实际执行方式；同一模型单次评审，不声称是独立评审者",
           "check": "qualitative"
         },
         {
-          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "text": "评审执行记录完整（评审状态、判定依据及限制），发现条目字段齐全",
           "check": "programmatic",
           "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-reviewer-oracle/review-report.md"
         },
         {
-          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
+          "text": "同一问题只登记一次，带定位、依据、影响、建议和 owner；报告中不出现通用反馈与处置映射表",
           "check": "qualitative"
         },
         {
@@ -608,8 +608,8 @@
     },
     {
       "id": 12,
-      "prompt": "使用 $testcase-reviewer 评审 testspec/changes/synthetic-reviewer-complete，执行通用评审和SOP的全部14项检查，只输出报告，不修改用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "两部分评审均完成，原14项检查和Gate完整；报告记录通用发现及逐项处置，不允许关闭任一部分。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "prompt": "使用 $testcase-reviewer 评审 testspec/changes/synthetic-reviewer-complete，执行SOP的全部14项检查，只输出报告，不修改用例。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
+      "expected_output": "评审状态为已完成，原14项检查和Gate完整；机器项引用脚本结果，判定力层（J1–J4）有需求判定力表逐项证据。 报告为单次评审：写评审执行记录，每个问题只登记一个 issue ID，不另设通用反馈与处置映射表；同一模型执行，不称独立评审者。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-reviewer-complete/raw-prd.md",
@@ -621,7 +621,7 @@
         },
         {
           "path": "testspec/changes/synthetic-reviewer-complete/requirements-analysis.md",
-          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"canonical_source_sha256\": \"ecfdaf499cc1d8026c0c5ffd2d9cb91b99463a10645e5f214b8edd3568de93eb\",\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
         },
         {
           "path": "testspec/changes/synthetic-reviewer-complete/specs/testpoints.md",
@@ -657,20 +657,20 @@
           "check": "qualitative"
         },
         {
-          "text": "两部分评审均完成，原14项检查和Gate完整；报告记录通用发现及逐项处置，不允许关闭任一部分。",
+          "text": "评审状态为已完成，原14项检查和Gate完整；机器项引用脚本结果，判定力层（J1–J4）有需求判定力表逐项证据。",
           "check": "qualitative"
         },
         {
-          "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "text": "评审执行记录说明实际执行方式；同一模型单次评审，不声称是独立评审者",
           "check": "qualitative"
         },
         {
-          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "text": "评审执行记录完整（评审状态、判定依据及限制），发现条目字段齐全",
           "check": "programmatic",
           "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-reviewer-complete/review-report.md"
         },
         {
-          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
+          "text": "同一问题只登记一次，带定位、依据、影响、建议和 owner；报告中不出现通用反馈与处置映射表",
           "check": "qualitative"
         },
         {
@@ -682,8 +682,8 @@
     },
     {
       "id": 13,
-      "prompt": "使用 $testcase-reviewer 评审当前 change，执行两部分评审。另有 independent-comments.md 中的外部发现，请一并逐项复核，不直接修改用例。 目录：testspec/changes/synthetic-reviewer-conventions。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
-      "expected_output": "保留外部原等级与原发现，按当前项目证据将强制改用 MSS/EXT/ERR 标题或五级优先级的建议判为不适用；原生命名和 p0/p1/p2 不变，不因外部 Critical 字样直接阻断。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
+      "prompt": "使用 $testcase-reviewer 评审当前 change，执行评审。另有 independent-comments.md 中的外部发现，请一并逐项复核，不直接修改用例。 目录：testspec/changes/synthetic-reviewer-conventions。 同时独立检查伴生 BDD 场景，在报告单列检查摘要、完成状态与全部文件指纹；输入 BDD 保持只读。",
+      "expected_output": "保留外部原等级与原发现，按当前项目证据将强制改用 MSS/EXT/ERR 标题或五级优先级的建议判为不适用；原生命名和 p0/p1/p2 不变，不因外部 Critical 字样直接阻断。 报告为单次评审：写评审执行记录，每个问题只登记一个 issue ID，不另设通用反馈与处置映射表；同一模型执行，不称独立评审者。 报告包含 BDD 场景评审摘要、bdd_review 完成记录及全部 BDD 指纹。",
       "files": [
         {
           "path": "testspec/changes/synthetic-reviewer-conventions/raw-prd.md",
@@ -695,7 +695,7 @@
         },
         {
           "path": "testspec/changes/synthetic-reviewer-conventions/requirements-analysis.md",
-          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
+          "content": "# 需求分析\n\n## 来源、模式与判断\n\n已读取 raw-prd.md 的R1～R6，选择 completeness、testability、logic。\nR4含拒绝提示、停留页面与原值保持三个可观察结果，单看提示会漏掉错误保存；因此加深该分支。\nR2的两个合法端点即使结果相同也分别保留。信号数量不决定检查深度。\n\n## 假设扫描与证据\n\n边界偏移与取消后意外保存是待检风险方向，其判定依据分别是R2/R4和R5，不是已发现的产品缺陷。\n不推断网络恢复、后台接口或数据库实现；这些在本轮范围外。\n\n## 模块与验证目标\n\n规则配置包括合法保存、合法上下界、相邻越界及空输入拒绝、小写格式拒绝、取消保持和停用入口。\n长度等价类为范围内、低于下界、高于上界；字符类别为大写合法、小写非法。\n状态迁移为启用规则编辑后保存或取消返回列表，停用规则入口保持禁用。\n关键Oracle均可由列表、编辑页名称、按钮状态及原文指定提示观察。\n\n## 问题及去向\n\n已确认规则均可进入TP；没有需补造的Oracle。真实环境中的数据准备仅作执行期跟进，不声称完成产品验证。\n没有TestLib输入，不虚构历史覆盖。\n\n\n<!-- testspec-context\n{\n  \"canonical_source_sha256\": \"ecfdaf499cc1d8026c0c5ffd2d9cb91b99463a10645e5f214b8edd3568de93eb\",\n  \"source_skill\": \"prd-analysis\",\n  \"source_revision\": {\n    \"version\": 1,\n    \"summary\": \"合成规则名称编辑验收\",\n    \"updated_by_skill\": \"prd-analysis\"\n  },\n  \"blocking_open_questions\": [],\n  \"dynamic_followups\": [],\n  \"material_quality\": \"high\",\n  \"stale_downstream_artifacts\": [\n    \"specs/testpoints.md\",\n    \"artifacts/testcases.json\",\n    \"review-report.md\"\n  ],\n  \"canonical_source_policy\": \"prd-first\",\n  \"evidence_sources\": [\n    {\n      \"type\": \"prd\",\n      \"source_ref\": \"raw-prd.md\",\n      \"authority\": \"canonical\"\n    }\n  ],\n  \"questions\": [],\n  \"risks_identified\": [\n    \"名称边界与拒绝后的原值保持影响验收判断\"\n  ],\n  \"next_skill\": \"test-points\",\n  \"stale_reason\": \"下游尚待完成\"\n}\n-->\n"
         },
         {
           "path": "testspec/changes/synthetic-reviewer-conventions/specs/testpoints.md",
@@ -739,16 +739,16 @@
           "check": "qualitative"
         },
         {
-          "text": "协同记录说明实际执行方式；同一模型依次评审不声称是独立评审者",
+          "text": "评审执行记录说明实际执行方式；同一模型单次评审，不声称是独立评审者",
           "check": "qualitative"
         },
         {
-          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "text": "评审执行记录完整（评审状态、判定依据及限制），发现条目字段齐全",
           "check": "programmatic",
           "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-reviewer-conventions/review-report.md"
         },
         {
-          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
+          "text": "同一问题只登记一次，带定位、依据、影响、建议和 owner；报告中不出现通用反馈与处置映射表",
           "check": "qualitative"
         },
         {
@@ -760,8 +760,8 @@
     },
     {
       "id": 14,
-      "prompt": "使用 $testcase-reviewer 评审 draft.md，通用评审与SOP检查在同一次调用中执行，结果保存为review-result.md；只给发现，不修改草稿。",
-      "expected_output": "通用评审明确指出成功不可判定并降低置信度；SOP逐项记录可判定的质量检查与缺少需求、TP、来源/版本导致的未完成项，不伪造TP、context、Gate或通过。 报告单列完整通用评审反馈及GR编号，再展示SOP结果和一一对应的处置；同一模型执行，不称独立评审者。",
+      "prompt": "使用 $testcase-reviewer 评审 draft.md，在同一次调用中完成单次评审，结果保存为review-result.md；只给发现，不修改草稿。",
+      "expected_output": "评审明确指出成功不可判定并降低置信度；逐项记录可判定的质量检查与缺少需求、TP、来源/版本导致的未完成项，不伪造TP、context、Gate或通过。 报告为单次评审：写评审执行记录，每个问题只登记一个 issue ID，不另设通用反馈与处置映射表；同一模型执行，不称独立评审者。",
       "files": [
         {
           "path": "draft.md",
@@ -775,7 +775,7 @@
           "script": "python3 -B -c 'from pathlib import Path; import hashlib; p=Path(\"draft.md\"); assert hashlib.sha256(p.read_bytes()).hexdigest()=='\"'\"'6462c20630f006825385856638c99e2407e66a13cb20e6b8e3a9d0574cdaa115'\"'\"'; assert Path(\"review-result.md\").is_file(); assert not Path(\"artifacts/testcases.json\").exists(); print(\"PASS\")'"
         },
         {
-          "text": "报告同次包含通用评审与SOP检查的结果，不提供仅运行其中一部分的替代入口",
+          "text": "报告为一次评审的结果，不拆成通用评审与SOP两部分，也不提供只运行其中一部分的入口",
           "check": "qualitative"
         },
         {
@@ -783,19 +783,19 @@
           "check": "qualitative"
         },
         {
-          "text": "通用反馈正文、原始发现及逐项处置完整，不能只有原生评审意见",
+          "text": "评审执行记录完整（评审状态、判定依据及限制），发现条目字段齐全",
           "check": "programmatic",
           "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report review-result.md"
         },
         {
-          "text": "同一模型先基于原始材料形成完整通用反馈，再做SOP复核；每项原等级、问题、影响、建议保留，重复或不适用项也不丢失原始反馈",
+          "text": "同一问题只登记一次，带定位、依据、影响、建议和 owner；报告中不出现通用反馈与处置映射表",
           "check": "qualitative"
         }
       ]
     },
     {
       "id": 15,
-      "prompt": "运行 testcase-reviewer，评审 synthetic-four-fields-pass，但当前未提供必需的伴生 BDD。完成可核实的通用反馈，明确交付缺口及下一步，禁止自行生成 BDD 或修改输入，不得宣称整轮完成或 Gate 通过。",
+      "prompt": "运行 testcase-reviewer，评审 synthetic-four-fields-pass，但当前未提供必需的伴生 BDD。完成可核实的检查，明确交付缺口及下一步，禁止自行生成 BDD 或修改输入，不得宣称整轮完成或 Gate 通过。",
       "expected_output": "保存 review-report.md，整轮与 SOP 状态为未完成，指出缺少伴生 BDD 并返回 testcase-generate 补齐；不补造通过的 Gate 或 BDD 评审完成记录。",
       "files": [
         {
@@ -819,7 +819,7 @@
         {
           "text": "BDD 缺失时记录未完成并退回生成，评审不代写缺失文件",
           "check": "programmatic",
-          "script": "python3 -B -c 'from pathlib import Path; import re; root=Path('\"'\"'testspec/changes/synthetic-four-fields-pass'\"'\"'); t=(root/\"review-report.md\").read_text(); assert re.search(r\"\\*\\*整轮状态\\*\\*\\s*[:：]\\s*未完成\",t); assert re.search(r\"\\*\\*SOP检查状态\\*\\*\\s*[:：]\\s*未完成\",t); assert \"BDD\" in t and \"testcase-generate\" in t; assert not list((root/\"artifacts\").glob(\"*_features.feature\")); print(\"PASS\")'"
+          "script": "python3 -B -c 'from pathlib import Path; import re; root=Path('\"'\"'testspec/changes/synthetic-four-fields-pass'\"'\"'); t=(root/\"review-report.md\").read_text(); assert re.search(r\"\\*\\*评审状态\\*\\*\\s*[:：]\\s*未完成\",t); assert \"BDD\" in t and \"testcase-generate\" in t; assert not list((root/\"artifacts\").glob(\"*_features.feature\")); print(\"PASS\")'"
         },
         {
           "text": "缺失输入不能触发改写已有材料",
@@ -827,11 +827,11 @@
           "script": "python3 -B -c 'from pathlib import Path; import hashlib; expected={'\"'\"'testspec/changes/synthetic-four-fields-pass/requirements.md'\"'\"': '\"'\"'528e7a61256fd37697a28e02b1cd2cd545beaa689006ac83d7f69abb023a627d'\"'\"', '\"'\"'testspec/changes/synthetic-four-fields-pass/requirements-analysis.md'\"'\"': '\"'\"'e04438bba3ecef09e93732931230f4d1455fb8e13b4fa14ffecb42b2db544508'\"'\"', '\"'\"'testspec/changes/synthetic-four-fields-pass/specs/testpoints.md'\"'\"': '\"'\"'20d6ee9c718afc17dc824551ea15a4a2f68c5a6b51c2e2c43c2bf288742f5230'\"'\"', '\"'\"'testspec/changes/synthetic-four-fields-pass/artifacts/testcases.json'\"'\"': '\"'\"'9494a80d7b251fc88b9cc62f36b81876a2a527fef156df41710b7f154039ecf3'\"'\"'}; assert all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in expected.items()); print(\"PASS\")'"
         },
         {
-          "text": "不伪造 BDD 完成记录或通过 Gate，保留可核实的通用反馈与缺项说明",
+          "text": "不伪造 BDD 完成记录或通过 Gate，保留可核实的发现与缺项说明",
           "check": "qualitative"
         },
         {
-          "text": "通用反馈和逐项处置保留完整结构",
+          "text": "评审执行记录结构完整",
           "check": "programmatic",
           "script": "python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report testspec/changes/synthetic-four-fields-pass/review-report.md"
         }

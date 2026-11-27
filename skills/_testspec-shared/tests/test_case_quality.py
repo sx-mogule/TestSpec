@@ -65,6 +65,30 @@ class TestCaseQuality(unittest.TestCase):
     def test_clear_short_step_returns_zero(self):
         code, result = self.run_cli([make_case()])
         self.assertEqual(code, 0, result)
+        self.assertEqual(result["provenance"]["mode"], "Provenance-Unknown")
+        self.assertEqual(result["provenance"]["issues"], [{
+            "severity": "S1", "scope": "GLOBAL:provenance-unknown", "locations": ["_context", "CASE-001"],
+        }])
+
+    def test_provenance_checks_the_complete_set_and_retains_modes(self):
+        native = {"origin": {"kind": "testspec-native"}, "trust": {"status": "provisional"}}
+        legacy = {"origin": {"kind": "legacy-import"}, "trust": {"status": "verified"}}
+        quarantined = {**legacy, "trust": {"status": "unverified"}}
+        mixed = {"origin": {"kind": "mixed"}, "trust": {"status": "mixed"}}
+        native_case = make_case(**native)
+        for context, cases, mode, locations in (
+            (native, [native_case], "Strict", []),
+            (legacy, [make_case(**legacy, tp_refs=[])], "Legacy", []),
+            (mixed, [native_case, make_case("CASE-002", **legacy)], "Strict", []),
+            ({}, [native_case, make_case("CASE-002")], "Provenance-Unknown", ["_context", "CASE-002"]),
+            (native, [native_case, make_case("CASE-002", **legacy)], "Provenance-Unknown", ["CASE-002"]),
+            (native, [native_case, make_case("CASE-002", origin={}, trust=[])], "Provenance-Unknown", ["CASE-002"]),
+            (quarantined, [make_case(**quarantined), make_case("CASE-002")], "Import-Quarantine", ["_context", "CASE-001"]),
+        ):
+            with self.subTest(mode=mode, locations=locations):
+                result = validator.check_provenance({"schema_version": 2, "_context": context, "testcases": cases})
+                self.assertEqual(result["mode"], mode)
+                self.assertEqual([place for issue in result["issues"] for place in issue["locations"]], locations)
 
     def test_concrete_display_and_prompt_are_not_vague_by_word_or_length(self):
         for expected in ("1、显示3条订单", "1、提示「请输入标题」", "1、订单状态为已取消"):

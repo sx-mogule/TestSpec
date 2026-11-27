@@ -13,7 +13,7 @@ TestSpec SOP 是一套将产品需求转化为**可执行、可追溯、可评�
 | [prd-analysis](skills/prd-analysis/SKILL.md) | 阶段 1：需求分析 | 建立规范需求源，核对蓝湖/HTML/历史覆盖，识别风险、边界与阻塞澄清项 |
 | [test-points](skills/test-points/SKILL.md) | 阶段 2：测试点设计 | 按业务差异、6 大分类与 12 种设计方法提炼独立验证目标，建立命名字典与需求去向 |
 | [testcase-generate](skills/testcase-generate/SKILL.md) | 阶段 3：用例生成 | 按 TP 展开八字段 schema v2 用例，自检并导出 XMind，提炼核心 BDD，支持按 issue 定向返修 |
-| [testcase-reviewer](skills/testcase-reviewer/SKILL.md) | 阶段 4：统一评审 | 同一模型先做通用评审与伴生 BDD 场景评审，再执行 SOP 14 项检查与四项描述门禁，裁定 Gate |
+| [testcase-reviewer](skills/testcase-reviewer/SKILL.md) | 阶段 4：统一评审 | 单次评审：机器项取脚本结果，判断力集中在关键分支、Oracle 判定力与四项描述，同轮评审伴生 BDD，裁定 Gate |
 | [_testspec-shared](skills/_testspec-shared/) | 共享底座 | 统一维护上下文协议、输出/命名/来源契约、反思与思考协议、报告模板及确定性校验脚本 |
 | [AGENTS.md](AGENTS.md) | 仓库执行规则 | 定义工作原则、伴生 BDD 强制模式，以及优先读取项目交互规范的路由要求 |
 | [project-interaction-spec.md](project-interaction-spec.md) | 项目交互与断言规范 | 定义当前项目的默认文本/列表上限、硬拦截/置灰行为与基准测试商品（当前为 Jellycat 规范） |
@@ -47,7 +47,7 @@ testspec/changes/<name>/
 │   ├── testcases.json               # 阶段 3 产物：schema v2 完整用例集
 │   ├── <name>_cases.xmind           # 阶段 3 产物：XMind 8 导图（默认导出）
 │   └── <name>_features.feature      # 阶段 3 产物：核心主路径与关键异常 BDD
-└── review-report.md                 # 阶段 4 产物：通用评审 + BDD 评审 + SOP 门禁报告
+└── review-report.md                 # 阶段 4 产物：单次评审报告（14 项检查 + BDD 评审 + Gate）
 ```
 
 > 内部校验缓存（`.testspec-cache/`）与可选 Excel 均不属于标准交付物或验收门禁。
@@ -69,7 +69,7 @@ testspec/changes/<name>/
 [3. testcase-generate] ──▶ testcases.json + <name>_cases.xmind + <name>_features.feature
    │                          ▲                                        │
    ▼                          └────────── 定向返修（open issue） ────────┘
-[4. testcase-reviewer] ──▶ review-report.md（GR 通用反馈 + BDD 评审 + R1–R6/H1–H8 + 四项描述门禁）
+[4. testcase-reviewer] ──▶ review-report.md（单次评审：M/J/D 14 项 + 需求判定力表 + BDD 评审 + Gate）
 ```
 
 默认按完整四阶段链路执行；仅在用户明确要求跳步时，下游才允许基于规范需求源降级执行并标注低置信度。
@@ -109,6 +109,7 @@ testspec/changes/<name>/
   - **8 项核心业务字段**：`module`、`submodule`、`test_name`（`{模块}_{功能点}_{简短场景}`）、`preconditions`、`test_data`、`steps`、`expected_result`、`priority`（`p0`/`p1`/`p2`）。
   - **追溯与分类字段**：`id`、`tp_refs`（100% 关联当前 TP）、`type`（`冒烟`/`正向`/`负向`/`边界`/`异常`/`埋点`/`兼容性矩阵`/`其他`）、`regression_tier`（`Smoke`/`Full`/`Targeted`）、`origin`（`testspec-native`）、`trust`（`provisional`）。
   - **冒烟不拆集**：`type=冒烟` 与 `regression_tier=Smoke` 必须为 `p0`，保留在完整用例集和完整 XMind 中，不派生独立 Smoke 文件。
+- **判定力自检**：每条用例先确定它要拦住的错误实现（条件写反、边界偏移一位、只提示未落地等），按 [generation-quality-loop.md](skills/testcase-generate/references/generation-quality-loop.md) 对 p0/p1 与写操作用例做反事实检验；拦不住缺陷的用例加强 Oracle、移到真实边界或合并，结果记入 `_context.oracle_strength`。
 - **四项描述原则**：采用直白短句，删去套话、重复背景、无关配置与多余步骤；连续动作可合写，关键条件、准确边界取值和可观察 Oracle 必须保留；步骤与预期按阶段和检查点组织，不强制一一配对。
 - **校验与导出**：
   1. 运行 [validate_testcases.py](skills/_testspec-shared/scripts/validate_testcases.py) 自检格式、方法对齐、特殊分类匹配与 TP 覆盖率（**≥95%**）。
@@ -118,13 +119,15 @@ testspec/changes/<name>/
 
 ### 阶段 4：`testcase-reviewer`（统一评审与交付门禁）
 
-- **执行模式与深度**：按 [review-workflow.md](skills/testcase-reviewer/testcase-review/review-workflow.md) 与 [independent-reviewer.md](skills/testcase-reviewer/testcase-review/references/independent-reviewer.md) 由同一模型依次执行：
-  1. **通用评审 + BDD 场景评审**：基于原始需求与完整测试稿形成原始反馈（保留稳定 `GR-xxx` 编号与 `Critical/High/Medium/Low` 等级），并独立评审全部伴生 BDD 场景，填入 `## BDD 场景评审`。
-  2. **SOP 健康检查与 14 项检查**：核对输入完整性、来源模式（优先级：`Import-Quarantine > Provenance-Unknown > Strict / Legacy`）和深度（`auto` 风险优先 / `--deep`），复用已有证据完成 **R1–R6**（覆盖度、命名、优先级、字段、可执行性、追溯）与 **H1–H8**（冗余、预期质量、意图一致性、前置充分性、风险边界、可维护性、回归价值、亮点识别）[维度细则](skills/testcase-reviewer/testcase-review/references/review-dimensions.md)，同时在 `### 通用发现处置` 表逐项关联或说明处置依据。
-  3. **四项描述门禁**：对完整用例集的 `preconditions`、`test_data`、`steps`、`expected_result` 逐条检查。确认问题按原 R/H 维度分级并计入 `description_issue_ids`；**即使为 S2/S3 或标为 `accepted`，未复审为 `resolved` 前仍阻断 Gate**。
+- **单次评审**：按 [SKILL.md](skills/testcase-reviewer/SKILL.md) 与 [review-workflow.md](skills/testcase-reviewer/testcase-review/review-workflow.md) 由同一模型走完一轮，不再拆成通用评审 + SOP 复核 + 逐项处置：
+  1. **M 机器层（M1–M5）**：覆盖与追溯、字段与格式、优先级分布、相似候选、来源与版本，直接引用 `validate_testcases.py` 与 `validate_context_chain.py` 输出。
+  2. **J 判定力层（J1–J4）**：先不看 TP、按需求原文建必测清单，再逐项判断漏测、拦不住（含反事实抽查生成阶段自检）、偏题、口径未定，写入需求判定力表 [维度细则](skills/testcase-reviewer/testcase-review/references/review-dimensions.md)。来源模式（`Import-Quarantine > Provenance-Unknown > Strict / Legacy`）与深度（`auto` 风险优先 / `--deep`）规则不变。
+  3. **同轮评审伴生 BDD**：BDD 问题与用例问题使用同一套 S1/S2/S3 issue ID，定位到 feature 与场景。
+  4. **D 描述层（D1–D5）**：D1–D4 即四项描述门禁，对完整用例集逐条检查，确认问题计入 `description_issue_ids`；D5 复核命名、相似候选与粒度。
+  5. **Gate**：任意层未解决的 S1、**J1–J4 任意等级**（计入 `judgment_issue_ids`）和 **D1–D4 任意等级**（含 `accepted`）均阻断；只有 M 层 S2/S3、M4、D5 和附注不阻断。
 - **标准交付通过条件**（须同时满足）：
-  1. 通用评审、伴生 BDD 场景评审、SOP 14 项检查及 GR 逐项处置均已完成；
-  2. `review_gate.status = pass`，且 `s1_unresolved_count = 0`、`s1_issue_ids = []`、`description_unresolved_count = 0`、`description_issue_ids = []`、`bdd_review.status = complete`；
+  1. 评审状态为已完成（SOP 14 项检查与伴生 BDD 场景评审均完成）；
+  2. 正文与上下文 Gate 均为 `pass`，J1–J4、D1–D4 均通过，S1、判定力及描述问题的未解决计数均为 0、对应 ID 列表均为空，且 `bdd_review.status = complete`。影响验收的阻塞 Q 已由需求分析确认并从阻塞列表移除。
   3. `reviewed_artifacts` 中 `testcases_sha256`、`testpoints_sha256` 及 `bdd_features_sha256` 与当前文件一致，且实际 XMind 与当前 JSON 比对通过。
 
 ---
@@ -134,7 +137,7 @@ testspec/changes/<name>/
 跨阶段元数据通过 Markdown 末尾唯一的 `<!-- testspec-context {...} -->` 块和 JSON 顶层 `_context` 传递，完整规则见 [context-protocol.md](skills/_testspec-shared/references/context-protocol.md)：
 
 - **版本单一更新点**：仅 `prd-analysis` 在业务口径或验收规则确认变化时递增 `source_revision` 并刷新 `canonical_source_sha256`；下游三阶段只原样继承版本。
-- **内容漂移检测**：即使 `source_revision` 未变，只要规范需求正文指纹与分析记录不一致，`validate_context_chain.py` 即要求回到 `prd-analysis` 重新核对。
+- **内容漂移检测**：正式放行要求分析指纹与当前规范需求一致。指纹缺失或不一致时，由 `prd-analysis` 核对原文并重建指纹。同版本的正文变化也须核对。
 - **stale 收敛规则**：当前阶段完成后，从 `stale_downstream_artifacts` 移除自身产物并指向 `next_skill`；终点 `testcase-reviewer` 清空 `stale_downstream_artifacts` 并省略 `next_skill` 与 `stale_reason`。（注意：脚本规定当 `stale_downstream_artifacts` 为空时，必须省略 `next_skill` 和 `stale_reason`。）
 - **按责返修闭环**：
   - 需求口径问题 → `prd-analysis`；TP 缺口或粒度问题 → `test-points`；用例字段或 BDD 问题 → `testcase-generate`。
@@ -197,28 +200,23 @@ python3 -B skills/_testspec-shared/scripts/validate_context_chain.py \
 ### 阶段 4：评审准备、报告校验与交付复核
 
 ```bash
-# 可选：为通用评审生成去上下文的中性只读 JSON 副本
+# 可选：生成去掉 TP 与 context 的只读 JSON 副本，先按需求判断用例
 python3 -B skills/testcase-reviewer/testcase-review/scripts/prepare_reviewer_input.py \
   --testcases "$CHANGE_DIR/artifacts/testcases.json" \
   --requirements "$CANONICAL" \
   --output ".testspec-cache/reviewer/input.json"
 
-# 评审报告保存后：校验上下文/指纹、14 项矩阵及通用反馈结构
+# 评审报告保存后：校验上下文/指纹、14 项矩阵及评审执行记录
 python3 -B skills/_testspec-shared/scripts/validate_context_chain.py \
   --change-dir "$CHANGE_DIR" --through review
 
 python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py review \
   --report "$CHANGE_DIR/review-report.md"
 
-python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback \
-  --report "$CHANGE_DIR/review-report.md"
-
 # 正式交付前对实际交付 XMind 复核一次
 python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py xmind \
   --json "$CHANGE_DIR/artifacts/testcases.json" --xmind "$XMIND_PATH"
 ```
-
-> 提示：填写 `review-report.md` 的总览矩阵 `H8 测试价值与亮点` 行时，关键指标单元格须同时包含 `标杆用例数 <N>` 与 `可复用模式数 <N>`（例如 `标杆用例数 0；可复用模式数 0`），以满足 `verify_eval_artifacts.py review` 校验。
 
 ---
 

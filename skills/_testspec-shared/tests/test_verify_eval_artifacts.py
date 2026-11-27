@@ -16,51 +16,65 @@ import verify_eval_artifacts as verify  # noqa: E402
 
 
 class TestReviewMatrix(unittest.TestCase):
-    def valid_report(self):
+    EXECUTION = "\n".join([
+        "## 评审执行记录",
+        "**评审状态**: 已完成",
+        "**执行方式**: 同一模型单次评审",
+        "**判定依据及限制**: requirements.md REQ-1～REQ-3；无原始 PRD",
+        "**机器检查**: validate_testcases.py PASS",
+        "## BDD 场景评审",
+        "**BDD评审状态**: 已完成",
+    ])
+
+    def valid_report(self, issues="未发现问题。", counts=None, gate=None):
+        counts = counts or {}
+        unresolved = {issue["dimension"] for issue in verify.parse_issues(issues) if issue["status"] != "resolved"}
         rows = []
         for key in verify.MATRIX_IDS:
-            if key == "H8":
-                rows.append("| H8 测试价值与亮点 | — | 标杆用例数 0；可复用模式数 0 | 0 |")
+            if key == "M4":
+                rows.append("| M4 相似候选 | — | 0 组 | 0 |")
             else:
-                rows.append(f"| {key} 检查 | pass | 已检查 4 项 | 0 |")
+                result = "blocked" if key in unresolved else "pass"
+                rows.append(f"| {key} 检查 | {result} | 已检查 4 项 | {counts.get(key, 0)} |")
+        gate = gate or {"status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": [],
+                        "judgment_unresolved_count": 0, "judgment_issue_ids": [],
+                        "description_unresolved_count": 0, "description_issue_ids": []}
         return "\n".join([
-            "### 结论总览矩阵",
-            "| 检查项 | 结果 | 关键指标 | 问题数 |",
+            f"**Review Gate**: {gate['status']}",
+            self.EXECUTION,
+            "## 二、需求判定力表",
+            "| 1 | REQ-1 上限 8 件 | REQ-1 | CASE-1 | 允许第 9 件 | 是 | 已拦住 | 无 |",
+            "### 方法落地（J3）",
+            "| TP_CART_QTY_101 | 边界值 | 1 | ✓ | ✓ | ✓ | ✓ | 通过 | CASE-1 有 8/9 边界 |",
+            "## 三、用例与 BDD 质量",
+            "### 四项描述门禁",
+            "| D1 | 前置条件 | 1/1 | pass | 无 |",
+            "| D2 | 测试数据 | 1/1 | pass | 无 |",
+            "| D3 | 操作步骤 | 1/1 | pass | 无 |",
+            "| D4 | 预期表述 | 1/1 | pass | 无 |",
+            "## 四、问题清单",
+            issues,
+            "## 五、14 项矩阵",
+            "| 检查项 | 结果 | 关键数值 | 问题数 |",
             "|---|---|---|---|",
             *rows,
-            "### H8: 测试价值与亮点识别",
-            "**标杆用例数**: 0",
-            "**可复用模式数**: 0",
-            "**测试策略健康度**: 覆盖完整，风险已记录。",
-            "## 整改建议清单",
+            "<!-- testspec-context",
+            json.dumps({"review_gate": gate}),
+            "-->",
         ])
 
-    def test_complete_matrix_and_h8_without_pass_fail_is_valid(self):
-        report = self.root_report(self.valid_report())
-        result = subprocess.run([sys.executable, str(SCRIPT_DIR / "verify_eval_artifacts.py"), "review", "--report", str(report)], capture_output=True, text=True)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+    J1_ISSUE = "\n".join([
+        "- [S1] [open] RV-001 [J1] 范围：REQ-3 / TP_CART_QTY_101",
+        "  - **定位**: requirements.md#REQ-3「单 SKU 最多加购 8 件」",
+        "  - **会逃逸的行为**: 允许加购第 9 件时现有用例仍通过",
+        "  - **建议**: 补上限置灰用例",
+        "  - **owner**: testcase-generate",
+    ])
 
-    def test_observed_h8_counts_with_parenthetical_evidence_and_health_label_are_valid(self):
-        text = self.valid_report()
-        text = text.replace(
-            "| H8 测试价值与亮点 | — | 标杆用例数 0；可复用模式数 0 | 0 |",
-            "| H8 测试价值与亮点 | — | 标杆用例 1；可复用变形测试模式 1 | 0 |",
-        )
-        text = text.replace("**标杆用例数**: 0", "**标杆用例数**: 1（notice-edit_202610280008）")
-        text = text.replace("**可复用模式数**: 0", "**可复用模式数**: 1（固定同一数据集、改变创建顺序、比较结果序列）")
-        text = text.replace(
-            "**测试策略健康度**: 覆盖完整，风险已记录。",
-            "- 策略健康度：用例集覆盖全部测试点，排序用例有清楚的变形断言。",
-        )
-        self.assertEqual(verify.validate_review_report(text), [])
-
-    def test_h8_count_without_number_is_rejected(self):
-        text = self.valid_report().replace("**可复用模式数**: 0", "**可复用模式数**:")
-        self.assertTrue(any("可复用模式数" in error for error in verify.validate_review_report(text)))
-
-    def test_h8_missing_health_comment_is_rejected(self):
-        text = self.valid_report().replace("**测试策略健康度**: 覆盖完整，风险已记录。\n", "")
-        self.assertTrue(any("测试策略健康度" in error for error in verify.validate_review_report(text)))
+    def blocked_gate(self, s1=(), judgment=(), description=()):
+        return {"status": "blocked", "s1_unresolved_count": len(s1), "s1_issue_ids": list(s1),
+                "judgment_unresolved_count": len(judgment), "judgment_issue_ids": list(judgment),
+                "description_unresolved_count": len(description), "description_issue_ids": list(description)}
 
     def root_report(self, content):
         directory = tempfile.TemporaryDirectory()
@@ -69,24 +83,127 @@ class TestReviewMatrix(unittest.TestCase):
         report.write_text(content, encoding="utf-8")
         return report
 
-    def test_missing_h2_is_rejected(self):
-        text = self.valid_report().replace("| H2 检查 | pass | 已检查 4 项 | 0 |\n", "")
-        self.assertTrue(any("H2: row missing" in error for error in verify.validate_review_report(text)))
+    def test_complete_layered_matrix_is_valid(self):
+        report = self.root_report(self.valid_report())
+        result = subprocess.run([sys.executable, str(SCRIPT_DIR / "verify_eval_artifacts.py"), "review", "--report", str(report)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
-    def test_placeholder_count_is_rejected(self):
-        text = self.valid_report().replace("| H2 检查 | pass | 已检查 4 项 | 0 |", "| H2 检查 | pass | 已检查 4 项 | <count> |")
-        self.assertTrue(any("H2: problem count" in error for error in verify.validate_review_report(text)))
+    def test_review_command_also_requires_execution_record(self):
+        report = self.root_report(self.valid_report().replace(self.EXECUTION, ""))
+        result = subprocess.run([sys.executable, str(SCRIPT_DIR / "verify_eval_artifacts.py"), "review", "--report", str(report)], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("评审状态", result.stdout)
+
+    def test_pass_rejects_incomplete_execution_or_missing_evidence(self):
+        baseline = self.valid_report()
+        for old, new, expected in (
+            ("**评审状态**: 已完成", "**评审状态**: 未完成\n**未完成原因**: D4 尚未完成", "评审状态 已完成"),
+            ("## 二、需求判定力表", "## 其他", "nonempty 需求判定力表"),
+            ("| 1 | REQ-1 上限 8 件 | REQ-1 | CASE-1 | 允许第 9 件 | 是 | 已拦住 | 无 |", "", "nonempty 需求判定力表"),
+            ("| 是 | 已拦住 |", "| 否 | 拦不住 |", "covered and observable check"),
+            ("### 四项描述门禁", "### 其他", "one 四项描述门禁 table"),
+            ("| D4 | 预期表述 | 1/1 |", "| D4 | 预期表述 | 0/1 |", "D4 must cover the full testcase set"),
+        ):
+            with self.subTest(expected=expected):
+                errors = verify.validate_review_report(baseline.replace(old, new))
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_partial_review_can_record_a_blocked_gate(self):
+        text = self.valid_report(gate=self.blocked_gate()).replace(
+            "**评审状态**: 已完成", "**评审状态**: 未完成\n**未完成原因**: 尚未核对四项描述",
+        ).replace("### 四项描述门禁", "### 待补项")
+        self.assertEqual(verify.validate_review_report(text) + verify.validate_review_execution(text), [])
+
+    def test_gate_rejects_conflicting_visible_status_and_blocking_matrix_rows(self):
+        baseline = self.valid_report()
+        for old, new, expected in (
+            ("**Review Gate**: pass", "**Review Gate**: blocked", "visible Review Gate must match"),
+            ("**Review Gate**: pass", "", "visible Review Gate must match"),
+            ("| J1 检查 | pass |", "| J1 检查 | blocked |", "J1: a passing Review Gate requires a pass result"),
+            ("| D4 检查 | pass |", "| D4 检查 | fail |", "D4: a passing Review Gate requires a pass result"),
+        ):
+            with self.subTest(expected=expected):
+                errors = verify.validate_review_report(baseline.replace(old, new))
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_unresolved_issue_cannot_claim_matrix_pass_under_a_blocked_gate(self):
+        text = self.valid_report(self.J1_ISSUE, {"J1": 1}, self.blocked_gate(s1=["RV-001"], judgment=["RV-001"]))
+        errors = verify.validate_review_report(text.replace("| J1 检查 | blocked |", "| J1 检查 | pass |"))
+        self.assertIn("review matrix J1: unresolved issues cannot have a pass result", errors)
+        errors = verify.validate_review_report(text.replace("| D4 检查 | pass |", "| D4 检查 | fail |"))
+        self.assertIn("review matrix D4: a fail result requires an unresolved issue", errors)
+
+    def test_missing_row_and_placeholder_count_are_rejected(self):
+        text = self.valid_report().replace("| J2 检查 | pass | 已检查 4 项 | 0 |\n", "")
+        self.assertTrue(any("J2: row missing" in error for error in verify.validate_review_report(text)))
+        text = self.valid_report().replace("| D4 检查 | pass | 已检查 4 项 | 0 |", "| D4 检查 | pass | 已检查 4 项 | <count> |")
+        self.assertTrue(any("D4: problem count" in error for error in verify.validate_review_report(text)))
+
+    def test_m4_takes_no_result_and_no_issues(self):
+        text = self.valid_report().replace("| M4 相似候选 | — | 0 组 | 0 |", "| M4 相似候选 | pass | 0 组 | 0 |")
+        self.assertTrue(any("M4" in error for error in verify.validate_review_report(text)))
+        issue = self.J1_ISSUE.replace("[J1]", "[M4]")
+        text = self.valid_report(issue, {"M4": 1}, self.blocked_gate(s1=["RV-001"]))
+        self.assertTrue(any("uses M4" in error for error in verify.validate_review_report(text)))
+
+    def test_tagged_issue_is_counted_and_gated(self):
+        text = self.valid_report(self.J1_ISSUE, {"J1": 1}, self.blocked_gate(s1=["RV-001"], judgment=["RV-001"]))
+        self.assertEqual(verify.validate_review_report(text), [])
+
+    def test_matrix_count_must_match_tagged_issues(self):
+        text = self.valid_report(self.J1_ISSUE, {}, self.blocked_gate(s1=["RV-001"], judgment=["RV-001"]))
+        self.assertTrue(any("J1: problem count 0 differs" in error for error in verify.validate_review_report(text)))
+
+    def test_gate_lists_must_match_unresolved_issues(self):
+        text = self.valid_report(self.J1_ISSUE, {"J1": 1}, self.blocked_gate(s1=["RV-001"]))
+        self.assertTrue(any("judgment_issue_ids differs" in error for error in verify.validate_review_report(text)))
+        d4 = self.J1_ISSUE.replace("[S1] [open] RV-001 [J1]", "[S3] [accepted] RV-002 [D4]")
+        text = self.valid_report(d4, {"D4": 1}, self.blocked_gate())
+        self.assertTrue(any("description_issue_ids differs" in error for error in verify.validate_review_report(text)))
+        self.assertEqual(verify.validate_review_report(self.valid_report(d4, {"D4": 1}, self.blocked_gate(description=["RV-002"]))), [])
+
+    def test_resolved_issue_leaves_gate_lists(self):
+        resolved = self.J1_ISSUE.replace("[open]", "[resolved]")
+        self.assertEqual(verify.validate_review_report(self.valid_report(resolved, {"J1": 1})), [])
+
+    def test_issue_requires_owner_and_unique_id(self):
+        no_owner = self.J1_ISSUE.replace("  - **owner**: testcase-generate", "")
+        text = self.valid_report(no_owner, {"J1": 1}, self.blocked_gate(s1=["RV-001"], judgment=["RV-001"]))
+        self.assertTrue(any("owner" in error for error in verify.validate_review_report(text)))
+        twice = self.J1_ISSUE + "\n" + self.J1_ISSUE
+        text = self.valid_report(twice, {"J1": 2}, self.blocked_gate(s1=["RV-001"], judgment=["RV-001"]))
+        self.assertTrue(any("duplicate issue ID RV-001" in error for error in verify.validate_review_report(text)))
 
     def test_keyword_only_sections_without_matrix_are_rejected(self):
-        text = "R1 R2 R3 R4 R5 R6 H1 H2 H3 H4 H5 H6 H7 H8"
+        text = "M1 M2 M3 M4 M5 J1 J2 J3 J4 D1 D2 D3 D4 D5"
         self.assertTrue(any("matrix" in error for error in verify.validate_review_report(text)))
 
-    def test_finding_checks_dimension_case_severity_and_missing_oracle(self):
+    def legacy_report(self, h8="| H8 测试价值与亮点 | — | 标杆用例数 0；可复用模式数 0 | 0 |"):
+        rows = [h8 if key == "H8" else f"| {key} 检查 | pass | 已检查 4 项 | 0 |" for key in verify.LEGACY_MATRIX_IDS]
+        return "\n".join(["### 结论总览矩阵", "| 检查项 | 结果 | 关键指标 | 问题数 |", "|---|---|---|---|", *rows, "## 整改建议清单"])
+
+    def test_legacy_r_h_matrix_remains_readable(self):
+        self.assertEqual(verify.validate_review_report(self.legacy_report()), [])
+        self.assertTrue(any("H8" in error for error in verify.validate_review_report(self.legacy_report("| H8 亮点 | pass | 无 | 0 |"))))
+        self.assertTrue(any("H8" in error for error in verify.validate_review_report(self.legacy_report("| H8 亮点 | — | <x> | 0 |"))))
+
+    def test_finding_matches_tagged_issue_severity_and_text(self):
+        text = self.valid_report(self.J1_ISSUE, {"J1": 1}, self.blocked_gate(s1=["RV-001"], judgment=["RV-001"]))
+        self.assertEqual(verify.validate_review_finding(text, "J1", "TP_CART_QTY_101", "S1", "第 9 件"), [])
+        self.assertTrue(verify.validate_review_finding(text, "J2", "TP_CART_QTY_101", "S1", "第 9 件"))
+        self.assertTrue(verify.validate_review_finding(text, "J1", "TP_CART_QTY_101", "S2", "第 9 件"))
+
+    def test_evidence_reads_layer_section_and_tagged_issues(self):
+        text = self.valid_report()
+        self.assertEqual(verify.validate_review_evidence(text, "J1", ["REQ-1", "CASE-1"], ["上限 8 件"]), [])
+        self.assertTrue(verify.validate_review_evidence(text, "J1", ["CASE-9"], []))
+
+    def test_legacy_finding_checks_dimension_case_severity_and_missing_oracle(self):
         report = "### H3: 意图一致性\n- [S1] [open] RV-S1-002 SYN_CANCEL_002：预期遗漏已取消状态。\n### H4: 前置条件充分性\n"
         self.assertEqual(verify.validate_review_finding(report, "H3", "SYN_CANCEL_002", "S1", "已取消"), [])
         self.assertTrue(verify.validate_review_finding(report, "H3", "SYN_CANCEL_001", "S1", "已取消"))
 
-    def test_review_evidence_requires_case_test_point_and_boundary_values(self):
+    def test_legacy_review_evidence_requires_case_test_point_and_boundary_values(self):
         report = "### H5: 风险与边界覆盖\nTP_NOTE_TITLE_100: SYN_MIN_001 最短 A；SYN_MAX_001 最长 ABCDEFGHIJ。\n### H6: 可维护性建议\n"
         self.assertEqual(verify.validate_review_evidence(report, "H5", ["TP_NOTE_TITLE_100", "SYN_MIN_001", "SYN_MAX_001"], ["最短", "A", "最长", "ABCDEFGHIJ"]), [])
         self.assertTrue(verify.validate_review_evidence(report, "H5", ["SYN_MISSING_001"], ["上限"]))
@@ -323,6 +440,8 @@ class TestRepairCycle(unittest.TestCase):
                     "status": gate_status,
                     "s1_unresolved_count": 0,
                     "s1_issue_ids": [],
+                    "judgment_unresolved_count": 0,
+                    "judgment_issue_ids": [],
                     "description_unresolved_count": 0 if gate_status == "pass" else 1,
                     "description_issue_ids": [] if gate_status == "pass" else [issue_id],
                 }
@@ -358,6 +477,13 @@ class TestRepairCycle(unittest.TestCase):
                 issue_id, "CASE-1", "test_data", "格式：文本",
             )
             self.assertTrue(any("Gate pass requires zero unresolved S1" in error for error in errors), errors)
+            missing_judgment = report("resolved", new_hash, "pass").replace('"judgment_unresolved_count": 0, "judgment_issue_ids": [], ', "")
+            final_path.write_text(missing_judgment, encoding="utf-8")
+            errors = verify.validate_repair_cycle(
+                accepted_path, before_path, after_path, testpoints_path, reopened_path, post_generate_path, final_path,
+                issue_id, "CASE-1", "test_data", "格式：文本",
+            )
+            self.assertTrue(any("Gate issue counts must match" in error for error in errors), errors)
             final_path.write_text(report("resolved", new_hash, "pass").replace("owner=generate", "owner=review"), encoding="utf-8")
             errors = verify.validate_repair_cycle(
                 accepted_path, before_path, after_path, testpoints_path, reopened_path, post_generate_path, final_path,
@@ -402,127 +528,87 @@ class TestRepairCycle(unittest.TestCase):
 
 
 
-class TestGeneralFeedback(unittest.TestCase):
-    def report(self, zero=False):
-        text = """## 通用评审反馈
-**通用评审状态**: 已完成
-**执行方式**: 同一模型按通用规则单独评审
-**评审依据与范围**: PRD REQ-1；完整2条用例
-**已检查内容**: 覆盖、拒绝路径和可观察预期；CASE-1预期只写成功
-**通用发现数**: 1
-**通用评审结论**: CASE-1缺少可观察预期
+class TestReviewExecution(unittest.TestCase):
+    SOP = """## 评审执行记录
+**评审状态**: 已完成
+**执行方式**: 同一模型单次评审
+**判定依据及限制**: requirements.md REQ-1；无原始 PRD，未做原文追溯
+**机器检查**: validate_testcases.py PASS
+## BDD 场景评审
+**BDD评审状态**: 已完成
+**评审结论**: 2 个场景，RV-S2-001 指出 ERR 场景缺少库存不变断言
+"""
+
+    STANDALONE = """## 评审发现
+**评审状态**: 已完成
+**执行方式**: 同一模型单次评审
+**判定依据及限制**: PRD REQ-1；完整 2 条用例
+**已检查内容**: 覆盖、拒绝路径和可观察预期
+**发现数**: 1
+**评审结论**: CASE-1 缺少可观察预期
 ### GR-001: High
 **定位**: CASE-1.expected_result
-**依据**: REQ-1要求拒绝后原名称保持
+**依据**: REQ-1 要求拒绝后原名称保持
 **问题**: 原文只写成功
 **影响**: 无法判断原名称是否保持
 **建议**: 明确列表仍显示原名称
-## 两部分评审执行记录
-**SOP检查状态**: 已完成
-**整轮状态**: 已完成
-### 通用发现处置
-| 通用发现编号 | 原等级 | 原始发现、依据与范围 | 处置 | 原生定位 | 处置依据 |
-|---|---|---|---|---|---|
-| GR-001 | High | CASE-1缺少可观察预期 | 采纳 | RV-S2-001 / H2 / S2 | REQ-1与CASE-1对照 |
+### 执行摘要
+- 材料范围：2 条用例
 """
-        if zero:
-            start=text.index("### GR-001:")
-            end=text.index("## 两部分评审执行记录")
-            text=text[:start]+text[end:]
-            text=text.replace("**通用发现数**: 1","**通用发现数**: 0")
-            text=text.replace("**通用评审结论**: CASE-1缺少可观察预期","**通用评审结论**: 在已核对范围内未发现实质性缺陷")
-            text="\n".join(line for line in text.splitlines() if not line.startswith("| GR-001 |"))+"\n"
-        return text
 
+    def test_single_pass_sop_record_is_accepted(self):
+        self.assertEqual(verify.validate_review_execution(self.SOP), [])
 
-    def test_quoted_html_source_is_preserved(self):
-        text=self.report().replace("**依据**: REQ-1要求拒绝后原名称保持", "**依据**: REQ-1明确要求<button>按钮拒绝后原名称保持")
-        text=text.replace("**建议**: 明确列表仍显示原名称", "**建议**: 在<input>修改失败后检查原名称")
-        text=text.replace("REQ-1与CASE-1对照 |", "PRD中的<button>与CASE-1对照 |")
-        self.assertEqual(verify.validate_general_feedback(text), [])
+    def test_missing_or_invalid_state_is_rejected(self):
+        self.assertTrue(verify.validate_review_execution(self.SOP.replace("**评审状态**: 已完成\n", "")))
+        self.assertTrue(verify.validate_review_execution(self.SOP.replace("**评审状态**: 已完成", "**评审状态**: 进行中")))
 
-    def test_unfilled_raw_placeholder_is_rejected(self):
-        text=self.report().replace("**建议**: 明确列表仍显示原名称", "**建议**: <可执行的建议>")
-        self.assertTrue(verify.validate_general_feedback(text))
+    def test_placeholder_basis_is_rejected(self):
+        text = self.SOP.replace("requirements.md REQ-1；无原始 PRD，未做原文追溯", "<实际读取的需求>")
+        self.assertTrue(verify.validate_review_execution(text))
 
+    def test_incomplete_requires_reason(self):
+        text = self.SOP.replace("**评审状态**: 已完成", "**评审状态**: 未完成")
+        self.assertTrue(verify.validate_review_execution(text))
+        self.assertEqual(verify.validate_review_execution(text + "**未完成原因**: 缺少伴生 BDD，已退回 testcase-generate\n"), [])
 
-    def test_empty_value_cannot_consume_following_label(self):
-        for label in ("定位", "依据", "问题", "影响", "建议"):
-            with self.subTest(label=label):
-                text=re.sub(rf"^\*\*{label}\*\*:.*$", f"**{label}**:", self.report(), flags=re.M)
-                self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_escaped_pipes_in_disposition_are_accepted(self):
-        text=self.report().replace("| CASE-1缺少可观察预期 |", r"| CASE-1仅接受A\|B的预期缺失 |")
-        text=text.replace("REQ-1与CASE-1对照 |", r"REQ-1中的A\|B与CASE-1对照 |")
-        self.assertEqual(verify.validate_general_feedback(text), [])
-
-    def test_unescaped_extra_column_is_rejected(self):
-        text=self.report().replace("| CASE-1缺少可观察预期 |", "| CASE-1含A|B |")
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_even_backslashes_leave_column_separator_active(self):
-        text=self.report().replace("CASE-1缺少可观察预期 | 采纳", r"CASE-1\\| 采纳")
-        self.assertEqual(verify.validate_general_feedback(text), [])
-
-    def test_finding_and_disposition_are_accepted(self):
-        self.assertEqual(verify.validate_general_feedback(self.report()), [])
-
-    def test_native_only_report_is_rejected(self):
-        self.assertTrue(verify.validate_general_feedback("### 结论总览矩阵\nR1-R6 H1-H8"))
-
-    def test_status_only_without_actual_feedback_is_rejected(self):
-        text=self.report()
-        text=text[:text.index("### GR-001:")]+text[text.index("## 两部分评审执行记录"):]
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_count_mismatch_is_rejected(self):
-        self.assertTrue(verify.validate_general_feedback(self.report().replace("**通用发现数**: 1","**通用发现数**: 2")))
-
-    def test_missing_raw_detail_is_rejected(self):
-        for label in ("定位", "依据", "问题", "影响", "建议"):
-            with self.subTest(label=label):
-                text=re.sub(rf"^\*\*{label}\*\*:.*\n", "", self.report(), flags=re.M)
-                self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_zero_findings_with_scope_and_conclusion_are_accepted(self):
-        self.assertEqual(verify.validate_general_feedback(self.report(zero=True)), [])
-
-    def test_zero_findings_without_explicit_conclusion_are_rejected(self):
-        self.assertTrue(verify.validate_general_feedback(self.report(zero=True).replace("未发现实质性缺陷","情况良好")))
-
-    def test_missing_disposition_is_rejected(self):
-        text="\n".join(l for l in self.report().splitlines() if not l.startswith("| GR-001 |"))
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_extra_disposition_is_rejected(self):
-        text=self.report()+"| GR-002 | Low | 其他建议 | 不适用 | 无原生关联 | 不属于当前范围 |\n"
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_original_severity_must_be_preserved(self):
-        text=self.report().replace("| GR-001 | High |","| GR-001 | Low |")
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_incomplete_part_cannot_claim_overall_complete(self):
-        text=self.report().replace("**通用评审状态**: 已完成","**通用评审状态**: 未完成\n**未完成原因**: 未读完用例")
-        self.assertTrue(verify.validate_general_feedback(text))
-        self.assertEqual(verify.validate_general_feedback(text.replace("**整轮状态**: 已完成","**整轮状态**: 未完成")), [])
-
-    def test_duplicate_original_finding_is_rejected(self):
-        text=self.report().replace("## 两部分评审执行记录","### GR-001: High\n**定位**: CASE-1\n**依据**: REQ-1\n**问题**: 预期不清\n**影响**: 无法判断\n**建议**: 明确结果\n## 两部分评审执行记录")
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_unfilled_disposition_row_is_rejected(self):
-        text=self.report(zero=True)+"| <GR-001> | <High> | 待填写 | 采纳 | <RV-ID> | 待补充 |\n"
-        self.assertTrue(verify.validate_general_feedback(text))
-
-    def test_placeholder_native_link_is_rejected(self):
-        text=self.report().replace("RV-S2-001 / H2 / S2","<RV-ID>")
-        self.assertTrue(verify.validate_general_feedback(text))
+    def test_incomplete_bdd_cannot_claim_complete_review(self):
+        text = self.SOP.replace("**BDD评审状态**: 已完成", "**BDD评审状态**: 未完成")
+        self.assertTrue(any("BDD" in error for error in verify.validate_review_execution(text)))
 
     def test_completion_states_allow_factual_explanations(self):
-        text=self.report().replace("**通用评审状态**: 已完成", "**通用评审状态**: 已完成（依据PRD逐条核对）").replace("**SOP检查状态**: 已完成", "**SOP检查状态**: 已完成；14项均有记录").replace("**整轮状态**: 已完成", "**整轮状态**: 已完成（两部分均完成）")
-        self.assertEqual(verify.validate_general_feedback(text), [])
+        text = self.SOP.replace("**评审状态**: 已完成", "**评审状态**: 已完成（依据 requirements.md 逐条核对）")
+        self.assertEqual(verify.validate_review_execution(text), [])
+
+    def test_empty_value_cannot_consume_following_label(self):
+        text = re.sub(r"^\*\*判定依据及限制\*\*:.*$", "**判定依据及限制**:", self.SOP, flags=re.M)
+        self.assertTrue(verify.validate_review_execution(text))
+
+    def test_standalone_finding_is_accepted(self):
+        self.assertEqual(verify.validate_review_execution(self.STANDALONE), [])
+
+    def test_standalone_missing_detail_is_rejected(self):
+        for label in ("定位", "依据", "问题", "影响", "建议"):
+            with self.subTest(label=label):
+                text = re.sub(rf"^\*\*{label}\*\*:.*\n", "", self.STANDALONE, flags=re.M)
+                self.assertTrue(verify.validate_review_execution(text))
+
+    def test_standalone_count_severity_and_duplicates_are_checked(self):
+        self.assertTrue(verify.validate_review_execution(self.STANDALONE.replace("**发现数**: 1", "**发现数**: 2")))
+        self.assertTrue(verify.validate_review_execution(self.STANDALONE.replace("### GR-001: High", "### GR-001: S1")))
+        duplicate = self.STANDALONE.replace("### 执行摘要", "### GR-001: Low\n**定位**: CASE-2\n**依据**: REQ-1\n**问题**: 措辞\n**影响**: 低\n**建议**: 改写\n### 执行摘要")
+        self.assertTrue(verify.validate_review_execution(duplicate.replace("**发现数**: 1", "**发现数**: 2")))
+
+    def test_zero_findings_require_explicit_conclusion(self):
+        start = self.STANDALONE.index("### GR-001:")
+        end = self.STANDALONE.index("### 执行摘要")
+        zero = (self.STANDALONE[:start] + self.STANDALONE[end:]).replace("**发现数**: 1", "**发现数**: 0")
+        self.assertTrue(verify.validate_review_execution(zero))
+        self.assertEqual(verify.validate_review_execution(zero.replace("CASE-1 缺少可观察预期", "在已核对范围内未发现实质性缺陷")), [])
+
+    def test_feedback_alias_matches_execution_check(self):
+        self.assertEqual(verify.validate_general_feedback(self.SOP), verify.validate_review_execution(self.SOP))
+        self.assertTrue(verify.validate_general_feedback("### 结论总览矩阵\nR1-R6 H1-H8"))
 
 
 if __name__ == "__main__":

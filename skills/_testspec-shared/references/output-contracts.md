@@ -25,11 +25,11 @@
 
 `_testspec-shared/` 仅维护模板、规范与工具，不保存每次执行生成的报告。表中的模板与规范路径以共享目录为基准；从具体 Skill、内部模块或本文件的链接读取时，按实际相对路径定位，不能把模板路径当作产物保存路径。
 
-同一轮评审汇总为一份报告。TestSpec 输入齐全时，以统一评审模板为外层结构，把通用或 BDD 评审结果填入“两部分评审执行记录”及相应检查项，保留原始发现、等级、依据与处置，不用通用/BDD 模板替代原 14 项检查。输入不足时按适用的通用/BDD 格式报告可核实发现，同时记录两部分完成状态和 SOP 缺项；不补造 TP、context、版本或 Gate 通过结论。通用评审能力无需先具备 TestSpec 产物。
+同一轮评审汇总为一份报告。TestSpec 输入齐全时使用统一评审模板：一次评审、一套 S1/S2/S3 issue，BDD 与用例问题登记在相应检查项，不另附第二轮复核或映射表，也不用单独评审模板替代原 14 项检查。输入不足时按适用的单独评审格式报告可核实发现，记录评审状态与 SOP 缺项；不补造 TP、context、版本或 Gate 通过结论。单独评审无需先具备 TestSpec 产物。
 
 单独分发 `testcase-reviewer` 时须携带同级 `_testspec-shared/`，模板始终引用这一份共享资源，不回退到 Skill 内的旧副本。
 
-共享存放不改变评审能力边界：通用用例和 BDD 评审沿用各自的判定依据及 Critical/High/Medium/Low 等级；TestSpec 的范围、版本、TP 与 Gate 约束只作用于 SOP 部分，不能用它们过滤或改写通用评审的发现。
+共享存放不改变评审能力边界：单独的用例和 BDD 评审沿用各自的判定依据及 Critical/High/Medium/Low 等级（编号 GR-xxx）；TestSpec SOP 评审使用 S1/S2/S3 issue。两套等级不在同一份报告中并存或互相映射。
 
 ## requirements.md
 
@@ -93,6 +93,8 @@
 7. `expected_result`：按序号输出的预期结果
 8. `priority`：仅允许 `p0`、`p1`、`p2`
 
+`_context.oracle_strength` 记录生成阶段的判定力自检（`checked`、`strengthened`、`merged_or_removed`、`weak_remaining`），规则见 `testcase-generate/references/generation-quality-loop.md`；它是自检记录，不改变八项字段，也不代替 Review。
+
 内部追溯字段可包含 `id`、`tp_refs`、`type`、`regression_tier`、`origin` 和 `trust`；兼容旧数据时可保留 `title` 和 `feature`，但不得替代八项业务字段。
 
 `test_name` 的场景部分须简短、直白、见名知意，统一遵循 `naming-contract.md`；JSON 与 XMind 表达同一测试意图，`title` 兼容别名与 `test_name` 同步。XMind 仅剥离分类前缀，不自动截断或改写场景名称。
@@ -150,12 +152,13 @@ Excel 不属于默认正式产物或任何阶段的生成、格式校验、覆�
 由 `testcase-reviewer` 生成，至少包含：
 
 - 评审模式（Import-Quarantine/Provenance-Unknown/Strict/Legacy）、深度（标准/加深）、触发原因和置信度
-- R1-R6、H1-H8 共 14 项检查矩阵与总体结论
-- 覆盖、命名、优先级、字段、可执行性和追溯检查
-- S1/S2/S3 问题列表；每项带稳定 issue ID、`open/resolved/accepted` 状态、`case_id`/`TP_ID`/`GLOBAL:<rule>`、owner、影响和建议
+- M1–M5、J1–J4、D1–D5 共 14 项检查矩阵与总体结论；矩阵问题数等于问题清单中该编号的登记条数
+- 机器检查表、需求判定力表（必测项 → 覆盖用例/BDD → 若实现错成… → 能否拦住）、四项描述门禁表
+- 唯一问题清单：每项写成 `- [S1] [open] RV-001 [J1] 范围：…`，带不含等级的稳定 issue ID、`open/resolved/accepted` 状态、M/J/D 编号标签、`case_id`/`TP_ID`/BDD 场景/`GLOBAL:<rule>`、owner、依据和建议
 - 前置条件、测试数据、操作步骤、预期结果的四行检查结果及对应问题 ID；问题给出原文、原因和可直接替换的短句
-- `review_gate.status`、`s1_unresolved_count`、`s1_issue_ids`、`description_unresolved_count`、`description_issue_ids`
-- 单列 `## BDD 场景评审`，记录 BDD评审状态、评审文件、已检查内容和评审结论；发现使用通用评审中的 GR 编号关联并逐项处置，不重复计算问题
+- `review_gate.status`、`s1_unresolved_count`、`s1_issue_ids`、`judgment_unresolved_count`、`judgment_issue_ids`、`description_unresolved_count`、`description_issue_ids`；三个 ID 列表必须分别等于问题清单中未解决（状态不是 `resolved`）的 S1 问题、J1–J4 问题、D1–D4 问题
+- `## 评审执行记录`：评审状态（已完成/未完成）、执行方式、判定依据及限制、机器检查结果；未完成时写未完成原因
+- 单列 `## BDD 场景评审`，记录 BDD评审状态、评审文件、已检查内容和评审结论；BDD 问题使用与用例问题相同的 issue ID 登记一次，不重复计算
 - `bdd_review.status`：实际完成为 `complete`，未完成为 `incomplete`；文件缺失、为空或未评审时不得宣称整轮完成，输入不足时沿用原规则不补造 Gate
 - `reviewed_artifacts`：实际评审完整 JSON 与测试点的 SHA-256，另以 `bdd_features_sha256` 映射记录全部 BDD 文件的相对路径和 SHA-256
 
@@ -174,42 +177,42 @@ BDD 完成记录与指纹的示例（真实报告使用实际文件和摘要值�
 
 BDD 内容或文件集合变化后须重新评审并刷新映射；不得只重算指纹冒充重评。旧报告缺少 BDD 完成记录或指纹时保持可读，但当前完整链路验收要求重新评审。保存后执行 `validate_context_chain.py --change-dir <变更目录> --through review`，检查 BDD 完成记录，并比对 JSON、测试点及全部 BDD 的实际指纹。任一文件指纹缺失、无效或变更时要求重评。
 
-新执行的统一评审必须记录通用评审与SOP检查两部分的执行状态、来源依据、原等级、原始发现与逐项处置；任一部分未完成时说明原因，不提供未启用选项。协同规则由 `skills/testcase-reviewer/testcase-review/references/independent-reviewer.md` 定义，由统一入口执行，通用评审能力与原SOP检查规则均保留。发现经证据复核后关联原生 issue ID；同一问题只计一次，不机械换算严重度，也不增加或替换现有 Gate 字段/公式。历史报告保持兼容，不补造协同记录。
+新执行的统一评审是一轮单次评审，14 项分三层：M 机器层（M1–M5）直接引用 `validate_testcases.py` 与 `validate_context_chain.py` 输出；J 判定力层（J1–J4）先按需求原文建必测清单，再逐项判断能否拦住错误实现；D 描述层（D1–D5）逐条检查。定义见 `testcase-reviewer/testcase-review/references/review-dimensions.md`。每个实际问题只登记一个 issue ID，不另设通用反馈正文或处置映射表。旧格式报告（R1–R6、H1–H8 矩阵）保持可读，不要求补造新格式；当前链路验收仍需按新格式重新评审。
 
-四项描述门禁与 S1 门禁同时生效：逐条检查完整用例集的四个字段，只有未解决 S1 和四项描述问题均为 0、两个 ID 列表均为空，`review_gate.status` 才能为 `pass`。`description_unresolved_count` 为非负整数，必须等于去重后的 `description_issue_ids` 数量；ID 必须是非空字符串并指向报告中的问题。
+判定力门禁与 S1 门禁、描述门禁同时生效：J1–J4 确认的未解决问题，不论 S1/S2，都计入 `judgment_issue_ids`，`judgment_unresolved_count` 必须等于其去重数量；有任何未解决判定力问题时 `review_gate.status` 不能为 `pass`。旧报告缺少判定力门禁字段时必须重新 Review，不自动补通过。
 
-四项描述问题按现有 R5/H2/H3/H4/H6 分级，仍可为 S2/S3；严重度不代替门禁结论。确认的套话、重复背景、无关配置/操作/检查或含糊表达均进入描述问题列表，不能仅以“建议优化”放行；其他 S2/S3 不因此新增阻断。每项给出 `case_id`、字段、原文、原因和可直接替换的建议，只有复审确认 resolved 后才移出；`accepted` 仍计入未解决描述问题，不能豁免本门禁。用户明确按报告修复且范围包含该项时，由 Review 先以原 issue ID 重开为 `open`，保留严重度、定位、owner 和计数/ID；Generate 只消费 `open` 且 owner 为 generate 的 finding。未纳入范围的 accepted 项保持 accepted 并继续阻断。返修后 Review 对完整集及伴生 BDD 复核、按原公式重算并刷新实际评审的全部 SHA-256；旧哈希不再代表已改变的产物。
+四项描述门禁与 S1 门禁同时生效：逐条检查完整用例集的四个字段，只有未解决 S1、判定力问题和四项描述问题均为 0、三个 ID 列表均为空，`review_gate.status` 才能为 `pass`。`description_unresolved_count` 为非负整数，必须等于去重后的 `description_issue_ids` 数量；ID 必须是非空字符串并指向报告中的问题。
+
+四项描述问题使用 D1–D4 编号，按维度细则分级，仍可为 S2/S3；严重度不代替门禁结论。确认的套话、重复背景、无关配置/操作/检查或含糊表达均进入描述问题列表，不能仅以“建议优化”放行；其他 S2/S3 不因此新增阻断。每项给出 `case_id`、字段、原文、原因和可直接替换的建议，只有复审确认 resolved 后才移出；`accepted` 仍计入未解决描述问题，不能豁免本门禁。用户明确按报告修复且范围包含该项时，由 Review 先以原 issue ID 重开为 `open`，保留严重度、定位、owner 和计数/ID；Generate 只消费 `open` 且 owner 为 generate 的 finding。未纳入范围的 accepted 项保持 accepted 并继续阻断。返修后 Review 对完整集及伴生 BDD 复核、按原公式重算并刷新实际评审的全部 SHA-256；旧哈希不再代表已改变的产物。
 
 未完成四项检查时，记录 `GLOBAL:description-review-incomplete` 范围的问题并保持 `blocked`，不得填 0 假装通过。旧报告缺少描述门禁字段时必须重新 Review，不自动补通过。脚本校验能检查字段、计数和门禁的一致性，不能代替文案语义评审；合法的 `blocked` 报告通过上下文校验也不代表用例获准交付。
 
-需求去向表用于记录原文位置→REQ→TP→用例→可观察 Oracle 的对应关系，不改变现有分级或 Gate 公式。原始需求材料未提供时，只能声明核对 canonical 需求文件。已确认规则缺少 TP、用例或可判定 Oracle 时记为覆盖缺口。尚未确认的关键验收口径保留 Q 编号。根据 H3/H5 裁定并引用同一个 issue ID；普通执行期跟进按 `dynamic_followups` 记录。
+需求判定力表记录“必测项 → 来源位置 → 覆盖用例/BDD → 若实现错成… → 能否拦住 → 结论”，替代原需求去向表。必测清单先依据需求原文和项目规范建立，再对照 TP。原始需求材料未提供时，只能声明核对 canonical 需求文件。已确认规则缺少 TP、用例或可判定 Oracle 时记为漏测或拦不住。尚未确认的关键验收口径保留 Q 编号。根据 J1–J4 裁定并引用同一个 issue ID；普通执行期跟进按 `dynamic_followups` 记录。
 
-### 通用评审反馈的强制展示与验收
-
-新执行的通用用例、套件和 BDD 评审，均先形成并完整展示“## 通用评审反馈”，再给出 SOP 检查结果和处置表。默认同一模型先后执行，不称独立评审者或多模型复核。原始反馈不依赖旧 Gate/R/H 意见，不能在 SOP 复核后被覆盖或缩成一句执行状态。
-
-反馈记录通用评审状态（已完成/未完成）、执行方式、评审依据与范围、已检查内容、通用发现数和通用评审结论。有发现时每项用“### GR-001: High”等结构，分别写定位、依据、问题、影响、建议；原等级保留 Critical/High/Medium/Low。已完成且为零发现时明确写“未发现实质性缺陷”，并提供真实检查范围与摘要；未完成时写明具体原因，不以“无发现”掩盖未执行。
-
-“### 通用发现处置”表与 GR 编号一一对应，保留原等级，引用原始发现及其证据位置，列出采纳/重复关联/不适用/待确认、原生 issue/维度/级别及处置依据。不适用和重复项仍保留原始反馈；去重只减少原生问题计数，不删除通用发现。不补造原生 issue，SOP 输入不足时如实说明不能关联的原因。通用评审或 SOP 未完成时整轮必须未完成；缺少反馈或处置时补齐记录，不能修改既有 Gate 公式来代替报告完成检查。
+### 评审执行记录与校验
 
 保存新报告后，从 SOP 根目录执行：
 
 ```bash
-python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py feedback --report <实际报告路径>
+python3 -B skills/_testspec-shared/scripts/verify_eval_artifacts.py review --report <实际报告路径>
 ```
 
-只在对话中输出时按同一格式自查，不为校验新建文件。该校验只核对反馈字段、发现数、编号与处置对应关系，不证明评审语义正确或实际模型执行；原有 review、context 与 Gate 校验仍按原规则执行。历史报告保持可读，不补造通用反馈。
+该校验核对 14 项矩阵、问题编号与计数、owner、三个 Gate 列表和评审执行记录。正文 `Review Gate` 须与 `review_gate.status` 一致。J1–J4、D1–D4 有未解决问题时，对应矩阵行须为 `fail` 或 `blocked`。Gate 为 `pass` 时，这八项均须通过，评审须已完成，需求判定力表须列出实际核对项，D1–D4 须记录检查数量与总数相等。
+
+`validate_context_chain.py --through review` 同时用实际产物复核用例总数、M5 来源、分析指纹和上游阻塞 Q。存在来源阻断时，报告保留对应的未解决 M5 S1。存在上游阻塞 Q 时，报告的问题清单须有引用原 Q 的未解决 J4，且 Gate 为 `blocked`。
+
+单独评审报告含 GR 条目时，同时检查每条的定位、依据、问题、影响、建议和发现数。旧命令 `feedback` 保留为只检查评审执行记录的别名。语义判定由评审完成。只在对话中输出时按同一格式自查，不为校验新建文件。
 
 ### 评审完成后的对话摘要
 
 ```text
 ✅ 评审完成 | 模式: <Import-Quarantine/Provenance-Unknown/Strict/Legacy> | 深度: <标准/加深> | 置信度: <高/中/低>
-🗣️ 通用评审: <已完成/未完成> | 发现: <count> 项 | 反馈正文: 已单独展示
+🔍 机器检查: <PASS/WARN/FAIL> | 判定力抽查: <count> 条，仪式感用例 <count> 条
 📄 报告: testspec/changes/<name>/review-report.md
-📊 总评: <S1> 个 S1 + <S2> 个 S2 + <S3> 个 S3 | 未解决四项描述问题: <count> | Gate: <pass/blocked>
+📊 总评: <S1> 个 S1 + <S2> 个 S2 + <S3> 个 S3 | 未解决判定力问题: <count> | 未解决四项描述问题: <count> | Gate: <pass/blocked>
 ```
 
-两部分未完成时如实写明状态和缺项，不能使用“评审完成”作为通过承诺；摘要中的路径使用本次报告的实际保存位置。
+评审未完成时如实写明状态和缺项，不能使用“评审完成”作为通过承诺；摘要中的路径使用本次报告的实际保存位置。
 
 ## 变更控制
 

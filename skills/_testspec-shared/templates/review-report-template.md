@@ -7,7 +7,8 @@
 **变更目录**: <change_dir>
 **Review Gate**: <pass/blocked/未计算；输入健康检查失败时不补造context>
 **Unresolved S1**: <count>
-**未解决四项描述问题**: <count>
+**未解决判定力问题（J1–J4）**: <count>
+**未解决四项描述问题（D1–D4）**: <count>
 **Provenance Gate**: <pass/blocked>
 
 ### 已评审完整集
@@ -25,253 +26,117 @@
 
 ---
 
-## 通用评审反馈
+## 评审执行记录
 
-本节在 SOP 检查前形成并完整保留，展示同一模型按通用规则得到的原始反馈。后续复核可以补充处置，不能删除、改写或只引用 SOP 问题来代替本节。
-
-**通用评审状态**: <已完成/未完成>
-**执行方式**: 同一模型按通用评审规则单独评审
-**评审依据与范围**: <实际读取的需求、用例/套件/BDD范围及来源限制>
-**已检查内容**: <实际检查的覆盖、边界、错误路径、Oracle、可执行性等及证据摘要>
-**通用发现数**: <count>
-**通用评审结论**: <依据原始材料得出的结论；已完成且为0项时明确写“未发现实质性缺陷”>
+**评审状态**: <已完成/未完成；输入健康检查、14 项检查和 BDD 场景评审均完成才可写已完成>
+**执行方式**: 同一模型单次评审；发现直接登记为 issue，不另设第二轮复核或映射表
+**判定依据及限制**: <实际读取的原始 PRD/验收标准/canonical 需求；缺失材料及其对结论的限制>
+**机器检查**: <validate_testcases.py 与 validate_context_chain.py 结果 PASS/WARN/FAIL 及要点>
 **未完成原因**: <仅未完成时填写具体原因；已完成时删除此行>
 
-有发现时逐项填写以下结构；使用 GR-001、GR-002 等本轮稳定编号，并删除占位说明。没有发现时删除示例发现，不为凑数编造问题。
+## 一、机器检查
 
-### GR-001: <Critical/High/Medium/Low>
+直接引用脚本输出，不写评语；问题仍在「问题清单」登记。
 
-**定位**: <需求/用例/场景编号及原文位置>
-**依据**: <原始材料与必要引文>
-**问题**: <通用评审发现的原始问题>
-**影响**: <影响范围和后果>
-**建议**: <原始的、可执行的修改或补充建议>
+| 编号 | 结果 | 数值 | 问题 ID |
+|---|---|---|---|
+| M1 覆盖与追溯 | <pass/fail> | <TP 覆盖率 %；追溯完整率 %> | <IDs / 无> |
+| M2 字段与格式 | <pass/fail> | <缺失字段数；命名格式违规数> | <IDs / 无> |
+| M3 优先级分布 | <pass/fail> | <冒烟 %、p0 %、p1 %、p2 %> | <IDs / 无> |
+| M4 相似候选 | — | <候选组数，交 D5 复核> | — |
+| M5 来源与版本 | <pass/blocked> | <模式；未验证导入数；版本与指纹是否一致> | <IDs / 无> |
+
+## 二、需求判定力表
+
+先依据需求原文与项目规范列必测项，再对照 TP、用例和 BDD。结论只用：已拦住 / 漏测 / 拦不住 / 待澄清 / 范围外。未提供原始材料时，说明只核对 canonical `requirements.md`/`proposal.md`，不声称完成原文追溯。
+
+| # | 必测项（REQ / 规则 / 分支） | 来源位置 | 覆盖用例 / BDD 场景 | 若实现错成… | 能拦住？ | 结论 | issue |
+|---|---|---|---|---|---|---|---|
+| 1 | <条件 → 可观察结果> | <原文位置 / REQ-001> | <case ID / feature:场景 / 无> | <具体错误实现> | <是/否> | <已拦住/漏测/拦不住/待澄清 Q-001/范围外（依据）> | <ID / 无> |
+
+### 方法落地（J3）
+
+| TP_ID | 设计方法 | 用例数 | Action | Oracle | Scope | Component | 结论 | 证据 |
+|---|---|---|---|---|---|---|---|---|
+| <tp_id> | <method> | <count> | <✓/✗> | <✓/✗> | <✓/✗> | <✓/✗> | <conclusion> | <case ID + 数据/操作/Oracle 中体现方法的证据> |
+
+### 判定力自检对照
+
+**生成阶段记录**: <_context.oracle_strength 摘要：checked / strengthened / weak_remaining；缺失时说明>
+**本次反事实抽查**: <抽查范围与条数>
+**不一致项**: <case ID 与差异；无则写“无”>
+
+## 三、用例与 BDD 质量
+
+### 四项描述门禁
+
+逐条检查完整用例集，不以抽样代替；D1–D4 未解决问题为 0 才可通过，S2/S3 与 accepted 同样阻断。
+
+| 编号 | 字段 | 已检查用例数/总数 | 结果（pass/blocked/未完成） | 问题 ID |
+|---|---|---|---|---|
+| D1 | 前置条件 | <checked/total> | <result> | <IDs / 无> |
+| D2 | 测试数据 | <checked/total> | <result> | <IDs / 无> |
+| D3 | 操作步骤 | <checked/total> | <result> | <IDs / 无> |
+| D4 | 预期表述 | <checked/total> | <result> | <IDs / 无> |
+
+### 相似候选与命名（D5）
+
+| 候选组 / 用例 | 差异 | 结论（保留/合并/改名） | 问题 ID |
+|---|---|---|---|
+| <M4 候选组或 case ID> | <条件、数据、边界位置或预期差异> | <结论与理由> | <ID / 无> |
 
 ## BDD 场景评审
 
 **BDD评审状态**: <已完成/未完成>
 **评审文件**: <全部实际评审的 artifacts/<name>_features.feature 相对路径>
-**已检查内容**: <核心主路径与关键异常覆盖、Given/When/Then、单一职责、业务语言、可观察 Oracle，以及与正式用例在同一规则下的结果核对>
-**评审结论**: <具体结论及对应 GR 编号；无发现时说明已检查范围，未完成时说明缺失材料及原因>
+**已检查内容**: <核心主路径与关键异常覆盖、Given/When/Then、单一职责、业务语言、可观察 Oracle>
+**评审结论**: <具体结论及对应 issue ID；无发现时说明已检查范围，未完成时说明缺失材料及原因>
 
-BDD 发现完整保留在上方通用反馈中，并使用相同 GR 编号逐项处置。缺少或未完成 BDD 评审时整轮为未完成；不得只填完成状态或重算指纹代替评审。输入不足时沿用原规则不补造 Gate。
-
-## 总评
-
-**结论**: <overall_conclusion>
-
-**置信度**: <confidence_level>
-
-### 结论总览矩阵
-
-| 检查项 | 结果 | 关键指标 | 问题数 |
-|--------|------|----------|--------|
-| R1 覆盖度 | <result> | <metric> | <count> |
-| R2 命名契约 | <result> | <metric> | <count> |
-| R3 优先级分布 | <result> | <metric> | <count> |
-| R4 字段完整性 | <result> | <metric> | <count> |
-| R5 可执行性 | <result> | <metric> | <count> |
-| R6 可追溯性 | <result> | <metric> | <count> |
-| H1 冗余检测 | <result> | <metric> | <count> |
-| H2 预期结果质量 | <result> | <metric> | <count> |
-| H3 意图一致性 | <result> | <metric> | <count> |
-| H4 前置条件充分性 | <result> | <metric> | <count> |
-| H5 风险与边界覆盖 | <result> | <metric> | <count> |
-| H6 可维护性建议 | <result> | <metric> | <count> |
-| H7 回归价值评估 | <result> | <metric> | <count> |
-| H8 测试价值与亮点 | — | 标杆用例数 <count>；可复用模式数 <count> | <count> |
-
----
-
-## 两部分评审执行记录
-
-**SOP检查状态**: <已完成/未完成；未完成逐项说明缺失材料>
-**整轮状态**: <已完成/未完成；通用评审、BDD 场景评审与 SOP 检查均完成才可写已完成>
-**执行方式**: 同一模型先执行通用评审，再执行SOP检查
-**统一入口**: `testcase-reviewer`；通用评审mode=`review`，SOP模块=`review-workflow.md`
-**判定依据及限制**: <原始 PRD/验收标准/canonical 需求；版本、文件 SHA-256 与缺失材料>
-**原始反馈定位**: 见上方“通用评审反馈”；原始发现、等级和建议完整保留
-
-### 通用发现处置
-
-| 通用发现编号 | 原等级 | 原始发现定位 | 处置 | 原生 issue ID / 维度 / 级别 | 处置依据 |
-|---|---|---|---|---|---|
-| <GR-001> | <Critical/High/Medium/Low> | <见通用反馈 GR-001、需求或用例位置> | <采纳/重复关联/不适用/待确认> | <RV-ID / R或H / S级；无则说明> | <复核证据或不适用理由> |
-
-没有发现时写“无通用发现，无需处置”，不保留占位行。原始反馈必须在上方单独完整展示，本表不能代替正文。每个发现均须有处置，采纳/重复问题只在原生问题列表登记一次。原等级与 S1/S2/S3 不机械对应；原有 14 项检查及 Gate 公式保持不变。
-
----
-
-## 规则检查
-
-### 四项描述门禁
-
-逐条检查完整用例集，不以抽样代替；四项均完成且未解决描述问题为 0 才可通过。必要长值和关键路径不因长度判错；S2/S3 描述问题仍须修复，不以 accepted 豁免。
-
-| 字段 | 已检查用例数/总数 | 结果（pass/blocked/未完成） | 问题 ID |
+| 场景 | 对应用例 | 同条件下结果一致？ | 问题 ID |
 |---|---|---|---|
-| 前置条件 | <checked/total> | <result> | <issue IDs / 无> |
-| 测试数据 | <checked/total> | <result> | <issue IDs / 无> |
-| 操作步骤 | <checked/total> | <result> | <issue IDs / 无> |
-| 预期结果 | <checked/total> | <result> | <issue IDs / 无> |
+| <feature 路径:场景名> | <case ID> | <是/否及差异> | <ID / 无> |
 
-问题在所属 R/H 维度中记录一次：用例 ID、字段、原文、原因、可直接替换的短句和状态；此表引用相同 issue ID，不重复计数。未完成时记录 `GLOBAL:description-review-incomplete` 范围的问题，Gate 保持 blocked。
+缺少或未完成 BDD 评审时评审状态为未完成；不得只填完成状态或重算指纹代替评审。输入不足时沿用原规则不补造 Gate。
 
-### 需求去向核对
+## 四、问题清单
 
-有原始 PRD/需求素材时，在来源位置与说明中串联“原文→REQ→TP→用例→可观察 Oracle”；未提供原始材料时，明确本表只核对 canonical `requirements.md`/`proposal.md`，不声称完成原文追溯。已确认且在范围内但缺少 TP、用例或可判定 Oracle 的需求，去向标为“覆盖缺口”；不得用待澄清或范围外掩盖。待澄清记录原 Q 编号及受影响的验收。仍影响本次关键验收时，按 H5 关联 S1 issue，由需求分析确认口径。范围外须有确认依据，其他关键缺口按 H3/H5 分级，本表引用对应 issue ID。
+每个问题只在此登记一次；上方各表只引用 ID。issue ID 不含等级，状态为 `open/resolved/accepted`。
 
-| 需求编号/来源段落 | 测试点/待澄清/范围外/覆盖缺口 | 用例 ID | 说明 |
-|------------------------|----------------------------------------|---------|------|
-| <原文位置（若可用）/REQ-001> | <正式测试点编号 / Q-001 / 范围外 / 覆盖缺口> | <用例 ID / 无> | <可观察结果或缺失条件、可能误通过的行为、对应 issue ID> |
+- [<S1/S2/S3>] [<open/resolved/accepted>] <RV-001> [<M1–M5/J1–J4/D1–D5>] 范围：<case_id / TP_ID / feature:场景 / GLOBAL:rule>
+  - **定位**: <需求或用例位置及原文>
+  - **依据**: <需求原文、项目规范或脚本结果>
+  - **会逃逸的行为 / 原因**: <J 层写可能误通过的错误实现；D 层写原文与原因>
+  - **建议**: <可执行的修改；D 层给可直接替换的短句>
+  - **owner**: <prd-analysis / test-points / testcase-generate>
 
-### R1: 测试点覆盖度
+没有问题时写“未发现问题”，并说明已检查范围。
 
-**结果**: <pass/fail>
-**覆盖率**: <percentage>%
+## 五、14 项矩阵
 
-<问题列表>
-- [S1/S2/S3] [<open/resolved/accepted>] <RV-S1-001 等稳定 issue ID>：<问题描述>
-  - **范围**: <case_id / TP_ID / GLOBAL:rule>
-  - **owner**: <责任阶段/技能>
-  - **影响**: <影响说明>
-  - **建议**: <整改建议>
+问题数等于问题清单中该编号的登记条数；结果按问题与检查完成情况填写，不另写评语。
 
-### R2: 命名契约
+| 检查项 | 结果 | 关键数值 | 问题数 |
+|--------|------|----------|--------|
+| M1 覆盖与追溯 | <pass/fail/blocked> | <metric> | <count> |
+| M2 字段与格式 | <pass/fail/blocked> | <metric> | <count> |
+| M3 优先级分布 | <pass/fail/blocked> | <metric> | <count> |
+| M4 相似候选 | — | <候选组数> | 0 |
+| M5 来源与版本 | <pass/fail/blocked> | <metric> | <count> |
+| J1 漏测 | <pass/fail/blocked> | <必测项数；漏测数> | <count> |
+| J2 拦不住 | <pass/fail/blocked> | <反事实抽查数；拦不住数> | <count> |
+| J3 偏题 | <pass/fail/blocked> | <已核对 TP 数> | <count> |
+| J4 口径未定 | <pass/fail/blocked> | <待澄清数> | <count> |
+| D1 前置条件 | <pass/fail/blocked> | <checked/total> | <count> |
+| D2 测试数据 | <pass/fail/blocked> | <checked/total> | <count> |
+| D3 操作步骤 | <pass/fail/blocked> | <checked/total> | <count> |
+| D4 预期表述 | <pass/fail/blocked> | <checked/total> | <count> |
+| D5 命名与粒度 | <pass/fail/blocked> | <已复核候选组数> | <count> |
 
-**结果**: <pass/fail>
-**违规数**: <count>
-
-<问题列表>
-名称问题逐项写明：用例 ID、原名称、问题原因、建议名称；建议遵循共享命名契约，保留关键条件和原测试意图。
-
-### R3: 优先级分布
-
-**结果**: <pass/fail>
-**分布情况**: 冒烟 <count>%, p0 <count>%, p1 <count>%, p2 <count>%
-
-<问题列表>
-
-### R4: 字段完整性
-
-**结果**: <pass/fail>
-**缺失字段数**: <count>
-
-<问题列表>
-
-### R5: 可执行性最小条件
-
-**结果**: <pass/fail>
-**不满足条件数**: <count>
-
-<问题列表>
-
-### R6: 可追溯性
-
-**结果**: <pass/fail>
-**追溯完整性**: <percentage>%
-**模式**: <Import-Quarantine/Provenance-Unknown/Strict/Legacy>
-
-<问题列表>
-
-### Provenance 与导入隔离
-
-**未验证历史导入数**: <count>
-**结果**: <pass/blocked>
-
-<问题列表；存在 legacy-import + unverified 时记录 GLOBAL:legacy-traceability S1；缺 provenance 时记录 GLOBAL:provenance-unknown S1>
+**附注（可选）**: <可沉淀的标杆用例或可复用模式；没有时删除此行>
 
 ---
 
-## 启发式检查
-
-### H1: 冗余检测
-
-**结果**: <pass/fail>
-**疑似冗余对数**: <count>
-
-<问题列表>
-
-### H2: 预期结果质量
-
-**结果**: <pass/fail>
-**模糊表述数**: <count>
-
-<问题列表>
-
-### H3: 意图一致性
-
-**结果**: <pass/fail>
-
-#### 意图一致性评估表
-
-| TP_ID | 设计方法 | 用例数 | Action Match | Oracle Match | Scope Match | 结论 | 证据/说明 |
-|-------|----------|--------|--------------|--------------|-------------|------|-----------|
-| <tp_id> | <method> | <count> | <score> | <score> | <score> | <conclusion> | <case ID + 数据/操作/Oracle 中体现方法的证据> |
-
-<问题列表>
-
-### H4: 前置条件充分性
-
-**结果**: <pass/fail>
-**抽样数**: <count>
-**不充分数**: <count>
-
-<问题列表>
-
-### H5: 风险与边界覆盖
-
-**结果**: <pass/fail>
-**覆盖类型**: <types>
-**HTML 按钮覆盖（适用时）**: <发现/已点击/已关联 TP/已有用例/未覆盖数量及 BTN_ID>
-
-<问题列表>
-
-### H6: 可维护性建议
-
-**结果**: <pass/fail>
-**建议数**: <count>
-
-<问题列表>
-
-### H7: 回归价值评估
-
-**结果**: <pass/fail>
-**抽样数**: <count>
-**仪式感用例数**: <count>
-
-<问题列表>
-
-### H8: 测试价值与亮点识别
-
-**标杆用例数**: <count>
-**可复用模式数**: <count>
-**测试策略健康度**: <评语>
-
-<亮点列表>
-
----
-
-## 整改建议清单
-
-### S1 阻断级（必须修复）
-
-- [ ] [<open/resolved/accepted>] <RV-S1-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
-  - **owner**: <原责任阶段/技能；返修时保留>
-
-### S2 重要级（应当修复）
-
-- [ ] [<open/resolved/accepted>] <RV-S2-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
-  - **owner**: <原责任阶段/技能；返修时保留>
-
-### S3 建议级（四项描述问题须修复，其他可选优化）
-
-- [ ] [<open/resolved/accepted>] <RV-S3-001> <case_id / TP_ID / GLOBAL:rule>：<问题描述> - <建议>
-  - **owner**: <原责任阶段/技能；返修时保留>
-
----
-
-通过条件：未解决 S1 和描述问题均为 0，两个 ID 列表均为空；计数必须对应报告中的未解决问题，不因模板默认值为 0 就宣称通过。
+通过条件：未解决 S1、J1–J4 和 D1–D4 问题均为 0，三个 ID 列表均为空；“未解决”指状态不是 `resolved`。计数必须对应问题清单，不因模板默认值为 0 就宣称通过。
 
 **评审完成时间**: <timestamp>
 
@@ -297,6 +162,8 @@ BDD 发现完整保留在上方通用反馈中，并使用相同 GR 编号逐项
     "status": "pass/blocked",
     "s1_unresolved_count": 0,
     "s1_issue_ids": [],
+    "judgment_unresolved_count": 0,
+    "judgment_issue_ids": [],
     "description_unresolved_count": 0,
     "description_issue_ids": []
   },

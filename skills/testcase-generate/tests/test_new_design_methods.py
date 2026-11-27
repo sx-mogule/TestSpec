@@ -124,12 +124,25 @@ class TestNewDesignMethods(unittest.TestCase):
                     stage_context("prd-analysis", ["specs/testpoints.md", "artifacts/testcases.json", "review-report.md"],
                                   next_skill="test-points"),
                 )
+                matrix = "\n".join(
+                    f"| {item} | {result} | 1 项 | {int(item == 'D1')} |"
+                    for item, result in (
+                        ("M1", "pass"), ("M2", "pass"), ("M3", "pass"), ("M4", "—"), ("M5", "pass"),
+                        ("J1", "pass"), ("J2", "pass"), ("J3", "pass"), ("J4", "pass"),
+                        ("D1", "blocked"), ("D2", "pass"), ("D3", "pass"), ("D4", "pass"), ("D5", "pass"),
+                    )
+                )
                 write_markdown(
                     root / "review-report.md", "# 合成 Review 门禁上下文\n\n以下为结构测试记录，不代表实际语义评审。\n"
+                    "**Review Gate**: blocked\n\n"
                     "## BDD 场景评审\n**BDD评审状态**: 已完成\n"
                     "**评审文件**: artifacts/synthetic_features.feature\n"
                     "**已检查内容**: 合成记录包含结构不合法的表达式、单一搜索动作和拒绝后的状态保持。\n"
-                    "**评审结论**: 此记录仅用于上下文校验回归；实际语义评审仍待执行。",
+                    "**评审结论**: 此记录用于上下文校验回归，实际语义评审仍待执行。\n\n"
+                    "## 四、问题清单\n\n"
+                    "- [S1] [open] SYN-REVIEW-PENDING [D1] 范围：GLOBAL:description-review-incomplete\n"
+                    "  - **owner**: testcase-generate\n\n"
+                    "## 五、14 项矩阵\n\n" + matrix,
                     stage_context("testcase-review", [], design_methods=list(METHODS),
                                   bdd_review={"status": "complete"},
                                   reviewed_artifacts={
@@ -141,6 +154,8 @@ class TestNewDesignMethods(unittest.TestCase):
                                   },
                                   review_gate={"status": "blocked", "s1_unresolved_count": 1,
                                                "s1_issue_ids": ["SYN-REVIEW-PENDING"],
+                                               "judgment_unresolved_count": 0,
+                                               "judgment_issue_ids": [],
                                                "description_unresolved_count": 1,
                                                "description_issue_ids": ["SYN-REVIEW-PENDING"]}),
                 )

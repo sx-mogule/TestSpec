@@ -9,12 +9,23 @@ import re
 import zipfile
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 
 NS = "{urn:xmind:xmap:xmlns:content:2.0}"
-MATRIX_IDS = tuple([f"R{i}" for i in range(1, 7)] + [f"H{i}" for i in range(1, 9)])
+MATRIX_IDS = tuple([f"M{i}" for i in range(1, 6)] + [f"J{i}" for i in range(1, 5)] + [f"D{i}" for i in range(1, 6)])
+LEGACY_MATRIX_IDS = tuple([f"R{i}" for i in range(1, 7)] + [f"H{i}" for i in range(1, 9)])
+JUDGMENT_IDS = frozenset(f"J{i}" for i in range(1, 5))
+DESCRIPTION_IDS = frozenset(f"D{i}" for i in range(1, 5))
+QUESTION_ID = re.compile(r"(?<![A-Za-z0-9_-])Q-[0-9]+(?![A-Za-z0-9_-])")
+DIMENSION_PATTERN = re.compile(r"(?:M[1-5]|J[1-4]|D[1-5])")
+ISSUE_LINE = re.compile(
+    r"^[ \t]*[-*+][ \t]+\[(S[1-3])\][ \t]+\[(open|resolved|accepted)\][ \t]+(\S+)[ \t]+\[(M[1-5]|J[1-4]|D[1-5])\]",
+    re.M,
+)
+LAYER_SECTIONS = {"M": "一、机器检查", "J": "二、需求判定力表", "D": "三、用例与 BDD 质量"}
 MATRIX_STATUSES = {"pass", "fail", "blocked"}
 PLACEHOLDER = re.compile(r"<[^>]*>|\b(?:TODO|TBD|N/?A)\b|待填写|待补充|占位|未填写", re.I)
 FIELD_LABELS = {
@@ -221,29 +232,251 @@ def _is_placeholder(value: str) -> bool:
     return not value.strip() or PLACEHOLDER.search(value) is not None or value.strip() in {"-", "—", "待确认", "无"}
 
 
-def validate_review_report(text: str) -> list[str]:
-    """Validate that all 14 matrix cells and H8 metrics are filled, not their truth."""
+def parse_issues(text: str) -> list[dict[str, str]]:
+    """Parse tagged entries of the single issue list: - [S1] [open] RV-001 [J1] ..."""
+    matches = list(ISSUE_LINE.finditer(text))
+    issues: list[dict[str, str]] = []
+    for index, match in enumerate(matches):
+        end = len(text)
+        if index + 1 < len(matches):
+            end = matches[index + 1].start()
+        heading = re.search(r"^#{1,6}\s+|^<!--", text[match.end():end], re.M)
+        if heading:
+            end = match.end() + heading.start()
+        issues.append({
+            "severity": match.group(1), "status": match.group(2), "id": match.group(3),
+            "dimension": match.group(4), "body": text[match.start():end],
+        })
+    return issues
+
+
+def blocking_question_ids(context: dict[str, Any], stage: str, errors: list[str]) -> set[str]:
+    entries = context.get("blocking_open_questions", [])
+    if not isinstance(entries, list):
+        errors.append(f"{stage}: blocking_open_questions must be an array")
+        return set()
+    ids = set()
+    for index, entry in enumerate(entries):
+        if isinstance(entry, dict):
+            value = entry.get("id") or entry.get("question_id")
+            match = QUESTION_ID.fullmatch(value.strip()) if isinstance(value, str) else None
+        else:
+            match = QUESTION_ID.search(entry) if isinstance(entry, str) else None
+        if match is None:
+            errors.append(f"{stage}: blocking_open_questions[{index}] requires a Q ID")
+        else:
+            ids.add(match[0])
+    return ids
+
+
+def validate_review_questions(context: dict[str, Any], gate: dict[str, Any],
+                              unresolved: list[dict[str, str]]) -> list[str]:
     errors: list[str] = []
-    heading = re.search(r"^###\s+结论总览矩阵\s*$", text, re.M)
-    if not heading:
-        return ["review report: missing conclusion matrix"]
-    next_section = re.search(r"^##\s+", text[heading.end():], re.M)
-    matrix = text[heading.end():heading.end() + next_section.start()] if next_section else text[heading.end():]
+    questions = blocking_question_ids(context, "review", errors)
+    if not questions:
+        return errors
+    if gate["status"] == "pass":
+        return errors + ["review: pass is blocked by open questions: " + ", ".join(sorted(questions))]
+
+    judgment_ids = gate.get("judgment_issue_ids")
+    covered = {
+        question_id
+        for issue in unresolved
+        if issue["dimension"] == "J4" and isinstance(judgment_ids, list) and issue["id"] in judgment_ids
+        for question_id in QUESTION_ID.findall(issue["body"])
+    }
+    missing = questions - covered
+    if missing:
+        errors.append("review: blocking questions require unresolved J4 issues: " + ", ".join(sorted(missing)))
+    return errors
+
+
+def _context_from_text(text: str) -> dict[str, Any] | None:
+    matches = re.findall(r"<!--[ \t]*testspec-context\b(.*?)-->", text, flags=re.S)
+    if len(matches) != 1:
+        return None
+    try:
+        data = json.loads(matches[0].strip())
+    except json.JSONDecodeError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def _table_rows(block: str) -> Iterator[list[str]]:
+    for line in block.splitlines():
+        if line.lstrip().startswith("|"):
+            yield [cell.strip() for cell in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+
+
+def _matrix_rows(block: str, id_pattern: str, errors: list[str]) -> dict[str, list[str]]:
     rows: dict[str, list[str]] = {}
-    for line in matrix.splitlines():
-        if not line.lstrip().startswith("|"):
-            continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+    for cells in _table_rows(block):
         if len(cells) != 4:
             continue
-        match = re.match(r"(R[1-6]|H[1-8])\b", cells[0])
+        match = re.match(rf"({id_pattern})\b", cells[0])
         if match:
             key = match.group(1)
             if key in rows:
                 errors.append(f"review matrix {key}: duplicate row")
             rows[key] = cells[1:]
+    return rows
+
+
+def _section_after(text: str, heading: re.Match[str], level: str = "##") -> str:
+    following = re.search(rf"^{level}\s+", text[heading.end():], re.M)
+    return text[heading.end():heading.end() + following.start()] if following else text[heading.end():]
+
+
+def _review_state(raw: str) -> str:
+    return re.split(r"[（(；;：:]", raw, maxsplit=1)[0].strip()
+
+
+def validate_pass_evidence(text: str, case_count: int | None = None) -> list[str]:
+    """Check the visible review evidence required for a passing SOP Gate."""
+    errors: list[str] = []
+    execution = list(re.finditer(r"^##[ \t]+评审执行记录[ \t]*$", text, re.M))
+    statuses = re.findall(r"^[ \t]*\*\*评审状态\*\*[ \t]*[:：][ \t]*([^\r\n]*)$",
+                          _section_after(text, execution[0]), re.M) if len(execution) == 1 else []
+    if len(statuses) != 1 or _review_state(statuses[0]) != "已完成":
+        errors.append("review: pass requires 评审执行记录 with 评审状态 已完成")
+
+    judgment = list(re.finditer(r"^##[ \t]+(?:二、)?需求判定力表[ \t]*$", text, re.M))
+    rows = [] if len(judgment) != 1 else [
+        cells for cells in _table_rows(_section_after(text, judgment[0], "#{2,3}"))
+        if any(cell and not re.fullmatch(r":?-+:?", cell) for cell in cells)
+        and not any(re.match(r"^必测项(?:[（(]|$)", cell) for cell in cells[:2])
+    ]
+    if not rows:
+        errors.append("review: pass requires nonempty 需求判定力表")
+    for cells in rows:
+        if len(cells) == 8 and re.fullmatch(r"\d+", cells[0]):
+            cells = cells[1:]
+        if len(cells) != 7 or any(_is_placeholder(cell) for cell in cells[:2]):
+            errors.append("review: 需求判定力表 requires a requirement and source on each row")
+            continue
+        requirement, _, coverage, counterfactual, caught, conclusion, _ = cells
+        if _review_state(conclusion) == "范围外":
+            continue
+        if (_review_state(conclusion) != "已拦住" or _review_state(caught) != "是"
+                or _is_placeholder(coverage) or _is_placeholder(counterfactual)):
+            errors.append(f"review: pass requires a covered and observable check in 需求判定力表 for {requirement}")
+
+    quality = list(re.finditer(r"^##[ \t]+(?:三、)?用例与 BDD 质量[ \t]*$", text, re.M))
+    block = _section_after(text, quality[0]) if len(quality) == 1 else ""
+    sections = list(re.finditer(r"^###[ \t]+四项描述门禁[ \t]*$", block, re.M))
+    if len(sections) != 1:
+        return errors + ["review: pass requires one 四项描述门禁 table"]
+
+    totals: dict[str, int] = {}
+    for cells in _table_rows(_section_after(block, sections[0], "###")):
+        dimension = cells[0] if cells else ""
+        if dimension not in DESCRIPTION_IDS:
+            continue
+        count = re.fullmatch(r"([0-9]+)\s*[/／]\s*([0-9]+)", cells[2]) if len(cells) == 5 else None
+        if dimension in totals or count is None or cells[3].lower() != "pass":
+            errors.append(f"review: 四项描述门禁 {dimension} requires one passing checked/total row")
+            continue
+        checked, total = map(int, count.groups())
+        totals[dimension] = total
+        if total == 0 or checked != total or (case_count is not None and total != case_count):
+            expected = f" ({case_count} current cases)" if case_count is not None else ""
+            errors.append(f"review: 四项描述门禁 {dimension} must cover the full testcase set{expected}; got {checked}/{total}")
+    if totals.keys() != DESCRIPTION_IDS or len(set(totals.values())) != 1:
+        errors.append("review: 四项描述门禁 must record D1–D4 with one consistent testcase total")
+    return errors
+
+
+def validate_review_report(
+    text: str, *, case_count: int | None = None, allow_legacy: bool = True,
+) -> list[str]:
+    """Validate the 14-item matrix, the single issue list and Gate consistency; not semantic truth."""
+    heading = re.search(r"^##\s+.*14\s*项矩阵\s*$", text, re.M)
+    if heading:
+        return _validate_layered_report(text, _section_after(text, heading), case_count)
+    legacy = re.search(r"^###\s+结论总览矩阵\s*$", text, re.M)
+    if legacy and allow_legacy:
+        return _validate_legacy_matrix(_section_after(text, legacy))
+    return ["review report: missing 14-item matrix"]
+
+
+def _validate_layered_report(text: str, matrix: str, case_count: int | None) -> list[str]:
+    errors: list[str] = []
+    rows = _matrix_rows(matrix, r"M[1-5]|J[1-4]|D[1-5]", errors)
+    issues = parse_issues(text)
+    tagged: dict[str, int] = {}
+    seen: set[str] = set()
+    for issue in issues:
+        tagged[issue["dimension"]] = tagged.get(issue["dimension"], 0) + 1
+        if issue["id"] in seen:
+            errors.append(f"review issues: duplicate issue ID {issue['id']}")
+        seen.add(issue["id"])
+        if issue["dimension"] == "M4":
+            errors.append(f"review issues: {issue['id']} uses M4; similar candidates are confirmed under D5")
+        if not re.search(r"\bowner(?:\*\*)?\s*[:：=]\s*[A-Za-z0-9_-]+", issue["body"]):
+            errors.append(f"review issues: {issue['id']} must declare owner")
 
     for key in MATRIX_IDS:
+        if key not in rows:
+            errors.append(f"review matrix {key}: row missing")
+            continue
+        result, metric, count = rows[key]
+        if key == "M4":
+            if result not in {"—", "-"}:
+                errors.append("review matrix M4: result must be a dash; candidates are confirmed under D5")
+        elif result not in MATRIX_STATUSES:
+            errors.append(f"review matrix {key}: invalid result {result!r}")
+        if _is_placeholder(metric) or not re.search(r"\d", metric):
+            errors.append(f"review matrix {key}: metric must contain a non-placeholder quantitative value")
+        if not re.fullmatch(r"\d+", count):
+            errors.append(f"review matrix {key}: problem count must be a nonnegative integer, got {count!r}")
+        elif int(count) != tagged.get(key, 0):
+            errors.append(f"review matrix {key}: problem count {count} differs from {tagged.get(key, 0)} issue(s) tagged [{key}]")
+
+    context = _context_from_text(text)
+    gate = context.get("review_gate") if context else None
+    status = gate.get("status") if isinstance(gate, dict) else None
+    if status not in ("pass", "blocked"):
+        return errors + ["review gate: missing or invalid review_gate.status"]
+
+    visible = re.findall(r"^[ \t]*\*\*Review Gate\*\*[ \t]*[:：][ \t]*([^\r\n]*)$", text, re.M)
+    if len(visible) != 1 or _review_state(visible[0]) != status:
+        errors.append(f"review gate: visible Review Gate must match review_gate.status ({status})")
+
+    unresolved = [issue for issue in issues if issue["status"] != "resolved"]
+    errors.extend(validate_review_questions(context, gate, unresolved))
+    unresolved_dimensions = {issue["dimension"] for issue in unresolved}
+    for key in sorted((JUDGMENT_IDS | DESCRIPTION_IDS) & rows.keys()):
+        result = rows[key][0]
+        if key in unresolved_dimensions and result == "pass":
+            errors.append(f"review matrix {key}: unresolved issues cannot have a pass result")
+        if key not in unresolved_dimensions and result == "fail":
+            errors.append(f"review matrix {key}: a fail result requires an unresolved issue")
+        if status == "pass" and result != "pass":
+            errors.append(f"review matrix {key}: a passing Review Gate requires a pass result")
+
+    expected = {
+        "s1_issue_ids": {issue["id"] for issue in unresolved if issue["severity"] == "S1"},
+        "judgment_issue_ids": {issue["id"] for issue in unresolved if issue["dimension"] in JUDGMENT_IDS},
+        "description_issue_ids": {issue["id"] for issue in unresolved if issue["dimension"] in DESCRIPTION_IDS},
+    }
+    for field, ids in expected.items():
+        recorded = gate.get(field)
+        if not isinstance(recorded, list):
+            errors.append(f"review gate: {field} missing; rerun testcase-reviewer")
+        elif set(map(str, recorded)) != ids:
+            errors.append(f"review gate: {field} differs from unresolved issues in the issue list: expected {sorted(ids)}")
+    if status == "pass":
+        if any(expected.values()):
+            errors.append("review gate: pass requires no unresolved S1, judgment, or description issues")
+        errors.extend(validate_pass_evidence(text, case_count))
+    return errors
+
+
+def _validate_legacy_matrix(matrix: str) -> list[str]:
+    """Pre-M/J/D reports (R1-R6, H1-H8) stay readable under their original rules."""
+    errors: list[str] = []
+    rows = _matrix_rows(matrix, r"R[1-6]|H[1-8]", errors)
+    for key in LEGACY_MATRIX_IDS:
         if key not in rows:
             errors.append(f"review matrix {key}: row missing")
             continue
@@ -251,10 +484,8 @@ def validate_review_report(text: str) -> list[str]:
         if key == "H8":
             if result not in {"—", "-"}:
                 errors.append("review matrix H8: result must be a dash; H8 has no pass/fail result")
-            has_benchmark_count = re.search(r"标杆用例(?:数)?\s*[:：]?\s*\d+", metric)
-            has_reusable_count = re.search(r"可复用(?:变形测试)?模式(?:数)?\s*[:：]?\s*\d+", metric)
-            if _is_placeholder(metric) or not (has_benchmark_count and has_reusable_count):
-                errors.append("review matrix H8: metric must include benchmark and reusable-pattern counts")
+            if not metric.strip() or PLACEHOLDER.search(metric):
+                errors.append("review matrix H8: metric must be filled (list highlights or write 无)")
         else:
             if result not in MATRIX_STATUSES:
                 errors.append(f"review matrix {key}: invalid result {result!r}")
@@ -262,149 +493,92 @@ def validate_review_report(text: str) -> list[str]:
                 errors.append(f"review matrix {key}: metric must contain a non-placeholder quantitative value")
         if not re.fullmatch(r"\d+", count):
             errors.append(f"review matrix {key}: problem count must be a nonnegative integer, got {count!r}")
-
-    h8 = re.search(r"^###\s+H8:\s*[^\n]*\n(.*?)(?=^##\s|\Z)", text, re.M | re.S)
-    if not h8:
-        errors.append("review section H8: section missing")
-    else:
-        block = h8.group(1)
-        for label in ("标杆用例数", "可复用模式数"):
-            match = re.search(rf"^\s*\*\*{label}\*\*\s*[:：]\s*(\d+(?:\s*(?:\([^()\n]+\)|（[^（）\n]+）))?)\s*$", block, re.M)
-            if not match:
-                errors.append(f"review section H8: {label} must be a nonnegative integer")
-        health = re.search(
-            r"^\s*(?:[-*+]\s*)?(?:\*\*)?(?:测试策略健康度|策略健康度)(?:\*\*)?\s*[:：]\s*([^\n]+)",
-            block,
-            re.M,
-        )
-        if not health or _is_placeholder(health.group(1)):
-            errors.append("review section H8: 测试策略健康度 must contain a filled comment")
     return errors
 
 
-
-def validate_general_feedback(text: str) -> list[str]:
-    """Check visible general feedback and disposition, not review truth or execution."""
+def validate_review_execution(text: str) -> list[str]:
+    """Check the single-pass execution record and any standalone GR entries; not review truth."""
     errors: list[str] = []
-    heading = re.search(r"^##\s+通用评审反馈\s*$", text, re.M)
-    if not heading:
-        return ["general feedback: missing 通用评审反馈 section"]
-    following = re.search(r"^##\s+", text[heading.end():], re.M)
-    block = text[heading.end():heading.end() + following.start()] if following else text[heading.end():]
 
     def pending(value: str) -> bool:
         return not value.strip() or re.fullmatch(r"<[^>]*>|TODO|TBD|N/?A|待填写|待补充|占位|未填写|待确认|—|-|无", value.strip(), re.I) is not None
 
-
-    def table_cells(line: str) -> list[str]:
-        cells: list[str] = []
-        content: list[str] = []
-        slashes = 0
-        for char in line.strip():
-            if char == "|" and slashes % 2 == 0:
-                cells.append("".join(content).strip())
-                content = []
-            else:
-                content.append(char)
-            slashes = slashes + 1 if char == "\\" else 0
-        cells.append("".join(content).strip())
-        if cells and cells[0] == "":
-            cells.pop(0)
-        if cells and cells[-1] == "":
-            cells.pop()
-        return cells
-
-    def value(part: str, label: str) -> str:
+    def value(part: str, label: str, required: bool = True) -> str:
         matches = re.findall(rf"^[ \t]*\*\*{re.escape(label)}\*\*[ \t]*[:：][ \t]*([^\r\n]*)$", part, re.M)
+        if not matches and not required:
+            return ""
         if len(matches) != 1 or pending(matches[0]):
-            errors.append(f"general feedback: {label} must have one filled value")
+            errors.append(f"review execution: {label} must have one filled value")
             return ""
         return matches[0].strip()
 
-    state = re.split(r"[（(；;：:]", value(block, "通用评审状态"), maxsplit=1)[0].strip()
+    state = _review_state(value(text, "评审状态"))
     if state not in {"已完成", "未完成"}:
-        errors.append("general feedback: invalid 通用评审状态")
-    method = value(block, "执行方式")
-    if "同一模型" not in method:
-        errors.append("general feedback: execution method must identify 同一模型")
-    for label in ("评审依据与范围", "已检查内容", "通用评审结论"):
-        value(block, label)
-    count_text = value(block, "通用发现数")
-    count = int(count_text) if re.fullmatch(r"\d+", count_text) else None
-    if count is None:
-        errors.append("general feedback: 通用发现数 must be a nonnegative integer")
+        errors.append("review execution: 评审状态 must be 已完成 or 未完成")
+    value(text, "判定依据及限制")
     if state == "未完成":
-        value(block, "未完成原因")
+        value(text, "未完成原因")
+    bdd_raw = value(text, "BDD评审状态", required=False)
+    if bdd_raw:
+        bdd = _review_state(bdd_raw)
+        if bdd not in {"已完成", "未完成"}:
+            errors.append("review execution: invalid BDD评审状态")
+        if state == "已完成" and bdd != "已完成":
+            errors.append("review execution: incomplete BDD review cannot claim 评审状态 已完成")
 
-    starts = list(re.finditer(r"^###\s+(GR-\d+)\b([^\n]*)$", block, re.M))
-    findings: dict[str, str] = {}
+    starts = list(re.finditer(r"^###\s+(GR-\d+)\b([^\n]*)$", text, re.M))
+    seen: set[str] = set()
     for index, match in enumerate(starts):
         issue_id = match.group(1)
-        severity = re.fullmatch(r"\s*[:：]\s*(Critical|High|Medium|Low)\s*", match.group(2))
-        if issue_id in findings:
-            errors.append(f"general feedback: duplicate {issue_id}")
-        findings[issue_id] = severity.group(1) if severity else ""
-        if not severity:
-            errors.append(f"general feedback: {issue_id} has invalid original severity")
-        next_heading = re.search(r"^###\s+", block[match.end():], re.M)
-        entry = block[match.end():match.end() + next_heading.start()] if next_heading else block[match.end():]
+        if issue_id in seen:
+            errors.append(f"review execution: duplicate {issue_id}")
+        seen.add(issue_id)
+        if not re.fullmatch(r"\s*[:：]\s*(Critical|High|Medium|Low)\s*", match.group(2)):
+            errors.append(f"review execution: {issue_id} has invalid severity")
+        next_heading = re.search(r"^#{1,3}\s+", text[match.end():], re.M)
+        entry = text[match.end():match.end() + next_heading.start()] if next_heading else text[match.end():]
         for label in ("定位", "依据", "问题", "影响", "建议"):
             value(entry, label)
-    if count is not None and count != len(starts):
-        errors.append("general feedback: 通用发现数 differs from finding entries")
-    if state == "已完成" and count == 0 and "未发现实质性缺陷" not in block:
-        errors.append("general feedback: zero findings requires explicit 未发现实质性缺陷 conclusion")
-
-    mapping = re.search(r"^###\s+通用发现处置\s*$", text, re.M)
-    if not mapping:
-        errors.append("general feedback: missing 通用发现处置")
-        return errors
-    stop = re.search(r"^#{1,3}\s+", text[mapping.end():], re.M)
-    table = text[mapping.end():mapping.end() + stop.start()] if stop else text[mapping.end():]
-    mapped: dict[str, list[str]] = {}
-    for line in table.splitlines():
-        cells = table_cells(line)
-        if line.lstrip().startswith("|") and cells and "GR-" in cells[0] and not re.fullmatch(r"GR-\d+", cells[0]):
-            errors.append("general feedback: invalid or placeholder disposition ID")
-        if not line.lstrip().startswith("|") or not cells or not re.fullmatch(r"GR-\d+", cells[0]):
-            continue
-        issue_id = cells[0]
-        if issue_id in mapped:
-            errors.append(f"general feedback: duplicate disposition for {issue_id}")
-        mapped[issue_id] = cells
-        if len(cells) != 6:
-            errors.append(f"general feedback: {issue_id} disposition must contain six cells")
-            continue
-        if issue_id in findings and cells[1] != findings[issue_id]:
-            errors.append(f"general feedback: {issue_id} original severity changed in disposition")
-        if cells[3] not in {"采纳", "重复关联", "不适用", "待确认"}:
-            errors.append(f"general feedback: {issue_id} invalid disposition")
-        for cell_index in (2, 5):
-            if pending(cells[cell_index]):
-                errors.append(f"general feedback: {issue_id} disposition lacks original finding or evidence")
-        if pending(cells[4]) and cells[4] not in {"—", "-", "无"}:
-            errors.append(f"general feedback: {issue_id} disposition needs native linkage or explanation")
-    if set(mapped) != set(findings):
-        errors.append("general feedback: finding IDs and disposition IDs differ")
-    sop = re.split(r"[（(；;：:]", value(text, "SOP检查状态"), maxsplit=1)[0].strip()
-    overall = re.split(r"[（(；;：:]", value(text, "整轮状态"), maxsplit=1)[0].strip()
-    if sop not in {"已完成", "未完成"} or overall not in {"已完成", "未完成"}:
-        errors.append("general feedback: invalid SOP or overall completion state")
-    if overall == "已完成" and (state != "已完成" or sop != "已完成"):
-        errors.append("general feedback: incomplete part cannot claim overall completion")
+    count_text = value(text, "发现数", required=False)
+    if count_text:
+        if not re.fullmatch(r"\d+", count_text):
+            errors.append("review execution: 发现数 must be a nonnegative integer")
+        elif int(count_text) != len(starts):
+            errors.append("review execution: 发现数 differs from GR entries")
+        elif state == "已完成" and int(count_text) == 0 and "未发现实质性缺陷" not in text:
+            errors.append("review execution: zero findings requires explicit 未发现实质性缺陷 conclusion")
     return errors
 
 
+def validate_general_feedback(text: str) -> list[str]:
+    """Deprecated alias kept for old eval scripts; checks the single-pass execution record."""
+    return validate_review_execution(text)
+
+
 def _review_section(text: str, dimension: str) -> str | None:
+    """Text that may evidence one dimension: tagged issues plus its layer section, or a legacy ### section."""
+    if DIMENSION_PATTERN.fullmatch(dimension):
+        parts = [issue["body"] for issue in parse_issues(text) if issue["dimension"] == dimension]
+        layer = re.search(rf"^##\s+{re.escape(LAYER_SECTIONS[dimension[0]])}\s*$", text, re.M)
+        if layer:
+            parts.append(_section_after(text, layer))
+        return "\n".join(parts) if parts else None
     match = re.search(rf"^###\s+{re.escape(dimension)}\s*:", text, re.M)
     if not match:
         return None
-    following = re.search(r"^###\s+", text[match.end():], re.M)
-    return text[match.end():match.end() + following.start()] if following else text[match.end():]
+    return _section_after(text, match, "###")
 
 
 def validate_review_finding(text: str, dimension: str, identifier: str, severity: str | None, required_text: str) -> list[str]:
     """Check required report references and terms; this does not judge semantic adequacy."""
+    expected = severity if severity else "an S1/S2/S3 severity"
+    if DIMENSION_PATTERN.fullmatch(dimension):
+        for issue in parse_issues(text):
+            if issue["dimension"] != dimension or identifier not in issue["body"]:
+                continue
+            if (not severity or issue["severity"] == severity) and required_text in issue["body"]:
+                return []
+        return [f"review finding {identifier}: expected {expected} issue tagged [{dimension}] containing {required_text!r}"]
     section = _review_section(text, dimension)
     if section is None:
         return [f"review finding {identifier}: dimension {dimension} missing"]
@@ -414,7 +588,6 @@ def validate_review_finding(text: str, dimension: str, identifier: str, severity
         severity_matches = severity in window if severity else any(f"[{level}]" in window for level in ("S1", "S2", "S3"))
         if severity_matches and required_text in window:
             return []
-    expected = severity if severity else "an S1/S2/S3 severity"
     return [f"review finding {identifier}: expected {expected}, target evidence {required_text!r} in {dimension}"]
 
 
@@ -510,7 +683,8 @@ def validate_repair_cycle(accepted_report_path: Path, before_path: Path, after_p
     if accepted_context.get("reviewed_artifacts", {}).get("testpoints_sha256") != testpoints_hash:
         errors.append("repair cycle: accepted report testpoints hash does not match the supplied file")
     accepted_gate = accepted_context.get("review_gate", {})
-    if accepted_gate.get("status") != "blocked" or issue_id not in accepted_gate.get("description_issue_ids", []):
+    gated_ids = list(accepted_gate.get("description_issue_ids", [])) + list(accepted_gate.get("judgment_issue_ids", []))
+    if accepted_gate.get("status") != "blocked" or issue_id not in gated_ids:
         errors.append(f"repair cycle: accepted Review Gate must be blocked by {issue_id}")
     for label, path, context in (("reopen", reopened_path, reopened_context), ("post-generate", after_generate_path, generated_context)):
         status, actual_severity, actual_owner = _issue_details(path, issue_id)
@@ -519,7 +693,7 @@ def validate_repair_cycle(accepted_report_path: Path, before_path: Path, after_p
         if (actual_severity, actual_owner) != (severity, owner):
             errors.append(f"repair cycle {label}: issue severity and owner must remain {severity!r}/{owner!r}")
         gate = context.get("review_gate", {})
-        if gate.get("status") != "blocked" or issue_id not in gate.get("description_issue_ids", []):
+        if gate.get("status") != "blocked" or issue_id not in list(gate.get("description_issue_ids", [])) + list(gate.get("judgment_issue_ids", [])):
             errors.append(f"repair cycle {label}: Review Gate must remain blocked by {issue_id}")
         if context.get("reviewed_artifacts", {}).get("testcases_sha256") != initial_hash:
             errors.append(f"repair cycle {label}: report must still reference the pre-repair testcase hash")
@@ -546,6 +720,8 @@ def validate_repair_cycle(accepted_report_path: Path, before_path: Path, after_p
     s1_ids = gate.get("s1_issue_ids")
     description_count = gate.get("description_unresolved_count")
     description_ids = gate.get("description_issue_ids")
+    judgment_count = gate.get("judgment_unresolved_count")
+    judgment_ids = gate.get("judgment_issue_ids")
     valid_s1 = (
         type(s1_count) is int
         and s1_count >= 0
@@ -562,10 +738,20 @@ def validate_repair_cycle(accepted_report_path: Path, before_path: Path, after_p
         and len(set(description_ids)) == len(description_ids)
         and description_count == len(description_ids)
     )
-    if not valid_s1 or not valid_description:
+    valid_judgment = (
+        type(judgment_count) is int
+        and judgment_count >= 0
+        and isinstance(judgment_ids, list)
+        and all(isinstance(item, str) and item.strip() for item in judgment_ids)
+        and len(set(judgment_ids)) == len(judgment_ids)
+        and judgment_count == len(judgment_ids)
+    )
+    if not valid_s1 or not valid_judgment or not valid_description:
         errors.append("repair cycle final Review: Gate issue counts must match unique nonblank issue ID lists")
-    if not (gate.get("status") == "pass" and valid_s1 and s1_count == 0 and s1_ids == [] and valid_description and description_count == 0 and description_ids == []):
-        errors.append("repair cycle final Review: Gate pass requires zero unresolved S1 and description issues with empty ID lists")
+    if not (gate.get("status") == "pass" and valid_s1 and s1_count == 0 and s1_ids == []
+            and valid_judgment and judgment_count == 0 and judgment_ids == []
+            and valid_description and description_count == 0 and description_ids == []):
+        errors.append("repair cycle final Review: Gate pass requires zero unresolved S1, judgment and description issues with empty ID lists")
     return errors
 
 
@@ -584,9 +770,9 @@ def main() -> int:
     xmind_parser = subparsers.add_parser("xmind", help="compare a zipped XMind export with JSON cases")
     xmind_parser.add_argument("--json", required=True, type=Path)
     xmind_parser.add_argument("--xmind", required=True, type=Path)
-    review_parser = subparsers.add_parser("review", help="check review matrix completeness, not semantic correctness")
+    review_parser = subparsers.add_parser("review", help="check review matrix and execution record completeness, not semantic correctness")
     review_parser.add_argument("--report", required=True, type=Path)
-    feedback_parser = subparsers.add_parser("feedback", help="check visible general feedback and disposition; not semantic correctness")
+    feedback_parser = subparsers.add_parser("feedback", help="deprecated alias: check only the review execution record")
     feedback_parser.add_argument("--report", required=True, type=Path)
     finding_parser = subparsers.add_parser("finding", help="check required Review report IDs, severity, and terms")
     finding_parser.add_argument("--report", required=True, type=Path)
@@ -615,13 +801,13 @@ def main() -> int:
             text = args.report.read_text(encoding="utf-8")
         except OSError as exc:
             return _print_result([str(exc)], "")
-        return _print_result(validate_review_report(text), "all matrix fields are filled; semantic correctness is not assessed")
+        return _print_result(validate_review_report(text) + validate_review_execution(text), "matrix and execution record are filled; semantic correctness is not assessed")
     if args.command == "feedback":
         try:
             text = args.report.read_text(encoding="utf-8")
         except OSError as exc:
             return _print_result([str(exc)], "")
-        return _print_result(validate_general_feedback(text), "general feedback and disposition are complete; semantic correctness and actual execution are not assessed")
+        return _print_result(validate_review_execution(text), "review execution record is complete; semantic correctness and actual execution are not assessed")
     if args.command == "finding":
         try:
             text = args.report.read_text(encoding="utf-8")

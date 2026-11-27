@@ -13,21 +13,58 @@ spec.loader.exec_module(chain)
 
 
 BDD_TEXT = "Feature: 订单提交\n  Scenario: 创建待支付订单\n    Given 商品可购买\n    When 用户提交订单\n    Then 新订单状态为待支付\n"
-BDD_REPORT = """# Fixture
-
-## BDD 场景评审
+BDD_REPORT = """## BDD 场景评审
 
 **BDD评审状态**: 已完成
 **评审文件**: artifacts/synthetic_features.feature
 **已检查内容**: 核对创建订单场景的 Given/When/Then、单一触发事件、业务语言及待支付状态 Oracle。
 **评审结论**: 场景与合成需求一致，未发现实质性缺陷。
 """
+REVIEW_BODY = """# Fixture
+
+**Review Gate**: pass
+
+## 评审执行记录
+
+**评审状态**: 已完成
+
+## 二、需求判定力表
+
+| # | 必测项 | 来源位置 | 覆盖用例 / BDD | 若实现错成… | 能拦住？ | 结论 | issue |
+|---|---|---|---|---|---|---|---|
+| 1 | 新订单待支付 | REQ-1 | CASE-1 | 新单直接显示已支付 | 是 | 已拦住 | 无 |
+
+## 三、用例与 BDD 质量
+
+### 四项描述门禁
+
+| 编号 | 字段 | 已检查用例数/总数 | 结果 | 问题 ID |
+|---|---|---|---|---|
+| D1 | 前置条件 | 1/1 | pass | 无 |
+| D2 | 测试数据 | 1/1 | pass | 无 |
+| D3 | 操作步骤 | 1/1 | pass | 无 |
+| D4 | 预期表述 | 1/1 | pass | 无 |
+
+""" + BDD_REPORT
+NATIVE_PROVENANCE = {"origin": {"kind": "testspec-native"}, "trust": {"status": "provisional"}}
+
+
+def review_body(status="pass", finding=""):
+    issues = chain._report_validator.parse_issues(finding)
+    unresolved = {issue["dimension"] for issue in issues if issue["status"] != "resolved"}
+    rows = []
+    for dimension in chain._report_validator.MATRIX_IDS:
+        count = sum(issue["dimension"] == dimension for issue in issues)
+        result = "—" if dimension == "M4" else "blocked" if dimension in unresolved else "pass"
+        rows.append(f"| {dimension} | {result} | 检查 1 项 | {count} |")
+    return (REVIEW_BODY.replace("**Review Gate**: pass", f"**Review Gate**: {status}")
+            + "\n## 四、问题清单\n\n" + finding + "\n\n## 五、14 项矩阵\n\n" + "\n".join(rows))
 
 
 def write_markdown(path, context, body=None):
     path.parent.mkdir(parents=True, exist_ok=True)
     if body is None:
-        body = BDD_REPORT if path.name == "review-report.md" else "# Fixture"
+        body = review_body(context["review_gate"]["status"]) if path.name == "review-report.md" else "# Fixture"
     path.write_text(body + "\n\n<!-- testspec-context\n" + json.dumps(context, ensure_ascii=False) + "\n-->\n", encoding="utf-8")
 
 
@@ -47,11 +84,18 @@ class TestFourStageContext(unittest.TestCase):
             }
 
         write_markdown(root / "requirements.md", context("prd-analysis", ["requirements-analysis.md", "specs/testpoints.md", "artifacts/testcases.json", "review-report.md"]))
-        write_markdown(root / "requirements-analysis.md", context("prd-analysis", ["specs/testpoints.md", "artifacts/testcases.json", "review-report.md"], next_skill="test-points"))
+        fingerprint = hashlib.sha256((root / "requirements.md").read_bytes()).hexdigest()
+        write_markdown(root / "requirements-analysis.md", context(
+            "prd-analysis", ["specs/testpoints.md", "artifacts/testcases.json", "review-report.md"],
+            next_skill="test-points", canonical_source_sha256=fingerprint,
+        ))
         write_markdown(root / "specs/testpoints.md", context("test-points", ["artifacts/testcases.json", "review-report.md"], next_skill="testcase-generate"))
-        generated = context("testcase-generate", ["review-report.md"], next_skill="testcase-review")
+        generated = context("testcase-generate", ["review-report.md"], next_skill="testcase-review", **NATIVE_PROVENANCE)
         (root / "artifacts").mkdir()
-        (root / "artifacts/testcases.json").write_text(json.dumps({"schema_version": 2, "_context": generated, "testcases": []}), encoding="utf-8")
+        cases = [{"id": "CASE-1", "tp_refs": ["TP_ORDER_SUBMIT_001"], **NATIVE_PROVENANCE}]
+        (root / "artifacts/testcases.json").write_text(
+            json.dumps({"schema_version": 2, "_context": generated, "testcases": cases}), encoding="utf-8",
+        )
         (root / "artifacts/synthetic_features.feature").write_text(BDD_TEXT, encoding="utf-8")
         reviewed = context(
             "testcase-review", [], bdd_review={"status": "complete"},
@@ -63,6 +107,7 @@ class TestFourStageContext(unittest.TestCase):
                 },
             }, review_gate={
                 "status": "pass", "s1_unresolved_count": 0, "s1_issue_ids": [],
+                "judgment_unresolved_count": 0, "judgment_issue_ids": [],
                 "description_unresolved_count": 0, "description_issue_ids": [],
             },
         )
@@ -102,6 +147,76 @@ class TestFourStageContext(unittest.TestCase):
             self.assertIn("analysis: invalid canonical_source_sha256; rerun prd-analysis",
                           chain.validate(root, "analysis", 1))
 
+    def test_historical_analysis_without_fingerprint_is_readable_but_cannot_pass_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            analysis = root / "requirements-analysis.md"
+            context = chain.load_context(analysis)
+            del context["canonical_source_sha256"]
+            write_markdown(analysis, context)
+            self.assertEqual(chain.validate(root, "analysis", 1), [])
+            self.assertEqual(chain.validate(root, "generate", 1), [])
+            self.assertTrue(any("pass requires canonical_source_sha256" in error for error in chain.validate(root, "review", 1)))
+
+            reviewed["review_gate"]["status"] = "blocked"
+            write_markdown(root / "review-report.md", reviewed)
+            self.assertEqual(chain.validate(root, "review", 1), [])
+
+    def test_blocking_question_cannot_disappear_between_stages(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_change(root)
+            canonical = root / "requirements.md"
+            analysis = root / "requirements-analysis.md"
+            points = root / "specs/testpoints.md"
+            source = chain.load_context(canonical)
+            source["blocking_open_questions"] = [{"id": "Q-001", "question": "新订单应显示什么状态？"}]
+            write_markdown(canonical, source)
+            self.assertIn("analysis: missing upstream blocking questions: Q-001", chain.validate(root, "analysis", 1))
+            analyzed = chain.load_context(analysis)
+            analyzed.update(blocking_open_questions=["Q-001：新订单应显示什么状态？", "Q-02"],
+                            canonical_source_sha256=hashlib.sha256(canonical.read_bytes()).hexdigest())
+            write_markdown(analysis, analyzed)
+            self.assertEqual(chain.validate(root, "analysis", 1), [])
+            self.assertIn("points: missing upstream blocking questions: Q-001, Q-02", chain.validate(root, "points", 1))
+            scored = chain.load_context(points)
+            scored["blocking_open_questions"] = [{"question_id": "Q-001"}, {"id": "Q-02"}]
+            write_markdown(points, scored)
+            self.assertEqual(chain.validate(root, "points", 1), [])
+            self.assertIn("generate: missing upstream blocking questions: Q-001, Q-02", chain.validate(root, "generate", 1))
+
+    def test_open_question_requires_a_linked_unresolved_j4(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            reviewed = self.make_change(root)
+            analysis, points, report = (root / name for name in ("requirements-analysis.md", "specs/testpoints.md", "review-report.md"))
+            path = root / "artifacts/testcases.json"
+            for doc in (analysis, points):
+                context = chain.load_context(doc)
+                context["blocking_open_questions"] = ["Q-001"]
+                write_markdown(doc, context)
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["_context"]["blocking_open_questions"] = ["Q-001"]
+            path.write_text(json.dumps(data), encoding="utf-8")
+            for key, doc in (("testcases_sha256", path), ("testpoints_sha256", points)):
+                reviewed["reviewed_artifacts"][key] = hashlib.sha256(doc.read_bytes()).hexdigest()
+            reviewed["blocking_open_questions"] = ["Q-001"]
+            write_markdown(report, reviewed)
+            self.assertEqual(chain.validate(root, "review", 1), ["review: pass is blocked by open questions: Q-001"])
+
+            reviewed["review_gate"].update(status="blocked", s1_unresolved_count=1, s1_issue_ids=["RV-001"],
+                                           judgment_unresolved_count=1, judgment_issue_ids=["RV-001"])
+            finding = "- [S1] [open] RV-001 [J4] 范围：REQ-1 / Q-001\n  - **owner**: prd-analysis"
+            for missing_link in (finding.replace("Q-001", "Q-0010"), finding.replace("[J4]", "[J2]")):
+                write_markdown(report, reviewed, review_body("blocked", missing_link))
+                self.assertIn("review: blocking questions require unresolved J4 issues: Q-001", chain.validate(root, "review", 1))
+            for status in ("open", "accepted"):
+                write_markdown(report, reviewed, review_body("blocked", finding.replace("[open]", f"[{status}]")))
+                self.assertEqual(chain.validate(root, "review", 1), [])
+            write_markdown(report, reviewed, review_body("blocked", finding.replace("[open]", "[resolved]")))
+            self.assertIn("review: blocking questions require unresolved J4 issues: Q-001", chain.validate(root, "review", 1))
+
     def test_review_is_terminal_stage(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -137,12 +252,56 @@ class TestFourStageContext(unittest.TestCase):
             write_markdown(root / "review-report.md", reviewed)
             self.assertIn("review: pass requires zero unresolved S1 and empty s1_issue_ids", chain.validate(root, "review", 1))
 
-    def validate_gate(self, **changes):
+    def test_pass_requires_completed_review_and_full_description_count(self):
+        baseline = review_body()
+        for body, expected in (
+            (baseline.replace("**评审状态**: 已完成", "**评审状态**: 未完成"), "评审状态 已完成"),
+            (baseline.replace("## 二、需求判定力表", "## 缺需求判定力表"), "nonempty 需求判定力表"),
+            (baseline.replace("1/1", "2/2"), "must cover the full testcase set (1 current cases)"),
+            (baseline.replace("**Review Gate**: pass", "**Review Gate**: blocked"), "visible Review Gate must match"),
+            (baseline.replace("| J1 | pass |", "| J1 | blocked |"), "J1: a passing Review Gate requires a pass result"),
+        ):
+            with self.subTest(expected=expected), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                reviewed = self.make_change(root)
+                write_markdown(root / "review-report.md", reviewed, body)
+                errors = chain.validate(root, "review", 1)
+                self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_m5_blocks_even_with_refreshed_hash_and_requires_a_matching_issue(self):
+        for record, scope in (("case", "GLOBAL:provenance-unknown"), ("import", "GLOBAL:legacy-traceability")):
+            with self.subTest(record=record), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                reviewed = self.make_change(root)
+                path = root / "artifacts/testcases.json"
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if record == "case":
+                    del data["testcases"][0]["origin"]
+                else:
+                    data["_context"].update(origin={"kind": "legacy-import"}, trust={"status": "unverified"})
+                path.write_text(json.dumps(data), encoding="utf-8")
+                reviewed["reviewed_artifacts"]["testcases_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                report = root / "review-report.md"
+                write_markdown(report, reviewed)
+                self.assertEqual(chain.validate(root, "generate", 1), [])
+                errors = chain.validate(root, "review", 1)
+                self.assertEqual(len(errors), 1, errors)
+                self.assertIn(scope, errors[0])
+                self.assertIn("requires blocked Gate", errors[0])
+
+                reviewed["review_gate"].update(status="blocked", s1_unresolved_count=1, s1_issue_ids=["RV-001"])
+                write_markdown(report, reviewed)
+                self.assertTrue(any("requires an unresolved S1" in error for error in chain.validate(root, "review", 1)))
+                finding = f"- [S1] [open] RV-001 [M5] 范围：{scope}\n  - **owner**: testcase-generate"
+                write_markdown(report, reviewed, review_body("blocked", finding))
+                self.assertEqual(chain.validate(root, "review", 1), [])
+
+    def validate_gate(self, *, finding="", **changes):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             reviewed = self.make_change(root)
             reviewed["review_gate"].update(changes)
-            write_markdown(root / "review-report.md", reviewed)
+            write_markdown(root / "review-report.md", reviewed, review_body(reviewed["review_gate"]["status"], finding))
             return chain.validate(root, "review", 1)
 
     def test_description_s3_issue_blocks_pass_without_becoming_s1(self):
@@ -157,6 +316,7 @@ class TestFourStageContext(unittest.TestCase):
     def test_blocked_description_report_is_a_consistent_chain(self):
         errors = self.validate_gate(
             status="blocked", description_unresolved_count=1, description_issue_ids=["RV-S3-001"],
+            finding="- [S3] [accepted] RV-S3-001 [D4] 范围：CASE-1\n  - **owner**: testcase-generate",
         )
         self.assertEqual(errors, [])
 
@@ -176,6 +336,38 @@ class TestFourStageContext(unittest.TestCase):
                     write_markdown(root / "review-report.md", reviewed)
                     errors = chain.validate(root, "review", 1)
                     self.assertTrue(any("missing four-field description gate fields" in error and "rerun testcase-review" in error for error in errors), errors)
+
+    def test_judgment_s2_issue_blocks_pass_without_becoming_s1(self):
+        errors = self.validate_gate(judgment_unresolved_count=1, judgment_issue_ids=["RV-004"])
+        self.assertIn("review: pass requires zero unresolved judgment issues and empty judgment_issue_ids", errors)
+        self.assertNotIn("review: pass requires zero unresolved S1 and empty s1_issue_ids", errors)
+
+    def test_blocked_judgment_report_is_a_consistent_chain(self):
+        self.assertEqual(self.validate_gate(
+            status="blocked", judgment_unresolved_count=1, judgment_issue_ids=["RV-004"],
+            finding="- [S2] [open] RV-004 [J2] 范围：CASE-1\n  - **owner**: testcase-generate",
+        ), [])
+
+    def test_report_without_judgment_gate_requires_rereview(self):
+        for fields in (("judgment_unresolved_count",), ("judgment_issue_ids",), ("judgment_unresolved_count", "judgment_issue_ids")):
+            for status in ("pass", "blocked"):
+                with self.subTest(fields=fields, status=status), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    reviewed = self.make_change(root)
+                    reviewed["review_gate"]["status"] = status
+                    for field in fields:
+                        del reviewed["review_gate"][field]
+                    write_markdown(root / "review-report.md", reviewed)
+                    errors = chain.validate(root, "review", 1)
+                    self.assertTrue(any("missing judgment gate fields" in error and "rerun testcase-reviewer" in error for error in errors), errors)
+
+    def test_judgment_count_and_ids_are_validated(self):
+        self.assertIn("review: judgment_unresolved_count must be a nonnegative integer",
+                      self.validate_gate(status="blocked", judgment_unresolved_count=-1))
+        self.assertIn("review: judgment_issue_ids must be an array of unique nonblank strings",
+                      self.validate_gate(status="blocked", judgment_issue_ids=["RV-004", "RV-004"]))
+        self.assertIn("review: judgment_unresolved_count differs from judgment_issue_ids length",
+                      self.validate_gate(status="blocked", judgment_unresolved_count=2, judgment_issue_ids=["RV-004"]))
 
     def test_description_count_rejects_invalid_values(self):
         for count in (True, False, -1, 0.0, 1.0, "0", None, []):
@@ -261,7 +453,7 @@ class TestFourStageContext(unittest.TestCase):
 
     def test_json_and_testpoint_content_changes_invalidate_review(self):
         for relative_path, changed in (
-            ("artifacts/testcases.json", lambda text: text.replace('"testcases": []', '"testcases": [{"expected_result": "状态仍为待支付"}]')),
+            ("artifacts/testcases.json", lambda text: text.replace("CASE-1", "CASE-2")),
             ("specs/testpoints.md", lambda text: text.replace("# Fixture", "# 新增一条验收规则")),
         ):
             with self.subTest(path=relative_path), tempfile.TemporaryDirectory() as directory:
@@ -329,7 +521,7 @@ class TestFourStageContext(unittest.TestCase):
             hashes, errors = chain.bdd_artifacts(root)
             self.assertEqual(errors, [])
             reviewed["reviewed_artifacts"]["bdd_features_sha256"] = hashes
-            body = BDD_REPORT.replace("artifacts/synthetic_features.feature",
+            body = review_body().replace("artifacts/synthetic_features.feature",
                                       "artifacts/synthetic_features.feature、artifacts/extra_features.feature")
             write_markdown(root / "review-report.md", reviewed, body)
             self.assertEqual(chain.validate(root, "review", 1), [])

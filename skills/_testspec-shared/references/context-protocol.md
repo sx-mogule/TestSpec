@@ -56,7 +56,7 @@ Markdown 产物在文件末尾保存：
 | `source_skill` | 生成当前产物的 Skill 新名称 |
 | `source_revision` | 当前需求口径的版本、摘要和更新者 |
 | `canonical_source_sha256` | 仅在 `requirements-analysis.md` 记录实际分析的 canonical 文件字节指纹，由共享 `fingerprint_inputs.py` 计算 |
-| `blocking_open_questions` | 影响当前范围或验收判定的未决问题，保留上游 Q 编号与受影响需求。Review 按 H5 核实是否阻断关键验收 |
+| `blocking_open_questions` | 影响验收的未决问题。保留上游 Q 编号及受影响需求，已确认的问题由 `prd-analysis` 更新需求和分析后移出。Review 将尚未解决的 Q 关联到未解决的 J4 并阻断放行 |
 | `dynamic_followups` | 执行期继续关注但不阻塞当前流程的问题 |
 | `material_quality` | 输入质量：high / medium / low |
 | `risks_identified` | 已识别风险 |
@@ -78,7 +78,7 @@ Markdown 产物在文件末尾保存：
 - canonical source 没有版本时，按 Legacy 模式继续并告警，不得伪造版本。
 - 直接上游版本低于 canonical source 时停止，并提示重新运行直接上游 Skill。
 - 直接上游版本高于 canonical source 时停止，报告元数据异常。
-- `validate_context_chain.py` 核对已记录的分析指纹；不一致即回 `prd-analysis`，即使版本号相同。历史分析没有指纹时仍可按版本读取，首次建立基线须核对原文并重跑分析。
+- `validate_context_chain.py` 核对分析指纹。同版本正文改变时回到 `prd-analysis` 复核。历史分析无指纹时仍可按版本读取，正式评审放行前须核对当前原文，重跑分析并记录指纹。
 
 ## stale 收敛
 
